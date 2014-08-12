@@ -1,7 +1,262 @@
+@media all and (min-width: 1001px) {
+    
+   body {
+    font-family: Arial;
+    background:red;
+} 
+    }
+
+
+
+
+
 body {
     font-family: Arial;
+    background:url('../images/map4.jpg');
 }
 
 h1 {
     color: blue;
+}
+input[type="button"] {
+    border: 0px red solid;
+    background: darkkhaki;
+    padding: 10;
+    border-radius: 5px;
+}
+
+.cardContainer {
+    width: 80px;
+    height: 100px;
+    margin: 8px;
+    border-radius: 4px;
+    position: absolute;
+    perspective: 800px;
+    float: left;
+   /* margin-left:-50px;*/
+    
+    
+    -webkit-perspective: 800px;
+    -moz-perspective: 800px;
+    -o-perspective: 800px;
+    perspective: 800px;
+
+     transition-property:left;
+    transition-duration:1s;
+    transition-timing-function:ease-in;
+    transition-delay:0s;
+    /* Safari */
+    -webkit-transition-property:left;
+    -webkit-transition-duration:1s;
+    -webkit-transition-timing-function:ease-in;
+    -webkit-transition-delay:0s;
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    -ms-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    
+     -moz-transition: all 1s;
+     -webkit-transition: all 1s;
+     -o-transition: all 1s;
+     transition: all 1s ;
+}
+.cardContainer:hover {
+   /* background: red;*/
+    
+    
+   
+}
+.cardContainer.secondSpot {
+    /*border:1px red solid;*/
+    transform:rotateZ(-90deg);
+    -webkit-transform:rotateZ(-90deg);
+}
+.cardContainer.thirdSpot {
+   /* border:1px yellow solid;*/
+    transform:rotateZ(90deg);
+    -webkit-transform:rotateZ(90deg);
+}
+.cardContainer.activated {
+    cursor:pointer;
+    box-shadow: 0px 29px 13px rgba(0,0,0,0.5);
+}
+.cardContainer.activated:hover{
+   box-shadow: 0px 29px 13px rgba(0,0,0,0.5), 1px 1px 24px 3px rgba(255,255,0,1);
+    
+}
+    
+#main {
+    
+}
+.card {
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    -webkit-transition: -webkit-transform 1s;
+    -moz-transition: -moz-transform 1s;
+    -o-transition: -o-transform 1s;
+    transition: transform 1s;
+    -webkit-transform-style: preserve-3d;
+    -moz-transform-style: preserve-3d;
+    -o-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    border: 1px rgba(0,0,0,0.15)  solid;
+    border-radius: 5px;
+    box-shadow: 2px 2px 5px 0px rgba(0,0,0,0.3), 0px 0px 25px -3px rgba(160,100,0,0.6) inset;
+    background:#ffffff;
+    
+   
+     
+}
+
+.card .front,.card .back{
+    display: block;
+    height: 94px;
+    width: 74px;
+    font-weight: bold;
+    position: absolute;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    -o-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.front,.back {
+    display: block;
+    -webkit-margin-before: 1em;
+    -webkit-margin-after: 1em;
+    -webkit-margin-start: 40px;
+    -webkit-margin-end: 40px;
+    margin: 0;
+    
+}
+.card .front {
+ /*   background: red;*/
+ padding: 6px 0 0 6px;
+ 
+}
+.card .back {
+     background: url(../images/cover.jpg) no-repeat;
+    -webkit-transform: rotateY( 180deg );
+    -moz-transform: rotateY( 180deg );
+    -o-transform: rotateY( 180deg );
+    transform: rotateY( 180deg );
+    border-radius: 3px;
+   
+    background-size: 100% 100%;
+    background-size: 73px 92px;
+    background-position: 4px 3px;
+}
+/*.card:hover {
+     -webkit-transform: rotateY( 180deg );
+    -moz-transform: rotateY( 180deg );
+    -o-transform: rotateY( 180deg );
+    transform: rotateY( 180deg );
+    
+}
+
+ */
+    
+.symbol{
+  /*  font-family:symbol;*/
+    display: block;
+    font-size: 35px;
+    text-align: center;
+    width: 86%;
+}
+.front.heart, .front.diamond {
+    color:red;
+}
+
+
+._left, ._right, ._center, ._pile ,._dump {
+    border: 8px rgba(255,255,150,0.3) solid;
+    border-radius: 22px;
+    position: absolute;
+}
+
+._center {
+    height: 100px;
+    width: 450px;
+    bottom: 5px;
+}
+
+._right {
+    height: 450px;
+    width: 100px;
+    right: 40px;
+}
+._left {
+    height: 450px;
+    width: 100px;
+    left: 40px;
+}
+._pile {
+    height: 100px;
+    width: 100px;
+    left: 40px;
+    top:10px;
+}
+._dump {
+    height: 50px;
+    width: 50px;
+    left: 40px;
+    top:10px;
+    
+}
+
+.board{
+   width: 250px;
+    height: 150px;
+    background: orange;
+    position: absolute;
+    top: 0;
+    right: 4;
+    opacity: 0.9;
+    border-radius:0 0 10px 10px;
+    z-index: 100000;
+    box-shadow: 11px 7px 45px 5px rgba(0,0,0,0.6);
+    padding:10px;
+}
+.title {
+    font-size: 14px;
+    
+    
+}
+.title div {
+    font-size: 10px;
+    margin-left:10px
+}
+
+.logs {
+    background-color: white;
+    height: 68px;
+    overflow-y: auto;
+    bottom: 7;
+    position: absolute;
+    right: 0;
+    left: 0;
+    padding: 0 5px;
+    font-size: 10px;
+}
+
+._player {
+    height: 12px;
+    position: relative;
+    
+}
+._player.currentTurn {
+    font-weight:bold;
+    color:#FFFFFF;
+}
+
+.currentTurn:before {
+    height: 10px;
+    width: 10px;
+    position: absolute;
+    content: '';
+    background: #FFFFFF;
+    left: -13px;
+    top: 2px;
+    border-radius: 7px;
 }

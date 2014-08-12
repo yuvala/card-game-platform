@@ -1,0 +1,19 @@
+{
+    "players":[
+        {
+            "player":"ok",
+            "playerName":"Avi",
+            "money":"5"
+            
+        },
+        {
+            "player":"ok",
+            "playerName":"Dany",
+            "money":"15"
+        },{
+            "player":"ok",
+            "playerName":"Tony Ray",
+            "money":"25"
+        }
+    ]
+}
