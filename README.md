@@ -1,18 +1,23 @@
+# Card Game
 
-    ,-----.,--.                  ,--. ,---.   ,--.,------.  ,------.
-    '  .--./|  | ,---. ,--.,--. ,-|  || o   \  |  ||  .-.  \ |  .---'
-    |  |    |  || .-. ||  ||  |' .-. |`..'  |  |  ||  |  \  :|  `--, 
-    '  '--'\|  |' '-' ''  ''  '\ `-' | .'  /   |  ||  '--'  /|  `---.
-     `-----'`--' `---'  `----'  `---'  `--'    `--'`-------' `------'
-    ----------------------------------------------------------------- 
+Legacy browser card game prototype served by a small local Node.js server.
 
+## Run
 
-Hi there! Welcome to Cloud9 IDE!
+```bash
+npm start
+```
 
-To get you started, create some files, play with the terminal,
-or visit http://docs.c9.io for our documentation.
-If you want, you can also go watch some training videos at
-http://www.youtube.com/user/c9ide.
+Open:
 
-Happy coding!
-The Cloud9 IDE team
+```text
+http://127.0.0.1:8000/
+```
+
+## Main Files
+
+- `html/game.html` - game page
+- `html/js/` - game logic and UI scripts
+- `html/css/main.css` - styles
+- `html/data/players.json` - player seed data
+- `node.js/server.js` - static server for local development
