@@ -3,24 +3,23 @@
 
 var arena ;
 (function(){
-    
-    var tid = setInterval( function () {
-        if ( document.readyState !== 'complete' ) return;
-        clearInterval( tid );       
-   
+    function bindStartButton() {
         var el = document.getElementById("startGame");
+        if (!el) {
+            return;
+        }
+
         el.onclick= function(){
             beginGame();
         };
-       
-    
-         
-    }, 100 );
-    
-   
-    
-    
+    }
 
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', bindStartButton);
+        return;
+    }
+
+    bindStartButton();
 })();
 
 function beginGame() {

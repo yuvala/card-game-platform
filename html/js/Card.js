@@ -1,18 +1,29 @@
-
-
 function cardId() {
     return this.num + this.suit;
+}
+
+function normalizePosition(value) {
+    if (typeof value === 'number') {
+        return value + 'px';
     }
+
+    if (typeof value === 'string' && /^-?\d+(\.\d+)?$/.test(value)) {
+        return value + 'px';
+    }
+
+    return value;
+}
 
 
 function Card(num,suit) {
     this.num = num;
     this.suit = suit;
     this.cardId = cardId;
-   
- }
- Card.prototype = {
-    getCard:{},
+    this.getCard = null;
+    this.status = null;
+}
+Card.prototype = {
+    getCard: null,
     createCard:function(){
         var card = document.createElement('div'),
             container = document.createElement('div'),
@@ -64,22 +75,22 @@ function Card(num,suit) {
         return this.domElement().parentElement.style.left;
     },
     setLeft: function(_left) {
-        this.domElement().parentElement.style.left=_left;
+        this.domElement().parentElement.style.left = normalizePosition(_left);
     },
     
     getTop: function() {
         return this.domElement().parentElement.style.top;
     },
     setTop: function(_top) {
-        this.domElement().parentElement.style.top=_top;
+        this.domElement().parentElement.style.top = normalizePosition(_top);
     },
     setClassName: function(cssClass) {
-        this.domElement().parentElement.className = this.domElement().parentElement.className +' '+ cssClass;
+        this.domElement().parentElement.classList.add(cssClass);
     },
     setEvent: function(type,callback){
         if(type === 'click'){
             var self= this;
-            this.getCard.className += ' activated';
+            this.getCard.classList.add('activated');
             this.getCard.onclick = function(e) {
                 console.log('card clicked!');
                 callback(e,self);
@@ -97,7 +108,7 @@ function Card(num,suit) {
     removeEvent:function(type){
         this.removeClassName('activated');
         if(type === 'click'){
-            this.getCard.onclick='';
+            this.getCard.onclick = null;
         }
     
         
@@ -106,4 +117,4 @@ function Card(num,suit) {
         this.domElement().parentElement.className = 'cardContainer'; 
     }
     
- }
+}

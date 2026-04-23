@@ -1,27 +1,40 @@
 function Arena(entryPoint) {
-    this.getJson();
     this.entryPoint = entryPoint;
+    this.jsonFile = {};
+    this.drawPile = {};
+    this.players = [];
+    this.spotId = ['firstSpot', 'secondSpot', 'thirdSpot'];
+    this.tableSpotPos = [];
+    this.cardsDisplayed = false;
+    this.isShuffled = false;
+    this.hasDealt = false;
+    this.controls = {
+        start: document.getElementById('startGame'),
+        shuffle: document.getElementById('shuff'),
+        deal: document.getElementById('deal')
+    };
+    this.getJson();
     this.setPlayers(3);
     this.initDrawPile();
     this.cardsManager = new CardsManager(this);
     this.initBoard();
-    this.tm = new TurnsManager();
+    this.tm = new TurnsManager(this);
    
-    var el2 = document.getElementById("shuff");
-    var dealEl = document.getElementById('deal');
     var selfish = this;
 
-    el2.onclick = function() {
+    this.controls.shuffle.onclick = function() {
         selfish.shuffleCards();
-        dealEl.disabled = false
+    };
+
+    this.controls.deal.onclick = function() {
+        selfish.stackDeal();
+    };
+
+    if (this.controls.start) {
+        this.controls.start.disabled = true;
     }
 
-    dealEl.onclick = function() {
-        selfish.stackDeal();
-        dealEl.disabled = true;
-    }
-    
-    
+    this.updateControls();
 }
 
 Arena.prototype = {
@@ -36,10 +49,11 @@ Arena.prototype = {
        var request = new XMLHttpRequest();
        request.open("GET", "data/players.json", false);
        request.send(null);
-       this.jsonFile = JSON.parse(request.responseText);
-      // alert (my_JSON_object.result[0]);
-      // console.log('c.players[0].playerName');
-        
+       try {
+           this.jsonFile = JSON.parse(request.responseText) || {};
+       } catch (err) {
+           this.jsonFile = {};
+       }
     },
     notifyBoard: function(type,arg) {
         if(type == 1){
@@ -50,19 +64,26 @@ Arena.prototype = {
     },
     //DISPLAY ON THE DOM
     showDeck: function() {
-        if (!this.cardsDisplayed) {
-            for (var i = 0; i < this.cardDeck.cards.length; i++) {
-                this.entryPoint.appendChild(this.cardDeck.cards[i].getEl());
-            }
-            this.cardsDisplayed = true;
-        }
+        this.cardsManager.showDeck();
     },
 
     shuffleCards: function() {
+        if (this.hasDealt) {
+            return;
+        }
+
         this.cardsManager.stackShuffle();
+        this.isShuffled = true;
+        this.updateControls();
     },
 
     stackDeal: function() {
+        if (!this.isShuffled || this.hasDealt) {
+            return;
+        }
+
+        this.hasDealt = true;
+        this.updateControls();
         var self = this;
         this.cardsManager.stackDeal(function() {
             self.tm.start(self.players.length, self.cardsManager.cardsToDeal);
@@ -94,8 +115,9 @@ Arena.prototype = {
     },
     setPlayers: function(num) {
         console.log('set players');
-        var ps = this.jsonFile.players;
-        for (var i = 0; i < ps.length; i++) {
+        var ps = this.jsonFile.players || [];
+        var limit = Math.min(num, ps.length, this.spotId.length);
+        for (var i = 0; i < limit; i++) {
             var p = new Player('player' + (i + 1), this.getBox(this.spotId[i]));
             p.playerName = ps[i].playerName;
             p.money = ps[i].money;
@@ -126,6 +148,14 @@ Arena.prototype = {
     },
     cleanDump:function(){
         this.cardsManager.clearOldCards();
+    },
+    updateControls: function() {
+        if (this.controls.shuffle) {
+            this.controls.shuffle.disabled = this.hasDealt;
+        }
+        if (this.controls.deal) {
+            this.controls.deal.disabled = !this.isShuffled || this.hasDealt;
+        }
     }
    
 }

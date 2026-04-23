@@ -1,6 +1,8 @@
 function Player(name, tableSpot) {
     this.playerName = name;
-    this.hand = new Array();
+    this.playerId = '';
+    this.money = 10;
+    this.hand = [];
     this.tableSpot = tableSpot;
 }
 
@@ -11,7 +13,7 @@ Player.prototype = {
     playerId:'',
     money: 10,
     hand: null,
-    tableSpot: {},
+    tableSpot: null,
     getHand: function() {
         return this.hand;
     },

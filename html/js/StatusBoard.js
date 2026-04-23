@@ -56,6 +56,9 @@ var StatusBoard = (function() {
 
         },
         insertLog: function(arg) {
+            if (!logDiv) {
+                return;
+            }
             arg += '<br>' + logDiv.innerHTML;
             logDiv.innerHTML = arg;
         },
@@ -65,7 +68,9 @@ var StatusBoard = (function() {
             for (var i = 0; i < p.length; i++) {
                 p[i].classList.remove(currentTurn);
             }
-            p[arg].className += ' '+currentTurn;
+            if (p[arg]) {
+                p[arg].classList.add(currentTurn);
+            }
 
         }
 

@@ -1,4 +1,5 @@
 function Deck(){
+    this.cards = [];
     this.create();
 }
     
@@ -8,7 +9,7 @@ Deck.prototype = {
     cardNum:['1','2','3','4','5','6','7','8','9','10','j','q','k'],
     cards:[],
     create:function(){
-        var d,cnt=0;
+        this.cards = [];
         var self =this;
         self.suit.forEach(function(entry) {
             

@@ -1,0 +1,9 @@
+{
+  "name": "card-game",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Legacy browser card game served by a small Node.js static server.",
+  "scripts": {
+    "start": "node node.js/server.js"
+  }
+}

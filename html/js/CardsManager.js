@@ -1,6 +1,9 @@
 function CardsManager(ep) {
     this.arena = ep;
     this.deck = new Deck();
+    this.cardsDisplayed = false;
+    this.players = [];
+    this.usedCards = [];
     this.createHand();
     this.showDeck();
 
@@ -22,8 +25,8 @@ CardsManager.prototype = {
                 var card = this.deck.cards[i].createCard();
                 left += 20;
                 zIndex += 10;
-                card.style.left = left;
-                card.style.top = this.arena.drawPile.top;
+                card.style.left = left + 'px';
+                card.style.top = this.arena.drawPile.top + 'px';
                 card.style.zIndex = zIndex;
                 this.arena.entryPoint.appendChild(card);
             }
@@ -45,8 +48,8 @@ CardsManager.prototype = {
             var id = this.deck.cards[i].cardId(),
                 card = document.getElementById(id);
 
-            card.parentElement.style.left = Math.floor(Math.random() * 622);
-            card.parentElement.style.top = Math.floor(Math.random() * 600);
+            card.parentElement.style.left = Math.floor(Math.random() * 622) + 'px';
+            card.parentElement.style.top = Math.floor(Math.random() * 600) + 'px';
         }
 
         //mixing
@@ -64,7 +67,7 @@ CardsManager.prototype = {
         }
         var self = this;
         setTimeout(function() {
-            var left = this.arena.drawPile.left,
+            var left = self.arena.drawPile.left,
                 zIndex = 100;
 
             for (var i = 0; i < deck.length; i++) {
@@ -74,8 +77,8 @@ CardsManager.prototype = {
                 //left += 20;
 
                 zIndex += 10;
-                card.parentElement.style.left = left;
-                card.parentElement.style.top = 90;
+                card.parentElement.style.left = left + 'px';
+                card.parentElement.style.top = self.arena.drawPile.top + 'px';
                 card.parentElement.style.zIndex = zIndex;
             }
 
@@ -108,7 +111,6 @@ CardsManager.prototype = {
                 }
                 var c = self.deck.cards.length - 1;
                 var player = self.players[i];
-                var lastCard, lastPosition;
                 var gap;
                 if (player.hand.length - 1 !== -1) {
                     gap = 90;
@@ -151,7 +153,9 @@ CardsManager.prototype = {
             }
             else {
                 console.log('cone');
-                callback();
+                if (typeof callback === 'function') {
+                    callback();
+                }
             }
         }
         loopNumbers();
@@ -160,8 +164,8 @@ CardsManager.prototype = {
         card.removeClassName('activated');
         var player = this.players[playerNum];
         var spotId = player.tableSpot.spotId;
-        var cardbox = arena.getBox(card.cardId());
-        var dump = arena.getDumpPile();
+        var cardbox = this.arena.getBox(card.cardId());
+        var dump = this.arena.getDumpPile();
         if (spotId === 'secondSpot') {
             var t = dump.top - cardbox.width / 2;
             card.markAsSelected(dump.left + dump.width, t);
@@ -191,6 +195,7 @@ CardsManager.prototype = {
            this.usedCards[i].setTop(-500);
            this.usedCards[i].setLeft(-50);
         }
-        
+
+        this.usedCards = [];
     }
 }
