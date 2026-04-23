@@ -1,23 +1,30 @@
 # Card Game
 
-Legacy browser card game prototype served by a small local Node.js server.
+Legacy browser card game prototype migrated to Vite and TypeScript.
 
 ## Run
 
 ```bash
-npm start
+npm run dev
 ```
 
 Open:
 
 ```text
-http://127.0.0.1:8000/
+http://127.0.0.1:8000/game.html
 ```
+
+## Scripts
+
+- `npm run dev` - start the Vite dev server
+- `npm run build` - run TypeScript checks and create a production build in `dist/`
+- `npm run preview` - preview the production build
+- `npm run serve:legacy` - run the old static Node.js server for comparison
 
 ## Main Files
 
-- `html/game.html` - game page
-- `html/js/` - game logic and UI scripts
+- `html/game.html` - game page entrypoint for Vite
+- `html/src/` - TypeScript game logic and bootstrapping
 - `html/css/main.css` - styles
 - `html/data/players.json` - player seed data
-- `node.js/server.js` - static server for local development
+- `vite.config.js` - Vite configuration for the legacy `html/` root

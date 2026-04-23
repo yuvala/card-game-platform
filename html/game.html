@@ -1,46 +1,33 @@
-<html>
-    
+<!DOCTYPE html>
+<html lang="en">
     <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Draw Poker</title>
-        
-        
-        <script src="js/Card.js"></script>
-        <script src="js/Player.js"></script>
-        <script src="js/Deck.js"></script>
-        <script src="js/CardsManager.js"></script>
-        <script src="js/Arena.js"></script>
-        <script src="js/StatusBoard.js"></script>
-        <script src="js/TurnsManager.js"></script>
-
-        
-        <script src="js/all.js"></script>
         <link rel="stylesheet" href="css/main.css" type="text/css" />
     </head>
-    
+
     <body>
-                <!--<input type="button" value="play" onClick="beginGame();">-->
-        <input type="button" value="start" id="startGame">
-        <input type="button" value="shuffle" id="shuff">
-        <input type="button" value="deal" id="deal" disabled>
-        <hr>
-        
+        <input type="button" value="start" id="startGame" />
+        <input type="button" value="shuffle" id="shuff" />
+        <input type="button" value="deal" id="deal" disabled />
+        <hr />
+
         <div id="main"></div>
-        <div style="height: 622px;width: 954px;position: relative;">
+        <div style="height: 622px; width: 954px; position: relative;">
             <div id="thirdSpot" class="_left"></div>
             <div id="secondSpot" class="_right"></div>
-            <div style="position: absolute; left: 50%;bottom:50px;">
+            <div style="position: absolute; left: 50%; bottom: 50px;">
                 <div id="firstSpot" class="_center" style="position: relative; left: -50%;"></div>
             </div>
             <div style="position: absolute; left: 50%;">
                 <div id="drawPile" class="_pile" style="position: relative; left: -50%;"></div>
             </div>
-            <div style="position: absolute; left: 50%;top: 36%;">
-                <div id="dumpPile" class="_dump" style="position: relative; left: -50%;top: -38px;"></div>
+            <div style="position: absolute; left: 50%; top: 36%;">
+                <div id="dumpPile" class="_dump" style="position: relative; left: -50%; top: -38px;"></div>
             </div>
         </div>
-        
-    </div>
-         
-    </body>
 
+        <script type="module" src="./src/main.ts"></script>
+    </body>
 </html>

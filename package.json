@@ -2,8 +2,16 @@
   "name": "card-game",
   "version": "1.0.0",
   "private": true,
-  "description": "Legacy browser card game served by a small Node.js static server.",
+  "description": "Legacy browser card game migrated to Vite and TypeScript.",
   "scripts": {
-    "start": "node node.js/server.js"
+    "start": "vite --config vite.config.js",
+    "dev": "vite --config vite.config.js",
+    "build": "tsc --noEmit && vite build --config vite.config.js",
+    "preview": "vite preview --config vite.config.js",
+    "serve:legacy": "node node.js/server.js"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^8.0.10"
   }
 }

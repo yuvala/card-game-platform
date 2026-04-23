@@ -21,7 +21,7 @@ h1 {
 input[type="button"] {
     border: 0px red solid;
     background: darkkhaki;
-    padding: 10;
+    padding: 10px;
     border-radius: 5px;
 }
 
@@ -211,7 +211,7 @@ input[type="button"] {
     background: orange;
     position: absolute;
     top: 0;
-    right: 4;
+    right: 4px;
     opacity: 0.9;
     border-radius:0 0 10px 10px;
     z-index: 100000;
@@ -232,7 +232,7 @@ input[type="button"] {
     background-color: white;
     height: 68px;
     overflow-y: auto;
-    bottom: 7;
+    bottom: 7px;
     position: absolute;
     right: 0;
     left: 0;
