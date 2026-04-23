@@ -14,6 +14,12 @@ Open:
 http://127.0.0.1:8000/game.html
 ```
 
+Rewrite sandbox:
+
+```text
+http://127.0.0.1:8000/rewrite.html
+```
+
 ## Scripts
 
 - `npm run dev` - start the Vite dev server
@@ -24,7 +30,10 @@ http://127.0.0.1:8000/game.html
 ## Main Files
 
 - `html/game.html` - game page entrypoint for Vite
+- `html/rewrite.html` - Phaser + XState rewrite entrypoint
 - `html/src/` - TypeScript game logic and bootstrapping
+- `html/src/rewrite/` - parallel greenfield rewrite scaffold
 - `html/css/main.css` - styles
+- `html/css/rewrite.css` - rewrite shell styles
 - `html/data/players.json` - player seed data
 - `vite.config.js` - Vite configuration for the legacy `html/` root

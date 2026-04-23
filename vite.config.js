@@ -16,7 +16,9 @@ module.exports = defineConfig({
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                game: resolve(__dirname, "html/game.html")
+                index: resolve(__dirname, "html/index.html"),
+                game: resolve(__dirname, "html/game.html"),
+                rewrite: resolve(__dirname, "html/rewrite.html")
             }
         }
     }
