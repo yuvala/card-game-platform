@@ -1,6 +1,17 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { RewriteGameViewSnapshot } from "./types";
 
+function getPlayerIconLabel(playerName: string): string {
+    const initials = playerName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("");
+
+    return initials || "P";
+}
+
 export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
@@ -52,14 +63,13 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
 
             return {
                 id: player.id,
-                seatLabel:
-                    (isCurrentTurn ? "> " : "") +
-                    player.name +
-                    " (" +
-                    player.hand.length +
-                    " cards, " +
-                    player.score +
-                    " pts)",
+                iconLabel: getPlayerIconLabel(player.name),
+                nameLabel: player.name,
+                metaLabel:
+                    String(player.hand.length) +
+                    " cards | " +
+                    String(player.score) +
+                    " pts",
                 hand: player.hand.map((card) => ({
                     id: card.id,
                     label: card.displayLabel,
@@ -70,6 +80,7 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
                 canInteract: isCurrentTurn && isPlayerTurn
             };
         }),
+        tableCards: [],
         piles: [
             {
                 id: "draw-pile",

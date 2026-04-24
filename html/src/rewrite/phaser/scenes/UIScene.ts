@@ -34,7 +34,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         this.add.rectangle(HUD_X + HUD_WIDTH / 2, REWRITE_HEIGHT / 2, HUD_WIDTH - 28, REWRITE_HEIGHT - 40, 0x08150f, 0.9)
             .setStrokeStyle(2, 0xffd166, 0.14);
 
-        this.add.text(HUD_X + 34, 40, "CONTROL PANEL", {
+        this.add.text(HUD_X + 34, 40, "TABLE CONTROLS", {
             fontFamily: "Arial",
             fontSize: "13px",
             color: "#ffd166",
@@ -62,7 +62,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             wordWrap: { width: HUD_WIDTH - 70 }
         });
 
-        this.add.text(HUD_X + 34, 252, "Switch decks with ?deck=french, ?deck=spanish, or ?deck=italian.", {
+        this.add.text(HUD_X + 34, 252, "Use Create Game above the table to change the ruleset, seats, or deck.", {
             fontFamily: "Arial",
             fontSize: "15px",
             color: "rgba(246,236,210,0.7)",
@@ -78,7 +78,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         });
 
         this.buttons = {
-            start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Start Rewrite", () => {
+            start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Deal Cards", () => {
                 this.actor.send({ type: "START" });
             }),
             play: this.createButton(HUD_X + HUD_WIDTH / 2, 458, "Play Card", () => {

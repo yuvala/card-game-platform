@@ -14,7 +14,9 @@ export interface CardGameViewCard {
 
 export interface CardGameViewPlayer {
     id: string;
-    seatLabel: string;
+    iconLabel: string;
+    nameLabel: string;
+    metaLabel: string;
     hand: CardGameViewCard[];
     isCurrentTurn: boolean;
     isRoundWinner: boolean;
@@ -31,6 +33,11 @@ export interface CardGameViewAnimation {
     key: string;
     playerId: string;
     cardId: string;
+}
+
+export interface CardGameViewTableCard extends CardGameViewCard {
+    playerId?: string;
+    caption?: string;
 }
 
 export interface CardGameViewPile {
@@ -53,6 +60,7 @@ export interface CardGameViewModel {
     statusText: string;
     selectedCardId: string | null;
     players: CardGameViewPlayer[];
+    tableCards: CardGameViewTableCard[];
     piles: CardGameViewPile[];
     controls: CardGameViewControls;
     animation: CardGameViewAnimation | null;

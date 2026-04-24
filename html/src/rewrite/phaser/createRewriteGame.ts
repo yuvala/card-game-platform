@@ -1,18 +1,16 @@
 import * as Phaser from "phaser";
 
-import { drawPokerGameDefinition } from "../games/drawPoker/definition";
-import type { RewriteGameActor } from "../games/drawPoker/machine";
+import type { CardGameActor, CardGameViewModelFactory } from "../engine/game/viewModel";
 import { HUD_WIDTH, REWRITE_HEIGHT, REWRITE_WIDTH } from "./layout";
 import { BootScene } from "./scenes/BootScene";
 import { TableScene } from "./scenes/TableScene";
 import { UIScene } from "./scenes/UIScene";
 
-export function createRewriteGame(parent: string, actor: RewriteGameActor): Phaser.Game {
-    const getViewModel = drawPokerGameDefinition.toViewModel;
-    if (!getViewModel) {
-        throw new Error("Draw Poker game definition is missing a view model adapter.");
-    }
-
+export function createRewriteGame<TSnapshot>(
+    parent: string,
+    actor: CardGameActor<TSnapshot>,
+    getViewModel: CardGameViewModelFactory<TSnapshot>
+): Phaser.Game {
     return new Phaser.Game({
         type: Phaser.AUTO,
         parent,

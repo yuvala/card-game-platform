@@ -4,6 +4,7 @@ import type {
     CardGameActor,
     CardGameViewCard,
     CardGameViewPile,
+    CardGameViewTableCard,
     CardGameViewModel,
     CardGameViewModelFactory
 } from "../../engine/game/viewModel";
@@ -38,6 +39,21 @@ interface CardSlot {
     label: Phaser.GameObjects.Text;
 }
 
+interface SeatBadge {
+    container: Phaser.GameObjects.Container;
+    iconCircle: Phaser.GameObjects.Arc;
+    iconText: Phaser.GameObjects.Text;
+    nameText: Phaser.GameObjects.Text;
+    metaText: Phaser.GameObjects.Text;
+}
+
+interface TableCardVisual {
+    container: Phaser.GameObjects.Container;
+    face: Phaser.GameObjects.Rectangle;
+    label: Phaser.GameObjects.Text;
+    caption: Phaser.GameObjects.Text;
+}
+
 export class TableScene<TSnapshot> extends Phaser.Scene {
     private readonly actor: CardGameActor<TSnapshot>;
     private readonly getViewModel: CardGameViewModelFactory<TSnapshot>;
@@ -49,9 +65,11 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private discardCard!: Phaser.GameObjects.Container;
     private discardCardFace!: Phaser.GameObjects.Rectangle;
     private discardCardLabel!: Phaser.GameObjects.Text;
-    private seatLabels = new Map<string, Phaser.GameObjects.Text>();
+    private seatBadges = new Map<string, SeatBadge>();
     private handSlots = new Map<string, CardSlot[]>();
+    private tableCardVisuals: TableCardVisual[] = [];
     private activeAnimationKey = "";
+    private activeTableCardFlipKey = "";
     private seatLayoutKey = "";
 
     constructor(actor: CardGameActor<TSnapshot>, getViewModel: CardGameViewModelFactory<TSnapshot>) {
@@ -206,6 +224,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.updateSeatLabels(viewModel);
         this.updateHandSlots(viewModel);
+        this.updateTableCards(viewModel);
         this.updateDiscard(viewModel);
     }
 
@@ -227,9 +246,9 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         viewModel.players.forEach((player, index) => {
             const layout = seatLayouts[index] ?? this.getFallbackSeatLayout(index, viewModel.players.length);
-            const label = this.add.text(layout.labelX, layout.labelY, "", this.getSeatLabelStyle()).setOrigin(0.5, 0);
+            const badge = this.createSeatBadge(layout);
 
-            this.seatLabels.set(player.id, label);
+            this.seatBadges.set(player.id, badge);
             this.handSlots.set(player.id, this.createHandSlots(player.id, layout, handSlotCount));
         });
 
@@ -237,10 +256,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private destroySeatVisuals(): void {
-        this.seatLabels.forEach((label) => {
-            label.destroy();
+        this.seatBadges.forEach((badge) => {
+            badge.container.destroy(true);
         });
-        this.seatLabels.clear();
+        this.seatBadges.clear();
 
         this.handSlots.forEach((slots) => {
             slots.forEach((slot) => {
@@ -348,7 +367,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private createBottomSeat(centerX: number): SeatLayout {
         return {
             labelX: centerX,
-            labelY: REWRITE_HEIGHT - 148,
+            labelY: REWRITE_HEIGHT - 190,
             handCenterX: centerX,
             handCenterY: 606,
             gapX: 74,
@@ -390,13 +409,28 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
     private updateSeatLabels(viewModel: CardGameViewModel): void {
         viewModel.players.forEach((player) => {
-            const label = this.seatLabels.get(player.id);
-            if (!label) {
+            const badge = this.seatBadges.get(player.id);
+            if (!badge) {
                 return;
             }
 
-            label.setText(player.seatLabel);
-            label.setColor(player.isCurrentTurn || player.isRoundWinner ? "#ffd166" : "#f6ecd2");
+            const isHighlighted = player.isCurrentTurn || player.isRoundWinner;
+            badge.iconText.setText(player.iconLabel);
+            badge.nameText.setText(player.nameLabel);
+            badge.metaText.setText(player.metaLabel);
+
+            badge.iconCircle.setFillStyle(
+                player.isCurrentTurn ? 0xffd166 : (player.isRoundWinner ? 0x93c47d : 0x15382c),
+                0.98
+            );
+            badge.iconCircle.setStrokeStyle(
+                2,
+                player.isCurrentTurn ? 0xfff1bf : (player.isRoundWinner ? 0xc7e6b6 : 0x5d7b70),
+                0.95
+            );
+            badge.iconText.setColor(player.isCurrentTurn ? "#10251c" : "#f6ecd2");
+            badge.nameText.setColor(isHighlighted ? "#ffd166" : "#f6ecd2");
+            badge.metaText.setColor(isHighlighted ? "rgba(255,209,102,0.82)" : "rgba(246,236,210,0.72)");
         });
     }
 
@@ -482,6 +516,11 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private updateDiscard(viewModel: CardGameViewModel): void {
+        if (viewModel.tableCards.length > 0) {
+            this.discardCard.setVisible(false);
+            return;
+        }
+
         const discardPile = this.getPile(viewModel, "discard");
         const discardCard = discardPile?.topCard ?? null;
 
@@ -493,6 +532,63 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         this.applyCardVisual(this.discardCardFace, this.discardCardLabel, discardCard);
         this.discardCardFace.setStrokeStyle(3, discardCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE);
         this.discardCard.setVisible(true);
+    }
+
+    private updateTableCards(viewModel: CardGameViewModel): void {
+        const tableCards = viewModel.tableCards;
+        this.ensureTableCardVisuals(tableCards.length);
+
+        if (tableCards.length === 0) {
+            this.tableCardVisuals.forEach((visual) => {
+                visual.container.setVisible(false);
+            });
+            this.activeTableCardFlipKey = "";
+            return;
+        }
+
+        const flipKey = tableCards.map((card) => card.id).join("|");
+        const shouldAnimateFlip = flipKey !== this.activeTableCardFlipKey;
+
+        tableCards.forEach((card, index) => {
+            const visual = this.tableCardVisuals[index];
+            const position = this.getTableCardPosition(index, tableCards.length);
+            visual.container.setPosition(position.x, position.y);
+            visual.caption.setText(card.caption ?? "");
+            visual.container.setVisible(true);
+
+            if (!shouldAnimateFlip) {
+                visual.container.setScale(1);
+                this.applyCardVisual(visual.face, visual.label, card);
+                return;
+            }
+
+            this.applyCardBackVisual(visual.face, visual.label);
+            visual.container.setScale(1);
+
+            this.tweens.killTweensOf(visual.container);
+            this.tweens.add({
+                targets: visual.container,
+                scaleX: 0.08,
+                duration: 110,
+                delay: index * 90,
+                ease: "Sine.easeIn",
+                onComplete: () => {
+                    this.applyCardVisual(visual.face, visual.label, card);
+                    this.tweens.add({
+                        targets: visual.container,
+                        scaleX: 1,
+                        duration: 160,
+                        ease: "Sine.easeOut"
+                    });
+                }
+            });
+        });
+
+        for (let index = tableCards.length; index < this.tableCardVisuals.length; index += 1) {
+            this.tableCardVisuals[index].container.setVisible(false);
+        }
+
+        this.activeTableCardFlipKey = flipKey;
     }
 
     private animatePlayedCard(viewModel: CardGameViewModel): void {
@@ -540,14 +636,6 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         });
     }
 
-    private getSeatLabelStyle(): Phaser.Types.GameObjects.Text.TextStyle {
-        return {
-            fontFamily: "Arial",
-            fontSize: "22px",
-            color: "#f6ecd2"
-        };
-    }
-
     private updatePileSummary(viewModel: CardGameViewModel): void {
         const drawPile = this.getPile(viewModel, "draw");
         const discardPile = this.getPile(viewModel, "discard");
@@ -586,5 +674,93 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         face.setFillStyle(CARD_BACK_FILL, 0.98);
         label.setText("CARD");
         label.setColor(CARD_BACK_TEXT);
+    }
+
+    private applyCardBackVisual(
+        face: Phaser.GameObjects.Rectangle,
+        label: Phaser.GameObjects.Text
+    ): void {
+        face.setFillStyle(CARD_BACK_FILL, 0.98);
+        face.setStrokeStyle(3, CARD_BACK_STROKE);
+        label.setText("CARD");
+        label.setColor(CARD_BACK_TEXT);
+    }
+
+    private createSeatBadge(layout: SeatLayout): SeatBadge {
+        const iconCircle = this.add.circle(-54, 16, 14, 0x15382c, 0.98)
+            .setStrokeStyle(2, 0x5d7b70, 0.95);
+        const iconText = this.add.text(-54, 16, "", {
+            fontFamily: "Arial",
+            fontSize: "12px",
+            color: "#f6ecd2",
+            fontStyle: "bold"
+        }).setOrigin(0.5);
+        const nameText = this.add.text(-30, 6, "", {
+            fontFamily: "Arial",
+            fontSize: "16px",
+            color: "#f6ecd2"
+        }).setOrigin(0, 0.5);
+        const metaText = this.add.text(-30, 24, "", {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            color: "rgba(246,236,210,0.72)"
+        }).setOrigin(0, 0.5);
+        const container = this.add.container(layout.labelX, layout.labelY, [
+            iconCircle,
+            iconText,
+            nameText,
+            metaText
+        ]);
+
+        return {
+            container,
+            iconCircle,
+            iconText,
+            nameText,
+            metaText
+        };
+    }
+
+    private ensureTableCardVisuals(cardCount: number): void {
+        while (this.tableCardVisuals.length < cardCount) {
+            this.tableCardVisuals.push(this.createTableCardVisual());
+        }
+    }
+
+    private createTableCardVisual(): TableCardVisual {
+        const face = this.add.rectangle(0, 0, 74, 104, CARD_BACK_FILL, 0.98)
+            .setStrokeStyle(3, CARD_BACK_STROKE);
+        const label = this.add.text(0, 0, "CARD", {
+            fontFamily: "Arial",
+            fontSize: "20px",
+            color: CARD_BACK_TEXT
+        }).setOrigin(0.5);
+        const caption = this.add.text(0, -72, "", {
+            fontFamily: "Arial",
+            fontSize: "14px",
+            color: "#f6ecd2"
+        }).setOrigin(0.5);
+        const container = this.add.container(TABLE_CENTER_X, 392, [caption, face, label]).setVisible(false).setDepth(80);
+
+        return {
+            container,
+            face,
+            label,
+            caption
+        };
+    }
+
+    private getTableCardPosition(index: number, cardCount: number): { x: number; y: number } {
+        if (cardCount <= 1) {
+            return { x: TABLE_CENTER_X, y: 392 };
+        }
+
+        const spacing = 156;
+        const startX = TABLE_CENTER_X - (spacing * (cardCount - 1)) / 2;
+
+        return {
+            x: startX + spacing * index,
+            y: 392
+        };
     }
 }

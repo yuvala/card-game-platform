@@ -2,18 +2,23 @@
     "players":[
         {
             "player":"ok",
-            "playerName":"Avi",
+            "playerName":"Avi masica",
             "money":"5"
             
         },
         {
             "player":"ok",
-            "playerName":"Dany",
+            "playerName":"Dany bamba",
             "money":"15"
         },{
             "player":"ok",
             "playerName":"Tony Ray",
             "money":"25"
+        }
+        ,{
+            "player":"ok",
+            "playerName":"maria pom",
+            "money":"35"
         }
     ]
 }
