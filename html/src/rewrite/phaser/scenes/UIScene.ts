@@ -14,6 +14,8 @@ export class UIScene extends Phaser.Scene {
     private subscription?: { unsubscribe(): void };
     private phaseBadge!: Phaser.GameObjects.Text;
     private roundText!: Phaser.GameObjects.Text;
+    private deckText!: Phaser.GameObjects.Text;
+    private scoreText!: Phaser.GameObjects.Text;
     private statusText!: Phaser.GameObjects.Text;
     private buttons!: ButtonRefs;
 
@@ -47,39 +49,54 @@ export class UIScene extends Phaser.Scene {
             color: "#f6ecd2"
         });
 
-        this.add.text(HUD_X + 34, 204, "Parallel Phaser/XState route. Legacy DOM flow still lives at /game.html.", {
+        this.deckText = this.add.text(HUD_X + 34, 206, "", {
+            fontFamily: "Arial",
+            fontSize: "16px",
+            color: "#f6ecd2",
+            wordWrap: { width: HUD_WIDTH - 70 }
+        });
+
+        this.add.text(HUD_X + 34, 252, "Switch decks with ?deck=french, ?deck=spanish, or ?deck=italian.", {
             fontFamily: "Arial",
             fontSize: "15px",
             color: "rgba(246,236,210,0.7)",
             wordWrap: { width: HUD_WIDTH - 70 }
         });
 
+        this.scoreText = this.add.text(HUD_X + 34, 306, "", {
+            fontFamily: "Arial",
+            fontSize: "16px",
+            color: "#f6ecd2",
+            wordWrap: { width: HUD_WIDTH - 70 },
+            lineSpacing: 4
+        });
+
         this.buttons = {
-            start: this.createButton(HUD_X + HUD_WIDTH / 2, 326, "Start Rewrite", () => {
+            start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Start Rewrite", () => {
                 this.actor.send({ type: "START" });
             }),
-            play: this.createButton(HUD_X + HUD_WIDTH / 2, 386, "Play Card", () => {
+            play: this.createButton(HUD_X + HUD_WIDTH / 2, 458, "Play Card", () => {
                 this.actor.send({ type: "PLAY_CARD" });
             }),
-            restart: this.createButton(HUD_X + HUD_WIDTH / 2, 446, "Restart", () => {
+            restart: this.createButton(HUD_X + HUD_WIDTH / 2, 518, "Restart", () => {
                 this.actor.send({ type: "RESTART" });
             })
         };
 
-        this.add.rectangle(HUD_X + HUD_WIDTH / 2, 586, HUD_WIDTH - 68, 154, 0x10221b, 0.84)
+        this.add.rectangle(HUD_X + HUD_WIDTH / 2, 620, HUD_WIDTH - 68, 118, 0x10221b, 0.84)
             .setStrokeStyle(2, 0xffd166, 0.18);
-        this.add.text(HUD_X + 34, 516, "STATUS", {
+        this.add.text(HUD_X + 34, 550, "STATUS", {
             fontFamily: "Arial",
             fontSize: "13px",
             color: "#ffd166",
             letterSpacing: 2
         });
-        this.statusText = this.add.text(HUD_X + 42, 546, "", {
+        this.statusText = this.add.text(HUD_X + 42, 580, "", {
             fontFamily: "Arial",
-            fontSize: "18px",
+            fontSize: "16px",
             color: "#f6ecd2",
             wordWrap: { width: HUD_WIDTH - 84 },
-            lineSpacing: 6
+            lineSpacing: 5
         });
 
         this.subscription = this.actor.subscribe((snapshot) => {
@@ -128,12 +145,25 @@ export class UIScene extends Phaser.Scene {
     }
 
     private syncSnapshot(snapshot: RewriteGameSnapshot): void {
+        const hasSelection = Boolean(snapshot.context.selectedCardId);
+
         this.phaseBadge.setText(String(snapshot.value).toUpperCase());
         this.roundText.setText("Round " + snapshot.context.round + " / " + snapshot.context.maxRounds);
+        this.deckText.setText(
+            snapshot.context.deckDefinition.name +
+                " | " +
+                snapshot.context.drawPile.length +
+                " cards left in draw pile"
+        );
+        this.scoreText.setText(
+            snapshot.context.players
+                .map((player) => player.name + ": " + player.score + " pts")
+                .join("\n")
+        );
         this.statusText.setText(snapshot.context.statusText);
 
         this.setButtonState(this.buttons.start, snapshot.matches("idle"));
-        this.setButtonState(this.buttons.play, snapshot.matches("playerTurn"));
+        this.setButtonState(this.buttons.play, snapshot.matches("playerTurn") && hasSelection);
         this.setButtonState(this.buttons.restart, snapshot.matches("gameOver"));
     }
 
