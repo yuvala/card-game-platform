@@ -27,6 +27,10 @@ http://127.0.0.1:8000/rewrite.html
 - `npm run preview` - preview the production build
 - `npm run serve:legacy` - run the old static Node.js server for comparison
 
+## Docs
+
+- `docs/rewrite-architecture.md` - architecture notes for the Phaser + XState rewrite and future multi-game support
+
 ## Main Files
 
 - `html/game.html` - game page entrypoint for Vite

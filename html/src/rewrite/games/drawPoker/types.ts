@@ -1,11 +1,14 @@
-import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
+import type { CardInstance } from "../../engine/cards/types";
+import type {
+    CardGameEvent,
+    CardGameOptions,
+    CardGamePlayer,
+    CardGameSession
+} from "../../engine/game/types";
 
-export interface RewritePlayer {
-    id: string;
-    name: string;
-    hand: CardInstance[];
+export type RewritePlayer = CardGamePlayer<CardInstance> & {
     score: number;
-}
+};
 
 export interface RewritePlayedCard {
     id: string;
@@ -15,31 +18,17 @@ export interface RewritePlayedCard {
     round: number;
 }
 
-export interface RewriteGameContext {
-    deckDefinition: DeckDefinition;
-    drawPile: CardInstance[];
-    discardPile: RewritePlayedCard[];
+export interface RewriteGameContext
+    extends CardGameSession<CardInstance, RewritePlayer, RewritePlayedCard> {
     roundCards: RewritePlayedCard[];
-    players: RewritePlayer[];
-    turnIndex: number;
-    round: number;
-    maxRounds: number;
-    cardsPerPlayer: number;
-    statusText: string;
-    lastPlayedCard: RewritePlayedCard | null;
-    selectedCardId: string | null;
-    winningPlayerIds: string[];
 }
 
-export interface RewriteGameOptions {
-    deckDefinition: DeckDefinition;
-    cardsPerPlayer?: number;
-    random?: () => number;
-}
+export type RewriteGameOptions = CardGameOptions;
 
-export type RewriteGameEvent =
-    | { type: "START" }
-    | { type: "SELECT_CARD"; cardId: string }
-    | { type: "PLAY_CARD" }
-    | { type: "ANIMATION_DONE" }
-    | { type: "RESTART" };
+export type RewriteGameEvent = CardGameEvent;
+
+export interface RewriteGameViewSnapshot {
+    value: string;
+    context: RewriteGameContext;
+    matches(stateValue: string): boolean;
+}

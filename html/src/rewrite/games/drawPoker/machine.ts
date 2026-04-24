@@ -1,26 +1,36 @@
 import { ActorRefFrom, SnapshotFrom, assign, setup } from "xstate";
 
 import { frenchDeckDefinition } from "../../engine/cards/deckDefinitions";
-import {
-    advanceToNextPlayer,
-    advanceToNextRound,
-    canCurrentPlayerPlay,
-    commitPlayedCard,
-    finalizeTurn,
-    finishGame,
-    hasMorePlayersInRound,
-    hasMoreRoundsRemaining,
-    queuePlayedCard,
-    selectCard,
-    setTurnStatus
-} from "./rules";
-import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
+import { drawPokerGameDefinition } from "./definition";
 import type { RewriteGameContext, RewriteGameEvent, RewriteGameOptions } from "./types";
+
+function getCurrentActorId(context: RewriteGameContext): string | null {
+    return context.players[context.turnIndex]?.id ?? null;
+}
+
+function hasLegalMove(context: RewriteGameContext, moveType: string): boolean {
+    return drawPokerGameDefinition.getLegalMoves(context, getCurrentActorId(context)).some((move) => {
+        return move.type === moveType;
+    });
+}
+
+function applyDefinitionMove(context: RewriteGameContext, move: Parameters<typeof drawPokerGameDefinition.applyMove>[1]) {
+    return drawPokerGameDefinition.applyMove(context, move).state;
+}
+
+function getAutomaticMove(context: RewriteGameContext) {
+    return drawPokerGameDefinition.getAutomaticMove?.(context) ?? null;
+}
 
 export function createRewriteGameMachine(playerNames: string[], options?: RewriteGameOptions) {
     const deckDefinition = options?.deckDefinition ?? frenchDeckDefinition;
     const cardsPerPlayer = options?.cardsPerPlayer ?? 5;
     const random = options?.random ?? Math.random;
+    const definitionOptions: RewriteGameOptions = {
+        deckDefinition,
+        cardsPerPlayer,
+        random
+    };
 
     return setup({
         types: {
@@ -28,35 +38,56 @@ export function createRewriteGameMachine(playerNames: string[], options?: Rewrit
             events: {} as RewriteGameEvent
         },
         actions: {
-            resetToIdle: assign(() => createInitialContext(playerNames, deckDefinition, cardsPerPlayer)),
-            prepareShuffle: assign(() =>
-                createShuffledContext(playerNames, deckDefinition, cardsPerPlayer, random)
-            ),
-            prepareDeal: assign(({ context }) => dealOpeningHands(context)),
-            setTurnStatus: assign(({ context }) => setTurnStatus(context)),
+            resetToIdle: assign(() => drawPokerGameDefinition.setup({
+                playerNames,
+                options: definitionOptions
+            })),
+            prepareShuffle: assign(({ context }) => applyDefinitionMove(context, {
+                type: "prepare-shuffle",
+                random
+            })),
+            prepareDeal: assign(({ context }) => applyDefinitionMove(context, {
+                type: "deal-opening-hands"
+            })),
+            beginTurn: assign(({ context }) => applyDefinitionMove(context, {
+                type: "begin-turn"
+            })),
             selectCard: assign(({ context, event }) => {
                 if (event.type !== "SELECT_CARD") {
                     return context;
                 }
 
-                return selectCard(context, event.cardId);
+                return applyDefinitionMove(context, {
+                    type: "select-card",
+                    cardId: event.cardId
+                });
             }),
-            queuePlayedCard: assign(({ context }) => queuePlayedCard(context)),
-            commitPlayedCard: assign(({ context }) => commitPlayedCard(context)),
-            finalizeTurn: assign(({ context }) => finalizeTurn(context)),
-            advanceToNextPlayer: assign(({ context }) => advanceToNextPlayer(context)),
-            advanceToNextRound: assign(({ context }) => advanceToNextRound(context)),
-            finishGame: assign(({ context }) => finishGame(context))
+            queuePlayedCard: assign(({ context }) => applyDefinitionMove(context, {
+                type: "queue-play"
+            })),
+            commitPlayedCard: assign(({ context }) => applyDefinitionMove(context, {
+                type: "commit-play"
+            })),
+            finalizeTurn: assign(({ context }) => applyDefinitionMove(context, {
+                type: "finalize-turn"
+            })),
+            advanceAfterResolution: assign(({ context }) => {
+                const move = getAutomaticMove(context);
+                return move ? applyDefinitionMove(context, move) : context;
+            })
         },
         guards: {
-            currentPlayerCanPlay: ({ context }) => canCurrentPlayerPlay(context),
-            hasMorePlayersInRound: ({ context }) => hasMorePlayersInRound(context),
-            hasMoreRoundsRemaining: ({ context }) => hasMoreRoundsRemaining(context)
+            currentPlayerCanPlay: ({ context }) => hasLegalMove(context, "queue-play"),
+            shouldAdvanceNextPlayer: ({ context }) => getAutomaticMove(context)?.type === "advance-next-player",
+            shouldAdvanceNextRound: ({ context }) => getAutomaticMove(context)?.type === "advance-next-round"
         }
     }).createMachine({
-        id: "rewriteDrawPoker",
+        id: drawPokerGameDefinition.id,
         initial: "idle",
-        context: createInitialContext(playerNames, deckDefinition, cardsPerPlayer),
+        context: drawPokerGameDefinition.setup({
+            playerNames,
+            options: definitionOptions
+        }),
         states: {
             idle: {
                 entry: "resetToIdle",
@@ -79,7 +110,7 @@ export function createRewriteGameMachine(playerNames: string[], options?: Rewrit
                 after: {
                     900: {
                         target: "playerTurn",
-                        actions: "setTurnStatus"
+                        actions: "beginTurn"
                     }
                 }
             },
@@ -108,18 +139,18 @@ export function createRewriteGameMachine(playerNames: string[], options?: Rewrit
                 after: {
                     700: [
                         {
-                            guard: "hasMorePlayersInRound",
+                            guard: "shouldAdvanceNextPlayer",
                             target: "playerTurn",
-                            actions: ["advanceToNextPlayer", "setTurnStatus"]
+                            actions: "advanceAfterResolution"
                         },
                         {
-                            guard: "hasMoreRoundsRemaining",
+                            guard: "shouldAdvanceNextRound",
                             target: "playerTurn",
-                            actions: ["advanceToNextRound", "setTurnStatus"]
+                            actions: "advanceAfterResolution"
                         },
                         {
                             target: "gameOver",
-                            actions: "finishGame"
+                            actions: "advanceAfterResolution"
                         }
                     ]
                 }

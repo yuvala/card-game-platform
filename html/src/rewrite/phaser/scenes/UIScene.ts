@@ -1,6 +1,10 @@
 import * as Phaser from "phaser";
 
-import type { RewriteGameActor, RewriteGameSnapshot } from "../../games/drawPoker/machine";
+import type {
+    CardGameActor,
+    CardGameViewModel,
+    CardGameViewModelFactory
+} from "../../engine/game/viewModel";
 import { HUD_WIDTH, HUD_X, REWRITE_HEIGHT } from "../layout";
 
 interface ButtonRefs {
@@ -9,8 +13,9 @@ interface ButtonRefs {
     restart: Phaser.GameObjects.Text;
 }
 
-export class UIScene extends Phaser.Scene {
-    private readonly actor: RewriteGameActor;
+export class UIScene<TSnapshot> extends Phaser.Scene {
+    private readonly actor: CardGameActor<TSnapshot>;
+    private readonly getViewModel: CardGameViewModelFactory<TSnapshot>;
     private subscription?: { unsubscribe(): void };
     private phaseBadge!: Phaser.GameObjects.Text;
     private roundText!: Phaser.GameObjects.Text;
@@ -19,9 +24,10 @@ export class UIScene extends Phaser.Scene {
     private statusText!: Phaser.GameObjects.Text;
     private buttons!: ButtonRefs;
 
-    constructor(actor: RewriteGameActor) {
+    constructor(actor: CardGameActor<TSnapshot>, getViewModel: CardGameViewModelFactory<TSnapshot>) {
         super("rewrite-ui");
         this.actor = actor;
+        this.getViewModel = getViewModel;
     }
 
     create(): void {
@@ -100,7 +106,7 @@ export class UIScene extends Phaser.Scene {
         });
 
         this.subscription = this.actor.subscribe((snapshot) => {
-            this.syncSnapshot(snapshot);
+            this.syncViewModel(this.getViewModel(snapshot));
         });
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -108,7 +114,7 @@ export class UIScene extends Phaser.Scene {
             this.subscription = undefined;
         });
 
-        this.syncSnapshot(this.actor.getSnapshot());
+        this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
     }
 
     private createButton(
@@ -144,27 +150,16 @@ export class UIScene extends Phaser.Scene {
         return button;
     }
 
-    private syncSnapshot(snapshot: RewriteGameSnapshot): void {
-        const hasSelection = Boolean(snapshot.context.selectedCardId);
+    private syncViewModel(viewModel: CardGameViewModel): void {
+        this.phaseBadge.setText(viewModel.phaseLabel);
+        this.roundText.setText(viewModel.roundLabel);
+        this.deckText.setText(viewModel.deckLabel);
+        this.scoreText.setText(viewModel.scoreLines.join("\n"));
+        this.statusText.setText(viewModel.statusText);
 
-        this.phaseBadge.setText(String(snapshot.value).toUpperCase());
-        this.roundText.setText("Round " + snapshot.context.round + " / " + snapshot.context.maxRounds);
-        this.deckText.setText(
-            snapshot.context.deckDefinition.name +
-                " | " +
-                snapshot.context.drawPile.length +
-                " cards left in draw pile"
-        );
-        this.scoreText.setText(
-            snapshot.context.players
-                .map((player) => player.name + ": " + player.score + " pts")
-                .join("\n")
-        );
-        this.statusText.setText(snapshot.context.statusText);
-
-        this.setButtonState(this.buttons.start, snapshot.matches("idle"));
-        this.setButtonState(this.buttons.play, snapshot.matches("playerTurn") && hasSelection);
-        this.setButtonState(this.buttons.restart, snapshot.matches("gameOver"));
+        this.setButtonState(this.buttons.start, viewModel.controls.canStart);
+        this.setButtonState(this.buttons.play, viewModel.controls.canPlay);
+        this.setButtonState(this.buttons.restart, viewModel.controls.canRestart);
     }
 
     private setButtonState(button: Phaser.GameObjects.Text, isEnabled: boolean): void {
