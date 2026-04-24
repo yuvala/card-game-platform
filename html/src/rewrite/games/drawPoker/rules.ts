@@ -1,4 +1,10 @@
+import { getPileCards, moveCardBetweenPiles } from "../../engine/game/piles";
+import { syncDrawPokerContextFromPiles } from "./setup";
 import type { RewriteGameContext, RewritePlayedCard, RewritePlayer } from "./types";
+import {
+    DRAW_POKER_DISCARD_PILE_ID,
+    getDrawPokerHandPileId
+} from "./types";
 
 function getCurrentPlayer(context: RewriteGameContext): RewritePlayer {
     return context.players[context.turnIndex];
@@ -7,7 +13,9 @@ function getCurrentPlayer(context: RewriteGameContext): RewritePlayer {
 function getPreviewCard(context: RewriteGameContext) {
     const player = getCurrentPlayer(context);
     if (context.selectedCardId) {
-        return player.hand.find((card) => card.id === context.selectedCardId) ?? null;
+        return getPileCards(context.piles, getDrawPokerHandPileId(player.id)).find((card) => {
+            return card.id === context.selectedCardId;
+        }) ?? null;
     }
 
     return null;
@@ -54,7 +62,9 @@ export function setTurnStatus(context: RewriteGameContext): RewriteGameContext {
 
 export function selectCard(context: RewriteGameContext, cardId: string): RewriteGameContext {
     const currentPlayer = getCurrentPlayer(context);
-    const clickedCard = currentPlayer.hand.find((card) => card.id === cardId);
+    const clickedCard = getPileCards(context.piles, getDrawPokerHandPileId(currentPlayer.id)).find((card) => {
+        return card.id === cardId;
+    });
 
     if (!clickedCard) {
         return context;
@@ -62,7 +72,9 @@ export function selectCard(context: RewriteGameContext, cardId: string): Rewrite
 
     const selectedCardId = context.selectedCardId === cardId ? null : cardId;
     const selectedCard = selectedCardId
-        ? currentPlayer.hand.find((card) => card.id === selectedCardId) ?? null
+        ? getPileCards(context.piles, getDrawPokerHandPileId(currentPlayer.id)).find((card) => {
+            return card.id === selectedCardId;
+        }) ?? null
         : null;
 
     return {
@@ -111,24 +123,21 @@ export function commitPlayedCard(context: RewriteGameContext): RewriteGameContex
         playerName: currentPlayer.name,
         round: context.round
     };
+    const playedCardState = moveCardBetweenPiles(
+        context.piles,
+        getDrawPokerHandPileId(currentPlayer.id),
+        DRAW_POKER_DISCARD_PILE_ID,
+        (card) => card.id === previewCard.id
+    );
 
-    return {
+    return syncDrawPokerContextFromPiles({
         ...context,
-        players: context.players.map((player, index) => {
-            if (index !== context.turnIndex) {
-                return player;
-            }
-
-            return {
-                ...player,
-                hand: player.hand.filter((card) => card.id !== previewCard.id)
-            };
-        }),
+        piles: playedCardState.piles,
         discardPile: context.discardPile.concat(playedCard),
         roundCards: context.roundCards.concat(playedCard),
         lastPlayedCard: playedCard,
         selectedCardId: null
-    };
+    });
 }
 
 export function finalizeTurn(context: RewriteGameContext): RewriteGameContext {
@@ -204,7 +213,9 @@ export function hasMorePlayersInRound(context: RewriteGameContext): boolean {
 }
 
 export function hasMoreRoundsRemaining(context: RewriteGameContext): boolean {
-    return context.round < context.maxRounds && context.players.some((player) => player.hand.length > 0);
+    return context.round < context.maxRounds && context.players.some((player) => {
+        return getPileCards(context.piles, getDrawPokerHandPileId(player.id)).length > 0;
+    });
 }
 
 export function finishGame(context: RewriteGameContext): RewriteGameContext {

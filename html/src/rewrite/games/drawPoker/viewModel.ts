@@ -1,6 +1,12 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
+import { getPileCards } from "../../engine/game/piles";
 import type { RewriteGameViewSnapshot } from "./types";
+import {
+    DRAW_POKER_DISCARD_PILE_ID,
+    DRAW_POKER_STOCK_PILE_ID,
+    getDrawPokerHandPileId
+} from "./types";
 
 function getPlayerIconLabel(playerName: string): string {
     const initials = playerName
@@ -17,12 +23,14 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
     const isPlayerTurn = snapshot.matches("playerTurn");
+    const drawCards = getPileCards(snapshot.context.piles, DRAW_POKER_STOCK_PILE_ID);
+    const discardCards = getPileCards(snapshot.context.piles, DRAW_POKER_DISCARD_PILE_ID);
     const discardTopCard =
-        snapshot.matches("animatingPlay") || !snapshot.context.lastPlayedCard
+        snapshot.matches("animatingPlay") || discardCards.length === 0
             ? null
             : {
-                  id: snapshot.context.lastPlayedCard.card.id,
-                  label: snapshot.context.lastPlayedCard.card.displayLabel,
+                  id: discardCards[discardCards.length - 1].id,
+                  label: discardCards[discardCards.length - 1].displayLabel,
                   isFaceUp: true
               };
     const animation =
@@ -47,14 +55,14 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
         deckLabel:
             snapshot.context.deckDefinition.name +
             " | " +
-            snapshot.context.drawPile.length +
+            drawCards.length +
             " cards left in draw pile",
-        drawPileLabel: String(snapshot.context.drawPile.length) + " cards",
-        discardPileLabel: String(snapshot.context.discardPile.length) + " cards",
+        drawPileLabel: String(drawCards.length) + " cards",
+        discardPileLabel: String(discardCards.length) + " cards",
         discardCardLabel:
-            snapshot.matches("animatingPlay") || !snapshot.context.lastPlayedCard
+            snapshot.matches("animatingPlay") || discardCards.length === 0
                 ? null
-                : snapshot.context.lastPlayedCard.card.displayLabel,
+                : discardCards[discardCards.length - 1].displayLabel,
         scoreLines: snapshot.context.players.map((player) => {
             return player.name + ": " + player.score + " pts";
         }),
@@ -69,11 +77,11 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
                 iconLabel: getPlayerIconLabel(player.name),
                 nameLabel: player.name,
                 metaLabel:
-                    String(player.hand.length) +
+                    String(getPileCards(snapshot.context.piles, getDrawPokerHandPileId(player.id)).length) +
                     " cards | " +
                     String(player.score) +
                     " pts",
-                hand: player.hand.map((card) => ({
+                hand: getPileCards(snapshot.context.piles, getDrawPokerHandPileId(player.id)).map((card) => ({
                     id: card.id,
                     label: card.displayLabel,
                     isFaceUp: true
@@ -89,16 +97,16 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
                 id: "draw-pile",
                 role: "draw",
                 label: "Draw Pile",
-                cardCount: snapshot.context.drawPile.length,
-                countLabel: String(snapshot.context.drawPile.length) + " cards",
+                cardCount: drawCards.length,
+                countLabel: String(drawCards.length) + " cards",
                 topCard: null
             },
             {
                 id: "discard-pile",
                 role: "discard",
                 label: "Discard",
-                cardCount: snapshot.context.discardPile.length,
-                countLabel: String(snapshot.context.discardPile.length) + " cards",
+                cardCount: discardCards.length,
+                countLabel: String(discardCards.length) + " cards",
                 topCard: discardTopCard
             }
         ],

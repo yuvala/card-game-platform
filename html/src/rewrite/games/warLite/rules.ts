@@ -1,7 +1,23 @@
+import {
+    appendCardsToPile,
+    clearPile,
+    getPileCards,
+    moveTopCardBetweenPiles
+} from "../../engine/game/piles";
+import { syncWarLiteContextFromPiles } from "./setup";
 import type { WarLiteContext, WarLitePlayedCard, WarLitePlayer } from "./types";
+import {
+    WAR_LITE_BATTLE_PILE_ID,
+    WAR_LITE_DISCARD_PILE_ID,
+    getWarLiteHandPileId
+} from "./types";
 
 function getCurrentPlayer(context: WarLiteContext): WarLitePlayer {
     return context.players[context.turnIndex];
+}
+
+function getPlayerStackCards(context: WarLiteContext, playerId: string) {
+    return getPileCards(context.piles, getWarLiteHandPileId(playerId));
 }
 
 function rankPlayedCards(roundCards: readonly WarLitePlayedCard[]): WarLitePlayedCard[] {
@@ -11,7 +27,9 @@ function rankPlayedCards(roundCards: readonly WarLitePlayedCard[]): WarLitePlaye
 }
 
 export function canRevealBattle(context: WarLiteContext): boolean {
-    return context.players.length >= 2 && context.players.every((player) => player.hand.length > 0);
+    return context.players.length >= 2 && context.players.every((player) => {
+        return getPlayerStackCards(context, player.id).length > 0;
+    });
 }
 
 export function setBattleStatus(context: WarLiteContext): WarLiteContext {
@@ -37,10 +55,18 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
     }
 
     const playedCards: WarLitePlayedCard[] = [];
-    const players = context.players.map((player) => {
-        const [topCard, ...remainingCards] = player.hand;
+    let piles = context.piles;
+
+    context.players.forEach((player) => {
+        const revealResult = moveTopCardBetweenPiles(
+            piles,
+            getWarLiteHandPileId(player.id),
+            WAR_LITE_BATTLE_PILE_ID
+        );
+        piles = revealResult.piles;
+        const topCard = revealResult.card;
         if (!topCard) {
-            return player;
+            return;
         }
 
         playedCards.push({
@@ -50,19 +76,14 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
             playerName: player.name,
             round: context.round
         });
-
-        return {
-            ...player,
-            hand: remainingCards
-        };
     });
 
     const rankedCards = rankPlayedCards(playedCards);
     const leadingCard = rankedCards[0] ?? null;
 
-    return {
+    return syncWarLiteContextFromPiles({
         ...context,
-        players,
+        piles,
         roundCards: playedCards,
         lastPlayedCard: leadingCard,
         winningPlayerIds: [],
@@ -72,7 +93,7 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
                 return playedCard.playerName + " flips " + playedCard.card.displayLabel;
             })
             .join(". ") + "."
-    };
+    });
 }
 
 export function finalizeBattle(context: WarLiteContext): WarLiteContext {
@@ -86,10 +107,19 @@ export function finalizeBattle(context: WarLiteContext): WarLiteContext {
     const winningPlayerIds = winningCards.length === 1 ? [winningCards[0].playerId] : [];
     const winnerNames = winningCards.map((playedCard) => playedCard.playerName).join(", ");
     const leadCard = winningCards[0] ?? rankedCards[0] ?? context.roundCards[0];
+    const battleCards = getPileCards(context.piles, WAR_LITE_BATTLE_PILE_ID);
+    const piles = clearPile(
+        appendCardsToPile(context.piles, WAR_LITE_DISCARD_PILE_ID, battleCards),
+        WAR_LITE_BATTLE_PILE_ID
+    );
+    const syncedContext = syncWarLiteContextFromPiles({
+        ...context,
+        piles
+    });
 
     return {
-        ...context,
-        players: context.players.map((player) => {
+        ...syncedContext,
+        players: syncedContext.players.map((player) => {
             if (!winningPlayerIds.includes(player.id)) {
                 return player;
             }
@@ -150,6 +180,7 @@ export function finishGame(context: WarLiteContext): WarLiteContext {
 
     return {
         ...context,
+        roundCards: [],
         winningPlayerIds,
         statusText:
             context.deckDefinition.name +

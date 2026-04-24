@@ -1,6 +1,11 @@
 import type { CardGameViewCard, CardGameViewModel } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
+import { getPileCards } from "../../engine/game/piles";
 import type { WarLiteViewSnapshot } from "./types";
+import {
+    WAR_LITE_DISCARD_PILE_ID,
+    getWarLiteHandPileId
+} from "./types";
 
 function getPlayerIconLabel(playerName: string): string {
     const initials = playerName
@@ -23,12 +28,13 @@ function createHiddenPreviewCards(cards: readonly CardGameViewCard[], count: num
 export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const remainingStackCards = snapshot.context.players.reduce((count, player) => {
-        return count + player.hand.length;
+        return count + getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
     }, 0);
-    const discardTopCard = snapshot.context.lastPlayedCard
+    const discardCards = getPileCards(snapshot.context.piles, WAR_LITE_DISCARD_PILE_ID);
+    const discardTopCard = discardCards[discardCards.length - 1]
         ? {
-              id: snapshot.context.lastPlayedCard.card.id,
-              label: snapshot.context.lastPlayedCard.card.displayLabel,
+              id: discardCards[discardCards.length - 1].id,
+              label: discardCards[discardCards.length - 1].displayLabel,
               isFaceUp: true
           }
         : null;
@@ -44,7 +50,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             remainingStackCards +
             " hidden cards still in player stacks",
         drawPileLabel: String(remainingStackCards) + " hidden cards",
-        discardPileLabel: String(snapshot.context.discardPile.length) + " cards revealed",
+        discardPileLabel: String(discardCards.length) + " cards revealed",
         discardCardLabel: discardTopCard?.label ?? null,
         scoreLines: snapshot.context.players.map((player) => {
             return player.name + ": " + player.score + " battle wins";
@@ -53,7 +59,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
         selectedCardId: null,
         players: snapshot.context.players.map((player) => {
             const revealedCard = snapshot.context.roundCards.find((card) => card.playerId === player.id);
-            const hiddenCards = player.hand.map((card) => ({
+            const hiddenCards = getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).map((card) => ({
                 id: card.id,
                 label: card.displayLabel,
                 isFaceUp: false
@@ -74,7 +80,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                 iconLabel: getPlayerIconLabel(player.name),
                 nameLabel: player.name,
                 metaLabel:
-                    String(player.hand.length + (revealedCard ? 1 : 0)) +
+                    String(hiddenCards.length + (revealedCard ? 1 : 0)) +
                     " cards | " +
                     String(player.score) +
                     " wins",
@@ -107,8 +113,8 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                 id: "battle-history",
                 role: "discard",
                 label: "Battle Log",
-                cardCount: snapshot.context.discardPile.length,
-                countLabel: String(snapshot.context.discardPile.length) + " cards revealed",
+                cardCount: discardCards.length,
+                countLabel: String(discardCards.length) + " cards revealed",
                 topCard: discardTopCard
             }
         ],

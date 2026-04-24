@@ -5,6 +5,27 @@ export interface CardGameDefinition {
     name: string;
 }
 
+export type CardPileRole =
+    | "stock"
+    | "discard"
+    | "hand"
+    | "table"
+    | "capture"
+    | "trump"
+    | "custom";
+
+export interface CardPile<TCard> {
+    id: string;
+    role: CardPileRole;
+    label: string;
+    ownerId?: string;
+    cards: TCard[];
+    isFaceUp: boolean;
+    isVisibleToAll: boolean;
+}
+
+export type CardPileMap<TCard> = Record<string, CardPile<TCard>>;
+
 export interface CardGamePlayer<TCard> {
     id: string;
     name: string;
@@ -28,6 +49,7 @@ export interface CardGameSession<
     deckDefinition: DeckDefinition;
     drawPile: TCard[];
     discardPile: TPlayedCard[];
+    piles: CardPileMap<TCard>;
     players: TPlayer[];
     cardsPerPlayer: number;
     statusText: string;

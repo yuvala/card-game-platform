@@ -10,6 +10,14 @@ export type RewritePlayer = CardGamePlayer<CardInstance> & {
     score: number;
 };
 
+export const DRAW_POKER_STOCK_PILE_ID = "stock";
+export const DRAW_POKER_DISCARD_PILE_ID = "discard";
+export const DRAW_POKER_HAND_PILE_PREFIX = "hand:";
+
+export function getDrawPokerHandPileId(playerId: string): string {
+    return DRAW_POKER_HAND_PILE_PREFIX + playerId;
+}
+
 export interface RewritePlayedCard {
     id: string;
     card: CardInstance;

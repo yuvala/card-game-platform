@@ -1,5 +1,6 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
+import { getPileCards } from "../../engine/game/piles";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
     advanceToNextPlayer,
@@ -18,6 +19,7 @@ import type {
     RewriteGameOptions,
     RewriteGameViewSnapshot
 } from "./types";
+import { getDrawPokerHandPileId } from "./types";
 
 export type DrawPokerMove =
     | { type: "prepare-shuffle"; random?: () => number }
@@ -37,6 +39,12 @@ function getPlayerNames(context: RewriteGameContext): string[] {
 
 function hasMorePlayersInRound(context: RewriteGameContext): boolean {
     return context.turnIndex < context.players.length - 1;
+}
+
+function areAllHandsEmpty(state: RewriteGameContext): boolean {
+    return state.players.every((player) => {
+        return getPileCards(state.piles, getDrawPokerHandPileId(player.id)).length === 0;
+    });
 }
 
 export const drawPokerGameDefinition: GameDefinition<
@@ -59,7 +67,7 @@ export const drawPokerGameDefinition: GameDefinition<
             return [];
         }
 
-        const moves: DrawPokerMove[] = currentPlayer.hand.map((card) => ({
+        const moves: DrawPokerMove[] = getPileCards(state.piles, getDrawPokerHandPileId(currentPlayer.id)).map((card) => ({
             type: "select-card",
             cardId: card.id
         }));
@@ -120,7 +128,7 @@ export const drawPokerGameDefinition: GameDefinition<
         }
     },
     isGameOver: (state) => {
-        return state.round >= state.maxRounds && state.players.every((player) => player.hand.length === 0);
+        return state.round >= state.maxRounds && areAllHandsEmpty(state);
     },
     getAutomaticMove: (state) => {
         if (hasMorePlayersInRound(state)) {

@@ -1,5 +1,6 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
+import { getPileCards } from "../../engine/game/piles";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
     advanceToNextRound,
@@ -10,7 +11,12 @@ import {
     setBattleStatus
 } from "./rules";
 import { getWarLiteViewModel } from "./viewModel";
-import type { WarLiteContext, WarLiteOptions, WarLiteViewSnapshot } from "./types";
+import {
+    getWarLiteHandPileId,
+    type WarLiteContext,
+    type WarLiteOptions,
+    type WarLiteViewSnapshot
+} from "./types";
 
 export type WarLiteMove =
     | { type: "prepare-shuffle"; random?: () => number }
@@ -23,6 +29,12 @@ export type WarLiteMove =
 
 function getPlayerNames(context: WarLiteContext): string[] {
     return context.players.map((player) => player.name);
+}
+
+function areAllStacksEmpty(state: WarLiteContext): boolean {
+    return state.players.every((player) => {
+        return getPileCards(state.piles, getWarLiteHandPileId(player.id)).length === 0;
+    });
 }
 
 export const warLiteGameDefinition: GameDefinition<
@@ -79,10 +91,10 @@ export const warLiteGameDefinition: GameDefinition<
         }
     },
     isGameOver: (state) => {
-        return state.players.every((player) => player.hand.length === 0) && state.roundCards.length === 0;
+        return areAllStacksEmpty(state) && state.roundCards.length === 0;
     },
     getAutomaticMove: (state) => {
-        if (state.players.every((player) => player.hand.length === 0)) {
+        if (areAllStacksEmpty(state)) {
             return { type: "finish-game" };
         }
 

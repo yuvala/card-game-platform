@@ -1,6 +1,12 @@
 import type { CardGameViewCard, CardGameViewModel } from "../../engine/game/viewModel";
+import { getPileCards } from "../../engine/game/piles";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import type { BriscaLiteViewSnapshot } from "./types";
+import {
+    BRISCA_LITE_STOCK_PILE_ID,
+    BRISCA_LITE_TRUMP_PILE_ID,
+    getBriscaLiteHandPileId
+} from "./types";
 
 function getPlayerIconLabel(playerName: string): string {
     const initials = playerName
@@ -32,10 +38,13 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
     const currentPhase = String(snapshot.value);
     const isPlayerTurn = snapshot.matches("playerTurn");
     const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
-    const trumpTopCard = snapshot.context.trumpCard
+    const stockCards = getPileCards(snapshot.context.piles, BRISCA_LITE_STOCK_PILE_ID);
+    const trumpCards = getPileCards(snapshot.context.piles, BRISCA_LITE_TRUMP_PILE_ID);
+    const trumpCard = trumpCards[trumpCards.length - 1] ?? null;
+    const trumpTopCard = trumpCard
         ? {
-              id: snapshot.context.trumpCard.id,
-              label: snapshot.context.trumpCard.displayLabel,
+              id: trumpCard.id,
+              label: trumpCard.displayLabel,
               isFaceUp: true
           }
         : null;
@@ -61,10 +70,10 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
         deckLabel:
             snapshot.context.deckDefinition.name +
             " | Trump: " +
-            (snapshot.context.trumpCard?.suitLabel ?? snapshot.context.trumpSuitId ?? "spent"),
-        drawPileLabel: snapshot.context.trumpCard
-            ? String(snapshot.context.drawPile.length) + " stock + trump"
-            : String(snapshot.context.drawPile.length) + " stock",
+            (trumpCard?.suitLabel ?? snapshot.context.trumpSuitId ?? "spent"),
+        drawPileLabel: trumpCard
+            ? String(stockCards.length) + " stock + trump"
+            : String(stockCards.length) + " stock",
         discardPileLabel: getTrumpPileCountLabel(snapshot),
         discardCardLabel: trumpTopCard?.label ?? null,
         scoreLines: snapshot.context.players.map((player) => {
@@ -75,7 +84,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
         players: snapshot.context.players.map((player) => {
             const isCurrentTurn = isPlayerTurn && player.id === currentPlayerId;
             const revealHand = (snapshot.matches("playerTurn") || snapshot.matches("animatingPlay")) && player.id === currentPlayerId;
-            const faceUpCards = player.hand.map((card) => ({
+            const faceUpCards = getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(player.id)).map((card) => ({
                 id: card.id,
                 label: card.displayLabel,
                 isFaceUp: true
@@ -110,16 +119,16 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                 id: "stock-pile",
                 role: "draw",
                 label: "Stock",
-                cardCount: snapshot.context.drawPile.length,
-                countLabel: snapshot.context.trumpCard
-                    ? String(snapshot.context.drawPile.length) + " + trump"
-                    : String(snapshot.context.drawPile.length) + " cards",
+                cardCount: stockCards.length,
+                countLabel: trumpCard
+                    ? String(stockCards.length) + " + trump"
+                    : String(stockCards.length) + " cards",
                 topCard: null
             },
             {
-                id: "trump-pile",
+                id: BRISCA_LITE_TRUMP_PILE_ID,
                 role: "discard",
-                label: snapshot.context.trumpCard ? "Trump" : "Trick Pile",
+                label: trumpCard ? "Trump" : "Trick Pile",
                 cardCount: snapshot.context.discardPile.length + snapshot.context.roundCards.length,
                 countLabel: getTrumpPileCountLabel(snapshot),
                 topCard: trumpTopCard

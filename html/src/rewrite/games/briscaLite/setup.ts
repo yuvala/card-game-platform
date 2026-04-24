@@ -1,6 +1,20 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
-import type { DeckDefinition } from "../../engine/cards/types";
+import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
+import type { CardPileMap } from "../../engine/game/types";
+import {
+    createCardPile,
+    getPileCards,
+    moveTopCardBetweenPiles,
+    setPileCards
+} from "../../engine/game/piles";
 import type { BriscaLiteContext, BriscaLitePlayer } from "./types";
+import {
+    BRISCA_LITE_STOCK_PILE_ID,
+    BRISCA_LITE_TRICK_PILE_ID,
+    BRISCA_LITE_TRUMP_PILE_ID,
+    getBriscaLiteCapturePileId,
+    getBriscaLiteHandPileId
+} from "./types";
 
 const DEFAULT_CARDS_PER_PLAYER = 3;
 
@@ -24,6 +38,74 @@ function resolveCardsPerPlayer(
     return Math.max(1, Math.min(DEFAULT_CARDS_PER_PLAYER, requestedCardsPerPlayer, supportedCardsPerPlayer));
 }
 
+function createInitialPiles(players: readonly BriscaLitePlayer[]): CardPileMap<CardInstance> {
+    const piles: CardPileMap<CardInstance> = {
+        [BRISCA_LITE_STOCK_PILE_ID]: createCardPile<CardInstance>({
+            id: BRISCA_LITE_STOCK_PILE_ID,
+            role: "stock",
+            label: "Stock",
+            isFaceUp: false,
+            isVisibleToAll: false
+        }),
+        [BRISCA_LITE_TRUMP_PILE_ID]: createCardPile<CardInstance>({
+            id: BRISCA_LITE_TRUMP_PILE_ID,
+            role: "trump",
+            label: "Trump",
+            isFaceUp: true,
+            isVisibleToAll: true
+        }),
+        [BRISCA_LITE_TRICK_PILE_ID]: createCardPile<CardInstance>({
+            id: BRISCA_LITE_TRICK_PILE_ID,
+            role: "table",
+            label: "Trick",
+            isFaceUp: true,
+            isVisibleToAll: true
+        })
+    };
+
+    return players.reduce<CardPileMap<CardInstance>>((nextPiles, player) => {
+        return {
+            ...nextPiles,
+            [getBriscaLiteHandPileId(player.id)]: createCardPile<CardInstance>({
+                id: getBriscaLiteHandPileId(player.id),
+                role: "hand",
+                ownerId: player.id,
+                label: player.name + " Hand",
+                isFaceUp: false,
+                isVisibleToAll: false
+            }),
+            [getBriscaLiteCapturePileId(player.id)]: createCardPile<CardInstance>({
+                id: getBriscaLiteCapturePileId(player.id),
+                role: "capture",
+                ownerId: player.id,
+                label: player.name + " Capture",
+                isFaceUp: true,
+                isVisibleToAll: false
+            })
+        };
+    }, piles);
+}
+
+export function syncBriscaLiteContextFromPiles(context: BriscaLiteContext): BriscaLiteContext {
+    const players = context.players.map((player) => {
+        return {
+            ...player,
+            hand: getPileCards(context.piles, getBriscaLiteHandPileId(player.id))
+        };
+    });
+    const drawPile = getPileCards(context.piles, BRISCA_LITE_STOCK_PILE_ID);
+    const trumpCards = getPileCards(context.piles, BRISCA_LITE_TRUMP_PILE_ID);
+    const trumpCard = trumpCards[trumpCards.length - 1] ?? null;
+
+    return {
+        ...context,
+        players,
+        drawPile,
+        trumpCard,
+        trumpSuitId: trumpCard?.suitId ?? null
+    };
+}
+
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
@@ -37,6 +119,7 @@ export function createInitialContext(
         deckDefinition,
         drawPile: [],
         discardPile: [],
+        piles: createInitialPiles(players),
         roundCards: [],
         players,
         turnIndex: 0,
@@ -64,37 +147,40 @@ export function createShuffledContext(
     random: () => number = Math.random
 ): BriscaLiteContext {
     const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);
+    const shuffledDeck = shuffleDeck(createDeck(deckDefinition), random);
 
-    return {
+    return syncBriscaLiteContextFromPiles({
         ...baseContext,
-        drawPile: shuffleDeck(createDeck(deckDefinition), random),
+        piles: setPileCards(baseContext.piles, BRISCA_LITE_STOCK_PILE_ID, shuffledDeck),
         statusText: "Shuffling the " + deckDefinition.name + " for Brisca-lite..."
-    };
+    });
 }
 
 export function dealOpeningHands(context: BriscaLiteContext): BriscaLiteContext {
-    const drawPile = context.drawPile.slice();
-    const players = context.players.map((player) => ({
-        ...player,
-        hand: player.hand.slice()
-    }));
+    let piles = context.piles;
 
     for (let cardIndex = 0; cardIndex < context.cardsPerPlayer; cardIndex += 1) {
-        players.forEach((player) => {
-            const card = drawPile.pop();
-            if (card) {
-                player.hand.push(card);
-            }
+        context.players.forEach((player) => {
+            const nextState = moveTopCardBetweenPiles(
+                piles,
+                BRISCA_LITE_STOCK_PILE_ID,
+                getBriscaLiteHandPileId(player.id)
+            );
+            piles = nextState.piles;
         });
     }
 
-    const trumpCard = drawPile.pop() ?? null;
-    const leadPlayerId = players[0]?.id ?? null;
+    const trumpDraw = moveTopCardBetweenPiles(
+        piles,
+        BRISCA_LITE_STOCK_PILE_ID,
+        BRISCA_LITE_TRUMP_PILE_ID
+    );
+    piles = trumpDraw.piles;
+    const leadPlayerId = context.players[0]?.id ?? null;
 
-    return {
+    return syncBriscaLiteContextFromPiles({
         ...context,
-        drawPile,
-        players,
+        piles,
         turnIndex: 0,
         round: 1,
         discardPile: [],
@@ -102,12 +188,10 @@ export function dealOpeningHands(context: BriscaLiteContext): BriscaLiteContext 
         lastPlayedCard: null,
         selectedCardId: null,
         winningPlayerIds: [],
-        trumpCard,
-        trumpSuitId: trumpCard?.suitId ?? null,
         leadPlayerId,
         trickWinnerId: null,
-        statusText: trumpCard
-            ? players[0].name + " leads. Trump is " + trumpCard.displayLabel + "."
-            : players[0].name + " leads the first trick."
-    };
+        statusText: trumpDraw.card
+            ? context.players[0].name + " leads. Trump is " + trumpDraw.card.displayLabel + "."
+            : context.players[0].name + " leads the first trick."
+    });
 }
