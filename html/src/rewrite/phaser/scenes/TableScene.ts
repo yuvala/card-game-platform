@@ -5,7 +5,6 @@ import { getCardSkinById } from "../../engine/cards/skinPacks";
 import type {
     CardGameActor,
     CardGameViewCard,
-    CardGameViewPile,
     CardGameViewTableCard,
     CardGameViewModel,
     CardGameViewModelFactory
@@ -565,21 +564,33 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private updateDiscard(viewModel: CardGameViewModel): void {
-        if (viewModel.tableCards.length > 0) {
+        const secondaryPile = viewModel.piles[1] ?? null;
+        if (!secondaryPile) {
             this.discardCard.setVisible(false);
             return;
         }
 
-        const discardPile = this.getPile(viewModel, "discard");
-        const discardCard = discardPile?.topCard ?? null;
-
-        if (!discardCard) {
+        if (viewModel.tableCards.length > 0 && secondaryPile.role === "discard") {
             this.discardCard.setVisible(false);
             return;
         }
 
-        this.applyCardTexture(this.discardCardImage, discardCard, "showcase");
-        this.discardCardOutline.setStrokeStyle(3, discardCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE);
+        if (!secondaryPile.topCard && secondaryPile.cardCount <= 0) {
+            this.discardCard.setVisible(false);
+            return;
+        }
+
+        if (secondaryPile.topCard) {
+            this.applyCardTexture(this.discardCardImage, secondaryPile.topCard, "showcase");
+            this.discardCardOutline.setStrokeStyle(
+                3,
+                secondaryPile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE
+            );
+        } else {
+            this.applyCardBackTexture(this.discardCardImage);
+            this.discardCardOutline.setStrokeStyle(3, CARD_BACK_STROKE);
+        }
+
         this.discardCard.setVisible(true);
     }
 
@@ -687,20 +698,19 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private updatePileSummary(viewModel: CardGameViewModel): void {
-        const drawPile = this.getPile(viewModel, "draw");
-        const discardPile = this.getPile(viewModel, "discard");
-        const showDiscardTitle = viewModel.tableCards.length === 0;
+        const primaryPile = viewModel.piles[0] ?? null;
+        const secondaryPile = viewModel.piles[1] ?? null;
+        const showSecondaryTitle = !(viewModel.tableCards.length > 0 && secondaryPile?.role === "discard");
 
-        this.drawPileTitle.setText(drawPile?.label ?? "Draw Pile");
-        this.deckText.setText(drawPile?.countLabel ?? viewModel.drawPileLabel);
+        this.drawPileTitle.setText(primaryPile?.label ?? "Draw Pile");
+        this.deckText.setText(primaryPile?.countLabel ?? viewModel.drawPileLabel);
+        this.drawPileTitle.setVisible(Boolean(primaryPile) || viewModel.drawPileLabel.length > 0);
+        this.deckText.setVisible(Boolean(primaryPile) || viewModel.drawPileLabel.length > 0);
 
-        this.discardPileTitle.setText(discardPile?.label ?? "Discard");
-        this.discardPileTitle.setVisible(showDiscardTitle);
-        this.discardText.setText(discardPile?.countLabel ?? viewModel.discardPileLabel);
-    }
-
-    private getPile(viewModel: CardGameViewModel, role: string): CardGameViewPile | null {
-        return viewModel.piles.find((pile) => pile.role === role) ?? null;
+        this.discardPileTitle.setText(secondaryPile?.label ?? "Discard");
+        this.discardPileTitle.setVisible(showSecondaryTitle && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0));
+        this.discardText.setText(secondaryPile?.countLabel ?? viewModel.discardPileLabel);
+        this.discardText.setVisible(Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
     }
 
     private applyCardTexture(

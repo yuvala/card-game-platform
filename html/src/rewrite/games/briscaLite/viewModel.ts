@@ -26,14 +26,6 @@ function createHiddenPreviewCards(cards: readonly CardGameViewCard[], count: num
     }));
 }
 
-function getTrumpPileCountLabel(snapshot: BriscaLiteViewSnapshot): string {
-    if (snapshot.context.trumpCard) {
-        return snapshot.context.trumpCard.displayLabel;
-    }
-
-    return String(snapshot.context.discardPile.length + snapshot.context.roundCards.length) + " cards played";
-}
-
 export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const isPlayerTurn = snapshot.matches("playerTurn");
@@ -74,7 +66,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
         drawPileLabel: trumpCard
             ? String(stockCards.length) + " stock + trump"
             : String(stockCards.length) + " stock",
-        discardPileLabel: getTrumpPileCountLabel(snapshot),
+        discardPileLabel: trumpCard?.displayLabel ?? "Trump spent",
         discardCardLabel: trumpTopCard?.label ?? null,
         scoreLines: snapshot.context.players.map((player) => {
             return player.name + ": " + player.score + " tricks";
@@ -127,10 +119,10 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             },
             {
                 id: BRISCA_LITE_TRUMP_PILE_ID,
-                role: "discard",
-                label: trumpCard ? "Trump" : "Trick Pile",
-                cardCount: snapshot.context.discardPile.length + snapshot.context.roundCards.length,
-                countLabel: getTrumpPileCountLabel(snapshot),
+                role: "trump",
+                label: "Trump",
+                cardCount: trumpCards.length,
+                countLabel: trumpCard?.displayLabel ?? "spent",
                 topCard: trumpTopCard
             }
         ],
