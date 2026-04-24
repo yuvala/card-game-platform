@@ -93,9 +93,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                                     aria-pressed="${String(isSelected)}"
                                 >
                                     <span class="rewriteGameChoiceLabel">${escapeHtml(entry.label)}</span>
-                                    <span class="rewriteGameChoiceMeta">${escapeHtml(
-                                        String(entry.minPlayers) + "-" + String(entry.maxPlayers) + " players"
-                                    )}</span>
+                                    <span class="rewriteGameChoiceMeta">${escapeHtml(formatPlayerCountMeta(entry))}</span>
                                     <span class="rewriteGameChoiceDescription">${escapeHtml(entry.description)}</span>
                                 </button>
                             `;
@@ -230,10 +228,27 @@ function getSelectedGame(
 }
 
 function getPlayerCountOptions(entry: AnyGameCatalogEntry): number[] {
+    if (entry.playerCountOptions && entry.playerCountOptions.length > 0) {
+        return entry.playerCountOptions.slice().sort((left, right) => left - right);
+    }
+
     return Array.from(
         { length: entry.maxPlayers - entry.minPlayers + 1 },
         (_, index) => entry.minPlayers + index
     );
+}
+
+function formatPlayerCountMeta(entry: AnyGameCatalogEntry): string {
+    const playerCountOptions = getPlayerCountOptions(entry);
+    if (playerCountOptions.length <= 1) {
+        return String(playerCountOptions[0] ?? entry.defaultPlayerCount) + " player";
+    }
+
+    if (entry.playerCountOptions && entry.playerCountOptions.length > 0) {
+        return playerCountOptions.join(", ") + " players";
+    }
+
+    return String(entry.minPlayers) + "-" + String(entry.maxPlayers) + " players";
 }
 
 function normalizeSelection(

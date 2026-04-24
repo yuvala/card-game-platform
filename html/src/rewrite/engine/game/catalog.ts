@@ -24,6 +24,7 @@ export interface GameCatalogEntry<
     minPlayers: number;
     maxPlayers: number;
     defaultPlayerCount: number;
+    playerCountOptions?: readonly number[];
     supportedDeckIds: readonly SupportedDeckId[];
     defaultDeckId: SupportedDeckId;
     definition: GameDefinition<any, any, any, any, TOptions, any, TSnapshot>;
@@ -41,7 +42,7 @@ export function defineGameCatalogEntry<
 }
 
 export function resolvePlayerCount(
-    entry: Pick<GameCatalogEntry, "minPlayers" | "maxPlayers" | "defaultPlayerCount">,
+    entry: Pick<GameCatalogEntry, "minPlayers" | "maxPlayers" | "defaultPlayerCount" | "playerCountOptions">,
     requestedPlayerCount: number | null | undefined,
     availablePlayerCount: number
 ): number {
@@ -50,15 +51,41 @@ export function resolvePlayerCount(
         return 0;
     }
 
-    const upperBound = Math.max(1, Math.min(entry.maxPlayers, availableCount));
-    const lowerBound = Math.min(Math.max(entry.minPlayers, 1), upperBound);
-    const fallbackCount = Math.min(Math.max(entry.defaultPlayerCount, lowerBound), upperBound);
     const normalizedRequested =
         typeof requestedPlayerCount === "number" && Number.isFinite(requestedPlayerCount)
             ? Math.floor(requestedPlayerCount)
-            : fallbackCount;
+            : null;
 
-    return Math.min(Math.max(normalizedRequested, lowerBound), upperBound);
+    if (entry.playerCountOptions && entry.playerCountOptions.length > 0) {
+        const allowedCounts = entry.playerCountOptions
+            .filter((count) => Number.isFinite(count))
+            .map((count) => Math.floor(count))
+            .filter((count, index, values) => {
+                return count >= 1 && count <= availableCount && values.indexOf(count) === index;
+            })
+            .sort((left, right) => left - right);
+
+        if (allowedCounts.length === 0) {
+            return 0;
+        }
+
+        if (normalizedRequested !== null && allowedCounts.includes(normalizedRequested)) {
+            return normalizedRequested;
+        }
+
+        if (allowedCounts.includes(entry.defaultPlayerCount)) {
+            return entry.defaultPlayerCount;
+        }
+
+        return allowedCounts[0];
+    }
+
+    const upperBound = Math.max(1, Math.min(entry.maxPlayers, availableCount));
+    const lowerBound = Math.min(Math.max(entry.minPlayers, 1), upperBound);
+    const fallbackCount = Math.min(Math.max(entry.defaultPlayerCount, lowerBound), upperBound);
+    const resolvedRequested = normalizedRequested ?? fallbackCount;
+
+    return Math.min(Math.max(resolvedRequested, lowerBound), upperBound);
 }
 
 export function resolveDeckId(

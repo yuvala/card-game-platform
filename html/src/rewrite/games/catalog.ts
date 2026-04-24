@@ -5,6 +5,9 @@ import {
     defineGameCatalogEntry,
     type AnyGameCatalogEntry
 } from "../engine/game/catalog";
+import { briscaLiteGameDefinition } from "./briscaLite/definition";
+import { createBriscaLiteMachine } from "./briscaLite/machine";
+import type { BriscaLiteOptions, BriscaLiteViewSnapshot } from "./briscaLite/types";
 import { drawPokerGameDefinition } from "./drawPoker/definition";
 import { createRewriteGameMachine } from "./drawPoker/machine";
 import type { RewriteGameOptions, RewriteGameViewSnapshot } from "./drawPoker/types";
@@ -14,6 +17,7 @@ import type { WarLiteOptions, WarLiteViewSnapshot } from "./warLite/types";
 
 const drawPokerSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
 const warLiteSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
+const briscaLiteSupportedDeckIds = ["spanish", "italian"] as const satisfies readonly SupportedDeckId[];
 
 const drawPokerCatalogEntry = defineGameCatalogEntry<RewriteGameViewSnapshot, RewriteGameOptions>({
     id: "draw-poker",
@@ -61,9 +65,34 @@ const warLiteCatalogEntry = defineGameCatalogEntry<WarLiteViewSnapshot, WarLiteO
     }
 });
 
+const briscaLiteCatalogEntry = defineGameCatalogEntry<BriscaLiteViewSnapshot, BriscaLiteOptions>({
+    id: "brisca-lite",
+    label: "Brisca-lite",
+    description: "Trump-led trick play on the 40-card Iberian decks. Winner draws first and scores one point per trick.",
+    minPlayers: 2,
+    maxPlayers: 5,
+    defaultPlayerCount: 2,
+    playerCountOptions: [2, 4, 5],
+    supportedDeckIds: briscaLiteSupportedDeckIds,
+    defaultDeckId: "spanish",
+    definition: briscaLiteGameDefinition,
+    getViewModel: (snapshot) => {
+        const toViewModel = briscaLiteGameDefinition.toViewModel;
+        if (!toViewModel) {
+            throw new Error("Brisca-lite game definition is missing a view model adapter.");
+        }
+
+        return toViewModel(snapshot);
+    },
+    createActor: (playerNames, options) => {
+        return createActor(createBriscaLiteMachine(playerNames, options));
+    }
+});
+
 export const gameCatalog = {
     "draw-poker": drawPokerCatalogEntry,
-    "war-lite": warLiteCatalogEntry
+    "war-lite": warLiteCatalogEntry,
+    "brisca-lite": briscaLiteCatalogEntry
 } satisfies Record<string, AnyGameCatalogEntry>;
 
 export type GameCatalogId = keyof typeof gameCatalog;

@@ -67,6 +67,11 @@ interface TableCardVisual {
     caption: Phaser.GameObjects.Text;
 }
 
+interface CardDisplaySize {
+    width: number;
+    height: number;
+}
+
 export class TableScene<TSnapshot> extends Phaser.Scene {
     private readonly actor: CardGameActor<TSnapshot>;
     private readonly getViewModel: CardGameViewModelFactory<TSnapshot>;
@@ -146,6 +151,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.discardCardImage = this.add.image(0, 0, "__MISSING")
             .setDisplaySize(DISCARD_CARD_WIDTH, DISCARD_CARD_HEIGHT);
+        this.discardCardImage.setData("cardDisplaySize", {
+            width: DISCARD_CARD_WIDTH,
+            height: DISCARD_CARD_HEIGHT
+        } satisfies CardDisplaySize);
         this.discardCardOutline = this.add.rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
             .setStrokeStyle(2, 0xffd166, 0.9);
         this.discardCard = this.add.container(TABLE_CENTER_X, 392, [this.discardCardImage, this.discardCardOutline]).setVisible(false);
@@ -163,6 +172,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         for (let i = 0; i < slotCount; i += 1) {
             const image = this.add.image(0, 0, this.getActiveBackTextureKey())
                 .setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
+            image.setData("cardDisplaySize", {
+                width: CARD_WIDTH,
+                height: CARD_HEIGHT
+            } satisfies CardDisplaySize);
             const outline = this.add.rectangle(0, 0, CARD_WIDTH + 4, CARD_HEIGHT + 4, 0x000000, 0)
                 .setStrokeStyle(2, 0x17352b, 0.72);
             const slotX = startX + layout.gapX * i;
@@ -714,8 +727,9 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         image: Phaser.GameObjects.Image,
         textureKey: string
     ): void {
-        const displayWidth = image.displayWidth;
-        const displayHeight = image.displayHeight;
+        const displaySize = image.getData("cardDisplaySize") as CardDisplaySize | undefined;
+        const displayWidth = displaySize?.width ?? image.displayWidth;
+        const displayHeight = displaySize?.height ?? image.displayHeight;
 
         image.setTexture(textureKey);
         image.setDisplaySize(displayWidth, displayHeight);
@@ -765,6 +779,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private createTableCardVisual(): TableCardVisual {
         const image = this.add.image(0, 0, this.getActiveBackTextureKey())
             .setDisplaySize(TABLE_CARD_WIDTH, TABLE_CARD_HEIGHT);
+        image.setData("cardDisplaySize", {
+            width: TABLE_CARD_WIDTH,
+            height: TABLE_CARD_HEIGHT
+        } satisfies CardDisplaySize);
         const outline = this.add.rectangle(0, 0, TABLE_CARD_WIDTH + 4, TABLE_CARD_HEIGHT + 4, 0x000000, 0)
             .setStrokeStyle(3, 0xffd166, 0.9);
         const caption = this.add.text(0, -72, "", {

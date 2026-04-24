@@ -1,0 +1,135 @@
+import type { CardGameViewCard, CardGameViewModel } from "../../engine/game/viewModel";
+import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
+import type { BriscaLiteViewSnapshot } from "./types";
+
+function getPlayerIconLabel(playerName: string): string {
+    const initials = playerName
+        .split(/\s+/)
+        .filter(Boolean)
+        .slice(0, 2)
+        .map((part) => part[0]?.toUpperCase() ?? "")
+        .join("");
+
+    return initials || "P";
+}
+
+function createHiddenPreviewCards(cards: readonly CardGameViewCard[], count: number): CardGameViewCard[] {
+    return cards.slice(0, count).map((card) => ({
+        ...card,
+        isFaceUp: false
+    }));
+}
+
+function getTrumpPileCountLabel(snapshot: BriscaLiteViewSnapshot): string {
+    if (snapshot.context.trumpCard) {
+        return snapshot.context.trumpCard.displayLabel;
+    }
+
+    return String(snapshot.context.discardPile.length + snapshot.context.roundCards.length) + " cards played";
+}
+
+export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGameViewModel {
+    const currentPhase = String(snapshot.value);
+    const isPlayerTurn = snapshot.matches("playerTurn");
+    const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
+    const trumpTopCard = snapshot.context.trumpCard
+        ? {
+              id: snapshot.context.trumpCard.id,
+              label: snapshot.context.trumpCard.displayLabel,
+              isFaceUp: true
+          }
+        : null;
+    const animation =
+        snapshot.matches("animatingPlay") && snapshot.context.lastPlayedCard
+            ? {
+                  key:
+                      snapshot.context.lastPlayedCard.id +
+                      "-" +
+                      snapshot.context.roundCards.length +
+                      "-" +
+                      snapshot.context.turnIndex,
+                  playerId: currentPlayerId ?? "",
+                  cardId: snapshot.context.lastPlayedCard.card.id
+              }
+            : null;
+
+    return {
+        phaseLabel: currentPhase.toUpperCase(),
+        roundLabel: "Trick " + snapshot.context.round + " / " + snapshot.context.maxRounds,
+        deckId: snapshot.context.deckDefinition.id,
+        cardSkinId: DEFAULT_CARD_SKIN_ID,
+        deckLabel:
+            snapshot.context.deckDefinition.name +
+            " | Trump: " +
+            (snapshot.context.trumpCard?.suitLabel ?? snapshot.context.trumpSuitId ?? "spent"),
+        drawPileLabel: snapshot.context.trumpCard
+            ? String(snapshot.context.drawPile.length) + " stock + trump"
+            : String(snapshot.context.drawPile.length) + " stock",
+        discardPileLabel: getTrumpPileCountLabel(snapshot),
+        discardCardLabel: trumpTopCard?.label ?? null,
+        scoreLines: snapshot.context.players.map((player) => {
+            return player.name + ": " + player.score + " tricks";
+        }),
+        statusText: snapshot.context.statusText,
+        selectedCardId: snapshot.context.selectedCardId,
+        players: snapshot.context.players.map((player) => {
+            const isCurrentTurn = isPlayerTurn && player.id === currentPlayerId;
+            const revealHand = (snapshot.matches("playerTurn") || snapshot.matches("animatingPlay")) && player.id === currentPlayerId;
+            const faceUpCards = player.hand.map((card) => ({
+                id: card.id,
+                label: card.displayLabel,
+                isFaceUp: true
+            }));
+
+            return {
+                id: player.id,
+                iconLabel: getPlayerIconLabel(player.name),
+                nameLabel: player.name,
+                metaLabel:
+                    String(player.hand.length) +
+                    " cards | " +
+                    String(player.score) +
+                    " tricks",
+                hand: revealHand
+                    ? faceUpCards
+                    : createHiddenPreviewCards(faceUpCards, Math.min(player.hand.length, 3)),
+                isCurrentTurn,
+                isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
+                canInteract: isCurrentTurn && isPlayerTurn
+            };
+        }),
+        tableCards: snapshot.context.roundCards.map((playedCard) => ({
+            id: playedCard.card.id,
+            label: playedCard.card.displayLabel,
+            isFaceUp: true,
+            playerId: playedCard.playerId,
+            caption: playedCard.playerName
+        })),
+        piles: [
+            {
+                id: "stock-pile",
+                role: "draw",
+                label: "Stock",
+                cardCount: snapshot.context.drawPile.length,
+                countLabel: snapshot.context.trumpCard
+                    ? String(snapshot.context.drawPile.length) + " + trump"
+                    : String(snapshot.context.drawPile.length) + " cards",
+                topCard: null
+            },
+            {
+                id: "trump-pile",
+                role: "discard",
+                label: snapshot.context.trumpCard ? "Trump" : "Trick Pile",
+                cardCount: snapshot.context.discardPile.length + snapshot.context.roundCards.length,
+                countLabel: getTrumpPileCountLabel(snapshot),
+                topCard: trumpTopCard
+            }
+        ],
+        controls: {
+            canStart: snapshot.matches("idle"),
+            canPlay: isPlayerTurn && Boolean(snapshot.context.selectedCardId),
+            canRestart: snapshot.matches("gameOver")
+        },
+        animation: animation && animation.playerId ? animation : null
+    };
+}
