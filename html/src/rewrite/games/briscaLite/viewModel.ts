@@ -5,6 +5,7 @@ import type { BriscaLiteViewSnapshot } from "./types";
 import {
     BRISCA_LITE_STOCK_PILE_ID,
     BRISCA_LITE_TRUMP_PILE_ID,
+    getBriscaLiteCapturePileId,
     getBriscaLiteHandPileId
 } from "./types";
 
@@ -124,7 +125,30 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                 cardCount: trumpCards.length,
                 countLabel: trumpCard?.displayLabel ?? "spent",
                 topCard: trumpTopCard
-            }
+            },
+            ...snapshot.context.players.map((player) => {
+                const capturedCards = getPileCards(
+                    snapshot.context.piles,
+                    getBriscaLiteCapturePileId(player.id)
+                );
+                const topCapturedCard = capturedCards[capturedCards.length - 1] ?? null;
+
+                return {
+                    id: getBriscaLiteCapturePileId(player.id),
+                    role: "capture",
+                    ownerId: player.id,
+                    label: "Won",
+                    cardCount: capturedCards.length,
+                    countLabel: String(capturedCards.length) + " won",
+                    topCard: topCapturedCard
+                        ? {
+                              id: topCapturedCard.id,
+                              label: topCapturedCard.displayLabel,
+                              isFaceUp: true
+                          }
+                        : null
+                };
+            })
         ],
         controls: {
             canStart: snapshot.matches("idle"),

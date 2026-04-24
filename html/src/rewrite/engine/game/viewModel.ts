@@ -44,6 +44,7 @@ export interface CardGameViewPile {
     id: string;
     role: string;
     label: string;
+    ownerId?: string;
     cardCount: number;
     countLabel: string;
     topCard: CardGameViewCard | null;

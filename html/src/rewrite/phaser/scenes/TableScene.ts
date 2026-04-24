@@ -5,6 +5,7 @@ import { getCardSkinById } from "../../engine/cards/skinPacks";
 import type {
     CardGameActor,
     CardGameViewCard,
+    CardGameViewPile,
     CardGameViewTableCard,
     CardGameViewModel,
     CardGameViewModelFactory
@@ -22,6 +23,8 @@ const DISCARD_CARD_WIDTH = 76;
 const DISCARD_CARD_HEIGHT = 108;
 const TABLE_CARD_WIDTH = 74;
 const TABLE_CARD_HEIGHT = 104;
+const OWNED_PILE_CARD_WIDTH = 42;
+const OWNED_PILE_CARD_HEIGHT = 60;
 const DEFAULT_HAND_SLOT_COUNT = 5;
 const CARD_BACK_STROKE = 0xc4b06a;
 const SELECTED_CARD_SCALE = 1;
@@ -66,6 +69,15 @@ interface TableCardVisual {
     caption: Phaser.GameObjects.Text;
 }
 
+interface OwnedPileVisual {
+    container: Phaser.GameObjects.Container;
+    stackBack: Phaser.GameObjects.Image;
+    image: Phaser.GameObjects.Image;
+    outline: Phaser.GameObjects.Rectangle;
+    labelText: Phaser.GameObjects.Text;
+    countText: Phaser.GameObjects.Text;
+}
+
 interface CardDisplaySize {
     width: number;
     height: number;
@@ -84,6 +96,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private discardCardOutline!: Phaser.GameObjects.Rectangle;
     private seatBadges = new Map<string, SeatBadge>();
     private handSlots = new Map<string, CardSlot[]>();
+    private ownedPileVisuals = new Map<string, OwnedPileVisual>();
     private tableCardVisuals: TableCardVisual[] = [];
     private activeAnimationKey = "";
     private activeTableCardFlipKey = "";
@@ -244,6 +257,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.updateSeatLabels(viewModel);
         this.updateHandSlots(viewModel);
+        this.updateOwnedPiles(viewModel);
         this.updateTableCards(viewModel);
         this.updateDiscard(viewModel);
     }
@@ -289,6 +303,69 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         });
         this.handSlots.clear();
         this.seatLayoutKey = "";
+    }
+
+    private updateOwnedPiles(viewModel: CardGameViewModel): void {
+        const ownedPiles = viewModel.piles.filter((pile, index) => {
+            return index >= 2 && Boolean(pile.ownerId);
+        });
+        const ownedPileIds = new Set(ownedPiles.map((pile) => pile.id));
+
+        this.ownedPileVisuals.forEach((visual, pileId) => {
+            if (ownedPileIds.has(pileId)) {
+                return;
+            }
+
+            visual.container.destroy(true);
+            this.ownedPileVisuals.delete(pileId);
+        });
+
+        const ownerCounts = new Map<string, number>();
+
+        ownedPiles.forEach((pile) => {
+            const ownerId = pile.ownerId;
+            if (!ownerId) {
+                return;
+            }
+
+            const badge = this.seatBadges.get(ownerId);
+            const owner = viewModel.players.find((player) => player.id === ownerId) ?? null;
+            if (!badge) {
+                return;
+            }
+
+            const visual = this.ownedPileVisuals.get(pile.id) ?? this.createOwnedPileVisual(pile.id);
+            const ownerPileIndex = ownerCounts.get(ownerId) ?? 0;
+            ownerCounts.set(ownerId, ownerPileIndex + 1);
+
+            const position = this.getOwnedPilePosition(ownerId, badge.container, ownerPileIndex);
+            visual.container.setPosition(position.x, position.y);
+            visual.labelText.setText(pile.label);
+            visual.countText.setText(pile.countLabel);
+            visual.container.setVisible(true);
+            this.applyCardBackTexture(visual.stackBack);
+            visual.stackBack.setVisible(pile.cardCount > 1);
+
+            if (pile.topCard) {
+                this.applyCardTexture(visual.image, pile.topCard, "compact");
+                visual.image.setAlpha(1);
+                visual.stackBack.setAlpha(0.92);
+                visual.outline.setStrokeStyle(
+                    2,
+                    owner?.isRoundWinner ? 0xffd166 : (pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE),
+                    0.9
+                );
+            } else {
+                this.applyCardBackTexture(visual.image);
+                visual.image.setAlpha(pile.cardCount > 0 ? 0.96 : 0.35);
+                visual.stackBack.setAlpha(pile.cardCount > 0 ? 0.78 : 0);
+                visual.outline.setStrokeStyle(
+                    2,
+                    owner?.isRoundWinner ? 0xffd166 : (pile.cardCount > 0 ? CARD_BACK_STROKE : 0x355449),
+                    0.9
+                );
+            }
+        });
     }
 
     private getSeatLayouts(playerCount: number): SeatLayout[] {
@@ -711,6 +788,112 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         this.discardPileTitle.setVisible(showSecondaryTitle && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0));
         this.discardText.setText(secondaryPile?.countLabel ?? viewModel.discardPileLabel);
         this.discardText.setVisible(Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
+    }
+
+    private createOwnedPileVisual(pileId: string): OwnedPileVisual {
+        const stackBack = this.add.image(-4, -4, this.getActiveBackTextureKey())
+            .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT)
+            .setAlpha(0.8);
+        stackBack.setData("cardDisplaySize", {
+            width: OWNED_PILE_CARD_WIDTH,
+            height: OWNED_PILE_CARD_HEIGHT
+        } satisfies CardDisplaySize);
+        const image = this.add.image(0, 0, this.getActiveBackTextureKey())
+            .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT);
+        image.setData("cardDisplaySize", {
+            width: OWNED_PILE_CARD_WIDTH,
+            height: OWNED_PILE_CARD_HEIGHT
+        } satisfies CardDisplaySize);
+        const outline = this.add.rectangle(0, 0, OWNED_PILE_CARD_WIDTH + 4, OWNED_PILE_CARD_HEIGHT + 4, 0x000000, 0)
+            .setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
+        const labelText = this.add.text(0, -42, "", {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            color: "rgba(246,236,210,0.84)"
+        }).setOrigin(0.5);
+        const countText = this.add.text(0, 44, "", {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            color: "rgba(255,209,102,0.86)"
+        }).setOrigin(0.5);
+        const container = this.add.container(0, 0, [labelText, stackBack, image, outline, countText]).setDepth(65);
+
+        const visual = {
+            container,
+            stackBack,
+            image,
+            outline,
+            labelText,
+            countText
+        };
+
+        this.ownedPileVisuals.set(pileId, visual);
+        return visual;
+    }
+
+    private getOwnedPilePosition(
+        ownerId: string,
+        badgeContainer: Phaser.GameObjects.Container,
+        ownerPileIndex: number
+    ): { x: number; y: number } {
+        const slots = this.handSlots.get(ownerId) ?? [];
+        const horizontalOffset = ownerPileIndex * 58;
+
+        if (slots.length > 0) {
+            const minX = Math.min(...slots.map((slot) => slot.originX));
+            const maxX = Math.max(...slots.map((slot) => slot.originX));
+            const minY = Math.min(...slots.map((slot) => slot.originY));
+            const maxY = Math.max(...slots.map((slot) => slot.originY));
+            const anchorAngle = slots[0].originAngle;
+
+            if (anchorAngle === 0) {
+                return {
+                    x: maxX + 92 + horizontalOffset,
+                    y: (minY + maxY) / 2 - (minY > TABLE_CENTER_Y ? 6 : -6)
+                };
+            }
+
+            if (anchorAngle > 0) {
+                return {
+                    x: minX - 84 - horizontalOffset,
+                    y: (minY + maxY) / 2
+                };
+            }
+
+            return {
+                x: maxX + 84 + horizontalOffset,
+                y: (minY + maxY) / 2
+            };
+        }
+
+        const x = badgeContainer.x;
+        const y = badgeContainer.y;
+
+        if (x > TABLE_CENTER_X + 110) {
+            return {
+                x: x - 96 - horizontalOffset,
+                y: y + 16
+            };
+        }
+
+        if (x < TABLE_CENTER_X - 110) {
+            return {
+                x: x + 96 + horizontalOffset,
+                y: y + 16
+            };
+        }
+
+        if (y < TABLE_CENTER_Y) {
+            return {
+                x: x + 92 + horizontalOffset,
+                y: y + 18
+            };
+        }
+
+        return {
+            x: x + 110 + horizontalOffset,
+            y: y - 8
+        };
     }
 
     private applyCardTexture(
