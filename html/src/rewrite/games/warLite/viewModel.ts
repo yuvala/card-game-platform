@@ -1,4 +1,5 @@
 import type { CardGameViewCard, CardGameViewModel } from "../../engine/game/viewModel";
+import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import type { WarLiteViewSnapshot } from "./types";
 
 function getPlayerIconLabel(playerName: string): string {
@@ -35,6 +36,8 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
     return {
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: "Battle " + snapshot.context.round + " / " + snapshot.context.maxRounds,
+        deckId: snapshot.context.deckDefinition.id,
+        cardSkinId: DEFAULT_CARD_SKIN_ID,
         deckLabel:
             snapshot.context.deckDefinition.name +
             " | " +
@@ -84,7 +87,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
         tableCards:
             snapshot.matches("revealingBattle") || snapshot.matches("resolvingBattle")
                 ? snapshot.context.roundCards.map((playedCard) => ({
-                      id: playedCard.id,
+                      id: playedCard.card.id,
                       label: playedCard.card.displayLabel,
                       isFaceUp: true,
                       playerId: playedCard.playerId,

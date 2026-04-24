@@ -52,6 +52,8 @@ export interface CardGameViewPile {
 export interface CardGameViewModel {
     phaseLabel: string;
     roundLabel: string;
+    deckId: string;
+    cardSkinId: string;
     deckLabel: string;
     drawPileLabel: string;
     discardPileLabel: string;

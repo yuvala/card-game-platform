@@ -1,4 +1,5 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
+import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import type { RewriteGameViewSnapshot } from "./types";
 
 function getPlayerIconLabel(playerName: string): string {
@@ -41,6 +42,8 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
     return {
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: "Round " + snapshot.context.round + " / " + snapshot.context.maxRounds,
+        deckId: snapshot.context.deckDefinition.id,
+        cardSkinId: DEFAULT_CARD_SKIN_ID,
         deckLabel:
             snapshot.context.deckDefinition.name +
             " | " +

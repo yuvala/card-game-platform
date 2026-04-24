@@ -1,5 +1,7 @@
 import * as Phaser from "phaser";
 
+import { supportedDeckDefinitions } from "../../engine/cards/deckDefinitions";
+import { getCardSkinById } from "../../engine/cards/skinPacks";
 import type {
     CardGameActor,
     CardGameViewCard,
@@ -8,16 +10,27 @@ import type {
     CardGameViewModel,
     CardGameViewModelFactory
 } from "../../engine/game/viewModel";
+import {
+    ensureDeckTextures,
+    getCardBackTextureKey,
+    getCardFaceTextureKey
+} from "../cards/CardTextureFactory";
 import { REWRITE_HEIGHT, TABLE_CENTER_X, TABLE_CENTER_Y, TABLE_WIDTH } from "../layout";
 
 const CARD_WIDTH = 60;
 const CARD_HEIGHT = 88;
+const DISCARD_CARD_WIDTH = 76;
+const DISCARD_CARD_HEIGHT = 108;
+const TABLE_CARD_WIDTH = 74;
+const TABLE_CARD_HEIGHT = 104;
 const DEFAULT_HAND_SLOT_COUNT = 5;
-const CARD_FACE_FILL = 0xf7efe0;
-const CARD_FACE_TEXT = "#17352b";
-const CARD_BACK_FILL = 0x1e4d3f;
 const CARD_BACK_STROKE = 0xc4b06a;
-const CARD_BACK_TEXT = "#f6ecd2";
+const SELECTED_CARD_SCALE = 1;
+const HOVER_CARD_SCALE = 1.01;
+const SELECTED_CARD_LIFT_Y = -8;
+const SELECTED_CARD_SHIFT_X = 5;
+const HOVER_CARD_LIFT_Y = -4;
+const HOVER_CARD_SHIFT_X = 3;
 
 interface SeatLayout {
     labelX: number;
@@ -35,8 +48,8 @@ interface CardSlot {
     originX: number;
     originY: number;
     originAngle: number;
-    face: Phaser.GameObjects.Rectangle;
-    label: Phaser.GameObjects.Text;
+    image: Phaser.GameObjects.Image;
+    outline: Phaser.GameObjects.Rectangle;
 }
 
 interface SeatBadge {
@@ -49,8 +62,8 @@ interface SeatBadge {
 
 interface TableCardVisual {
     container: Phaser.GameObjects.Container;
-    face: Phaser.GameObjects.Rectangle;
-    label: Phaser.GameObjects.Text;
+    image: Phaser.GameObjects.Image;
+    outline: Phaser.GameObjects.Rectangle;
     caption: Phaser.GameObjects.Text;
 }
 
@@ -63,14 +76,16 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private discardPileTitle!: Phaser.GameObjects.Text;
     private discardText!: Phaser.GameObjects.Text;
     private discardCard!: Phaser.GameObjects.Container;
-    private discardCardFace!: Phaser.GameObjects.Rectangle;
-    private discardCardLabel!: Phaser.GameObjects.Text;
+    private discardCardImage!: Phaser.GameObjects.Image;
+    private discardCardOutline!: Phaser.GameObjects.Rectangle;
     private seatBadges = new Map<string, SeatBadge>();
     private handSlots = new Map<string, CardSlot[]>();
     private tableCardVisuals: TableCardVisual[] = [];
     private activeAnimationKey = "";
     private activeTableCardFlipKey = "";
     private seatLayoutKey = "";
+    private activeDeckId = "";
+    private activeCardSkinId = "";
 
     constructor(actor: CardGameActor<TSnapshot>, getViewModel: CardGameViewModelFactory<TSnapshot>) {
         super("rewrite-table");
@@ -129,13 +144,11 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         this.discardPileTitle = this.add.text(TABLE_CENTER_X, 318, "Discard", pileStyle).setOrigin(0.5, 0.5);
         this.discardText = this.add.text(TABLE_CENTER_X, 474, "", pileStyle).setOrigin(0.5);
 
-        this.discardCardFace = this.add.rectangle(0, 0, 76, 108, CARD_FACE_FILL, 1).setStrokeStyle(3, 0x17352b);
-        this.discardCardLabel = this.add.text(0, 0, "", {
-            fontFamily: "Arial",
-            fontSize: "22px",
-            color: CARD_FACE_TEXT
-        }).setOrigin(0.5);
-        this.discardCard = this.add.container(TABLE_CENTER_X, 392, [this.discardCardFace, this.discardCardLabel]).setVisible(false);
+        this.discardCardImage = this.add.image(0, 0, "__MISSING")
+            .setDisplaySize(DISCARD_CARD_WIDTH, DISCARD_CARD_HEIGHT);
+        this.discardCardOutline = this.add.rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
+            .setStrokeStyle(2, 0xffd166, 0.9);
+        this.discardCard = this.add.container(TABLE_CENTER_X, 392, [this.discardCardImage, this.discardCardOutline]).setVisible(false);
     }
 
     private createHandSlots(
@@ -148,16 +161,13 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         const startY = layout.handCenterY - (layout.gapY * (slotCount - 1)) / 2;
 
         for (let i = 0; i < slotCount; i += 1) {
-            const face = this.add.rectangle(0, 0, CARD_WIDTH, CARD_HEIGHT, CARD_FACE_FILL, 0.95)
-                .setStrokeStyle(2, 0x17352b);
-            const label = this.add.text(0, 0, "CARD", {
-                fontFamily: "Arial",
-                fontSize: "16px",
-                color: CARD_FACE_TEXT
-            }).setOrigin(0.5);
+            const image = this.add.image(0, 0, this.getActiveBackTextureKey())
+                .setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
+            const outline = this.add.rectangle(0, 0, CARD_WIDTH + 4, CARD_HEIGHT + 4, 0x000000, 0)
+                .setStrokeStyle(2, 0x17352b, 0.72);
             const slotX = startX + layout.gapX * i;
             const slotY = startY + layout.gapY * i;
-            const container = this.add.container(slotX, slotY, [face, label]).setAngle(layout.angle);
+            const container = this.add.container(slotX, slotY, [image, outline]).setAngle(layout.angle);
             const hitTarget = this.add.rectangle(
                 slotX,
                 slotY,
@@ -185,23 +195,20 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 if (hitTarget.input?.enabled) {
                     container.setData("isHovered", true);
                     const isSelected = container.getData("isSelected") === true;
-                    const scale = isSelected ? 1.08 : 1.06;
+                    const scale = isSelected ? SELECTED_CARD_SCALE : HOVER_CARD_SCALE;
                     container.setScale(scale);
-                    hitTarget.setScale(scale);
                 }
             });
             hitTarget.on(Phaser.Input.Events.POINTER_OUT, () => {
                 container.setData("isHovered", false);
                 if (!hitTarget.input?.enabled) {
                     container.setScale(1);
-                    hitTarget.setScale(1);
                     return;
                 }
 
                 const isSelected = container.getData("isSelected") === true;
-                const scale = isSelected ? 1.05 : 1;
+                const scale = isSelected ? SELECTED_CARD_SCALE : 1;
                 container.setScale(scale);
-                hitTarget.setScale(scale);
             });
 
             slots.push({
@@ -210,8 +217,8 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 originX: slotX,
                 originY: slotY,
                 originAngle: layout.angle,
-                face,
-                label
+                image,
+                outline
             });
         }
 
@@ -219,6 +226,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private syncViewModel(viewModel: CardGameViewModel): void {
+        this.ensureCardTextures(viewModel);
         this.ensureSeatVisuals(viewModel);
         this.updatePileSummary(viewModel);
 
@@ -367,7 +375,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private createBottomSeat(centerX: number): SeatLayout {
         return {
             labelX: centerX,
-            labelY: REWRITE_HEIGHT - 190,
+            labelY: REWRITE_HEIGHT - 72,
             handCenterX: centerX,
             handCenterY: 606,
             gapX: 74,
@@ -405,6 +413,28 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             gapY,
             angle: isRight ? 90 : -90
         };
+    }
+
+    private ensureCardTextures(viewModel: CardGameViewModel): void {
+        if (this.activeDeckId === viewModel.deckId && this.activeCardSkinId === viewModel.cardSkinId) {
+            return;
+        }
+
+        const deckDefinition = supportedDeckDefinitions[viewModel.deckId as keyof typeof supportedDeckDefinitions];
+        if (!deckDefinition) {
+            return;
+        }
+
+        const skin = getCardSkinById(viewModel.cardSkinId);
+        ensureDeckTextures(this, deckDefinition, skin);
+
+        this.activeDeckId = deckDefinition.id;
+        this.activeCardSkinId = skin.id;
+        this.activeTableCardFlipKey = "";
+    }
+
+    private getActiveBackTextureKey(): string {
+        return getCardBackTextureKey(this.activeDeckId || "french", this.activeCardSkinId || "vintage-european");
     }
 
     private updateSeatLabels(viewModel: CardGameViewModel): void {
@@ -471,10 +501,16 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 const isSelected = viewModel.selectedCardId === card?.id;
                 const isHovered = slot.container.getData("isHovered") === true;
                 if (!viewModel.animation) {
-                    const selectedOffsetX = slot.originAngle === 0 ? 0 : (slot.originAngle > 0 ? -14 : 14);
-                    const selectedOffsetY = slot.originAngle === 0 ? -18 : 0;
-                    const hoverOffsetX = !isSelected && isHovered ? (slot.originAngle > 0 ? -10 : (slot.originAngle < 0 ? 10 : 0)) : 0;
-                    const hoverOffsetY = !isSelected && isHovered ? (slot.originAngle === 0 ? -14 : 0) : 0;
+                    const selectedOffsetX = slot.originAngle === 0
+                        ? 0
+                        : (slot.originAngle > 0 ? -SELECTED_CARD_SHIFT_X : SELECTED_CARD_SHIFT_X);
+                    const selectedOffsetY = slot.originAngle === 0 ? SELECTED_CARD_LIFT_Y : 0;
+                    const hoverOffsetX = !isSelected && isHovered
+                        ? (slot.originAngle > 0 ? -HOVER_CARD_SHIFT_X : (slot.originAngle < 0 ? HOVER_CARD_SHIFT_X : 0))
+                        : 0;
+                    const hoverOffsetY = !isSelected && isHovered
+                        ? (slot.originAngle === 0 ? HOVER_CARD_LIFT_Y : 0)
+                        : 0;
                     const slotX = layoutStartX + layoutGapX * slotIndex + (isSelected ? selectedOffsetX : hoverOffsetX);
                     const slotY = layoutStartY + layoutGapY * slotIndex + (isSelected ? selectedOffsetY : hoverOffsetY);
                     slot.container.setPosition(slotX, slotY);
@@ -491,22 +527,22 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 if (!card || !player.canInteract) {
                     slot.container.setData("isHovered", false);
                 }
-                const slotScale = isSelected ? 1.05 : (isHovered ? 1.06 : 1);
+                const slotScale = isSelected ? SELECTED_CARD_SCALE : (isHovered ? HOVER_CARD_SCALE : 1);
                 const slotDepth = isSelected ? 30 + slotIndex : (isHovered ? 20 + slotIndex : slotIndex);
                 slot.container.setScale(slotScale);
-                slot.hitTarget.setScale(slotScale);
+                slot.hitTarget.setScale(1);
                 slot.container.setDepth(slotDepth);
                 slot.hitTarget.setDepth(slotDepth + 0.5);
                 if (slot.hitTarget.input) {
                     slot.hitTarget.input.enabled = Boolean(card && player.canInteract);
                 }
-                slot.face.setStrokeStyle(
+                slot.outline.setStrokeStyle(
                     3,
                     isSelected ? 0xffd166 : (isHovered && player.isCurrentTurn ? 0xd4f0a7 : (player.isCurrentTurn ? 0x9dc08b : 0x17352b))
                 );
-                this.applyCardVisual(slot.face, slot.label, card ?? null);
+                this.applyCardTexture(slot.image, card ?? null, "compact");
                 if (card && !card.isFaceUp) {
-                    slot.face.setStrokeStyle(
+                    slot.outline.setStrokeStyle(
                         3,
                         isSelected ? 0xffd166 : (isHovered ? 0xd4f0a7 : CARD_BACK_STROKE)
                     );
@@ -529,8 +565,8 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             return;
         }
 
-        this.applyCardVisual(this.discardCardFace, this.discardCardLabel, discardCard);
-        this.discardCardFace.setStrokeStyle(3, discardCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE);
+        this.applyCardTexture(this.discardCardImage, discardCard, "showcase");
+        this.discardCardOutline.setStrokeStyle(3, discardCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE);
         this.discardCard.setVisible(true);
     }
 
@@ -555,14 +591,15 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             visual.container.setPosition(position.x, position.y);
             visual.caption.setText(card.caption ?? "");
             visual.container.setVisible(true);
+            visual.outline.setStrokeStyle(3, card.isFaceUp ? 0xffd166 : CARD_BACK_STROKE, 0.9);
 
             if (!shouldAnimateFlip) {
                 visual.container.setScale(1);
-                this.applyCardVisual(visual.face, visual.label, card);
+                this.applyCardTexture(visual.image, card, "showcase");
                 return;
             }
 
-            this.applyCardBackVisual(visual.face, visual.label);
+            this.applyCardBackTexture(visual.image);
             visual.container.setScale(1);
 
             this.tweens.killTweensOf(visual.container);
@@ -573,7 +610,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 delay: index * 90,
                 ease: "Sine.easeIn",
                 onComplete: () => {
-                    this.applyCardVisual(visual.face, visual.label, card);
+                    this.applyCardTexture(visual.image, card, "showcase");
                     this.tweens.add({
                         targets: visual.container,
                         scaleX: 1,
@@ -639,11 +676,13 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private updatePileSummary(viewModel: CardGameViewModel): void {
         const drawPile = this.getPile(viewModel, "draw");
         const discardPile = this.getPile(viewModel, "discard");
+        const showDiscardTitle = viewModel.tableCards.length === 0;
 
         this.drawPileTitle.setText(drawPile?.label ?? "Draw Pile");
         this.deckText.setText(drawPile?.countLabel ?? viewModel.drawPileLabel);
 
         this.discardPileTitle.setText(discardPile?.label ?? "Discard");
+        this.discardPileTitle.setVisible(showDiscardTitle);
         this.discardText.setText(discardPile?.countLabel ?? viewModel.discardPileLabel);
     }
 
@@ -651,39 +690,35 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         return viewModel.piles.find((pile) => pile.role === role) ?? null;
     }
 
-    private applyCardVisual(
-        face: Phaser.GameObjects.Rectangle,
-        label: Phaser.GameObjects.Text,
-        card: CardGameViewCard | null
+    private applyCardTexture(
+        image: Phaser.GameObjects.Image,
+        card: CardGameViewCard | CardGameViewTableCard | null,
+        variant: "compact" | "showcase"
     ): void {
-        if (!card) {
-            face.setFillStyle(CARD_FACE_FILL, 0.95);
-            face.setStrokeStyle(2, 0x17352b);
-            label.setText("");
-            label.setColor(CARD_FACE_TEXT);
+        if (!card || !card.isFaceUp) {
+            this.applyCardBackTexture(image);
             return;
         }
 
-        if (card.isFaceUp) {
-            face.setFillStyle(CARD_FACE_FILL, 0.95);
-            label.setText(card.label);
-            label.setColor(CARD_FACE_TEXT);
-            return;
-        }
-
-        face.setFillStyle(CARD_BACK_FILL, 0.98);
-        label.setText("CARD");
-        label.setColor(CARD_BACK_TEXT);
+        this.setImageTexturePreservingDisplaySize(
+            image,
+            getCardFaceTextureKey(card.id, this.activeCardSkinId, variant)
+        );
     }
 
-    private applyCardBackVisual(
-        face: Phaser.GameObjects.Rectangle,
-        label: Phaser.GameObjects.Text
+    private applyCardBackTexture(image: Phaser.GameObjects.Image): void {
+        this.setImageTexturePreservingDisplaySize(image, this.getActiveBackTextureKey());
+    }
+
+    private setImageTexturePreservingDisplaySize(
+        image: Phaser.GameObjects.Image,
+        textureKey: string
     ): void {
-        face.setFillStyle(CARD_BACK_FILL, 0.98);
-        face.setStrokeStyle(3, CARD_BACK_STROKE);
-        label.setText("CARD");
-        label.setColor(CARD_BACK_TEXT);
+        const displayWidth = image.displayWidth;
+        const displayHeight = image.displayHeight;
+
+        image.setTexture(textureKey);
+        image.setDisplaySize(displayWidth, displayHeight);
     }
 
     private createSeatBadge(layout: SeatLayout): SeatBadge {
@@ -728,24 +763,21 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private createTableCardVisual(): TableCardVisual {
-        const face = this.add.rectangle(0, 0, 74, 104, CARD_BACK_FILL, 0.98)
-            .setStrokeStyle(3, CARD_BACK_STROKE);
-        const label = this.add.text(0, 0, "CARD", {
-            fontFamily: "Arial",
-            fontSize: "20px",
-            color: CARD_BACK_TEXT
-        }).setOrigin(0.5);
+        const image = this.add.image(0, 0, this.getActiveBackTextureKey())
+            .setDisplaySize(TABLE_CARD_WIDTH, TABLE_CARD_HEIGHT);
+        const outline = this.add.rectangle(0, 0, TABLE_CARD_WIDTH + 4, TABLE_CARD_HEIGHT + 4, 0x000000, 0)
+            .setStrokeStyle(3, 0xffd166, 0.9);
         const caption = this.add.text(0, -72, "", {
             fontFamily: "Arial",
             fontSize: "14px",
             color: "#f6ecd2"
         }).setOrigin(0.5);
-        const container = this.add.container(TABLE_CENTER_X, 392, [caption, face, label]).setVisible(false).setDepth(80);
+        const container = this.add.container(TABLE_CENTER_X, 392, [caption, image, outline]).setVisible(false).setDepth(80);
 
         return {
             container,
-            face,
-            label,
+            image,
+            outline,
             caption
         };
     }
