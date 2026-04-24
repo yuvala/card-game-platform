@@ -10,6 +10,10 @@ import type {
 
 const TEXTURE_WIDTH = 180;
 const TEXTURE_HEIGHT = 264;
+const TEXTURE_SCALE = 2;
+const CANVAS_TEXTURE_WIDTH = TEXTURE_WIDTH * TEXTURE_SCALE;
+const CANVAS_TEXTURE_HEIGHT = TEXTURE_HEIGHT * TEXTURE_SCALE;
+const TEXTURE_VERSION = "v2";
 const CORNER_RADIUS = 18;
 const FACE_VARIANTS = ["compact", "showcase"] as const;
 
@@ -20,11 +24,11 @@ export function getCardFaceTextureKey(
     skinId: string,
     variant: CardTextureVariant = "showcase"
 ): string {
-    return "rewrite-card-face:" + skinId + ":" + variant + ":" + cardId;
+    return "rewrite-card-face:" + TEXTURE_VERSION + ":" + skinId + ":" + variant + ":" + cardId;
 }
 
 export function getCardBackTextureKey(deckId: string, skinId: string): string {
-    return "rewrite-card-back:" + skinId + ":" + deckId;
+    return "rewrite-card-back:" + TEXTURE_VERSION + ":" + skinId + ":" + deckId;
 }
 
 export function ensureDeckTextures(
@@ -34,7 +38,7 @@ export function ensureDeckTextures(
 ): void {
     const backTextureKey = getCardBackTextureKey(deckDefinition.id, skin.id);
     if (!scene.textures.exists(backTextureKey)) {
-        const texture = scene.textures.createCanvas(backTextureKey, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+        const texture = scene.textures.createCanvas(backTextureKey, CANVAS_TEXTURE_WIDTH, CANVAS_TEXTURE_HEIGHT);
         if (texture) {
             drawCardBack(texture.getContext(), deckDefinition, skin);
             texture.refresh();
@@ -48,7 +52,7 @@ export function ensureDeckTextures(
                 return;
             }
 
-            const texture = scene.textures.createCanvas(textureKey, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+            const texture = scene.textures.createCanvas(textureKey, CANVAS_TEXTURE_WIDTH, CANVAS_TEXTURE_HEIGHT);
             if (!texture) {
                 return;
             }
@@ -148,7 +152,11 @@ function drawCardBack(
 }
 
 function clearCanvas(context: CanvasRenderingContext2D): void {
-    context.clearRect(0, 0, TEXTURE_WIDTH, TEXTURE_HEIGHT);
+    context.setTransform(1, 0, 0, 1, 0, 0);
+    context.clearRect(0, 0, CANVAS_TEXTURE_WIDTH, CANVAS_TEXTURE_HEIGHT);
+    context.scale(TEXTURE_SCALE, TEXTURE_SCALE);
+    context.imageSmoothingEnabled = true;
+    context.imageSmoothingQuality = "high";
 }
 
 function drawCardShadow(context: CanvasRenderingContext2D): void {

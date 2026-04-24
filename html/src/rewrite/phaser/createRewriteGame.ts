@@ -18,10 +18,13 @@ export function createRewriteGame<TSnapshot>(
         height: REWRITE_HEIGHT,
         backgroundColor: "#0a1b14",
         render: {
-            antialias: true
+            antialias: false,
+            antialiasGL: false,
+            roundPixels: true
         },
         scale: {
             mode: Phaser.Scale.FIT,
+            autoRound: true,
             autoCenter: Phaser.Scale.CENTER_BOTH
         },
         scene: [new BootScene(), new TableScene(actor, getViewModel), new UIScene(actor, getViewModel)],

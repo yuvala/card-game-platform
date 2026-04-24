@@ -13,6 +13,8 @@ interface ButtonRefs {
     restart: Phaser.GameObjects.Text;
 }
 
+const UI_TEXT_RESOLUTION = 2;
+
 export class UIScene<TSnapshot> extends Phaser.Scene {
     private readonly actor: CardGameActor<TSnapshot>;
     private readonly getViewModel: CardGameViewModelFactory<TSnapshot>;
@@ -39,7 +41,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             fontSize: "13px",
             color: "#ffd166",
             letterSpacing: 2
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.phaseBadge = this.add.text(HUD_X + 34, 96, "", {
             fontFamily: "Arial",
@@ -47,27 +49,27 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             color: "#10251c",
             backgroundColor: "#ffd166",
             padding: { left: 16, right: 16, top: 10, bottom: 10 }
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.roundText = this.add.text(HUD_X + 34, 164, "", {
             fontFamily: "Arial",
             fontSize: "20px",
             color: "#f6ecd2"
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.deckText = this.add.text(HUD_X + 34, 206, "", {
             fontFamily: "Arial",
             fontSize: "16px",
             color: "#f6ecd2",
             wordWrap: { width: HUD_WIDTH - 70 }
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.add.text(HUD_X + 34, 252, "Use Create Game above the table to change the ruleset, seats, or deck.", {
             fontFamily: "Arial",
             fontSize: "15px",
             color: "rgba(246,236,210,0.7)",
             wordWrap: { width: HUD_WIDTH - 70 }
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.scoreText = this.add.text(HUD_X + 34, 306, "", {
             fontFamily: "Arial",
@@ -75,7 +77,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             color: "#f6ecd2",
             wordWrap: { width: HUD_WIDTH - 70 },
             lineSpacing: 4
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.buttons = {
             start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Deal Cards", () => {
@@ -96,14 +98,14 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             fontSize: "13px",
             color: "#ffd166",
             letterSpacing: 2
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
         this.statusText = this.add.text(HUD_X + 42, 580, "", {
             fontFamily: "Arial",
             fontSize: "16px",
             color: "#f6ecd2",
             wordWrap: { width: HUD_WIDTH - 84 },
             lineSpacing: 5
-        });
+        }).setResolution(UI_TEXT_RESOLUTION);
 
         this.subscription = this.actor.subscribe((snapshot) => {
             this.syncViewModel(this.getViewModel(snapshot));
@@ -129,7 +131,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             color: "#10251c",
             backgroundColor: "#f6ecd2",
             padding: { left: 18, right: 18, top: 12, bottom: 12 }
-        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        }).setOrigin(0.5).setResolution(UI_TEXT_RESOLUTION).setInteractive({ useHandCursor: true });
 
         button.on(Phaser.Input.Events.POINTER_OVER, () => {
             if (button.input?.enabled) {
