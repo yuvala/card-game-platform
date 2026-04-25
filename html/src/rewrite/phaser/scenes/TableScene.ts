@@ -121,8 +121,8 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 width: CARD_WIDTH,
                 height: CARD_HEIGHT
             } satisfies CardDisplaySize);
-            const outline = this.add.rectangle(0, 0, CARD_WIDTH + 4, CARD_HEIGHT + 4, 0x000000, 0)
-                .setStrokeStyle(2, 0x17352b, 0.72);
+            const outline = this.add.rectangle(0, 0, CARD_WIDTH + 8, CARD_HEIGHT + 8, 0x000000, 0)
+                .setStrokeStyle(1, 0x17352b, 0.28);
             const slotX = startX + layout.gapX * i;
             const slotY = startY + layout.gapY * i;
             const container = this.add.container(slotX, slotY, [image, outline]).setAngle(layout.angle);

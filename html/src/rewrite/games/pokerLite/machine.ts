@@ -2,12 +2,13 @@ import { ActorRefFrom, SnapshotFrom } from "xstate";
 
 import { frenchDeckDefinition } from "../../engine/cards/deckDefinitions";
 import { createCardGameMachine } from "../../engine/game/machineFactory";
+import { pokerLiteConfig } from "./config";
 import { pokerLiteGameDefinition } from "./definition";
 import type { PokerLiteContext, PokerLiteEvent, PokerLiteOptions } from "./types";
 
 export function createPokerLiteMachine(playerNames: string[], options?: PokerLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? frenchDeckDefinition;
-    const cardsPerPlayer = options?.cardsPerPlayer ?? 5;
+    const cardsPerPlayer = options?.cardsPerPlayer ?? pokerLiteConfig.openingHandSize;
     const random = options?.random ?? Math.random;
     const definitionOptions: PokerLiteOptions = {
         deckDefinition,

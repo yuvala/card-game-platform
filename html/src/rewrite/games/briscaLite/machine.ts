@@ -2,6 +2,7 @@ import { ActorRefFrom, SnapshotFrom } from "xstate";
 
 import { spanishDeckDefinition } from "../../engine/cards/deckDefinitions";
 import { createCardGameMachine } from "../../engine/game/machineFactory";
+import { briscaLiteConfig } from "./config";
 import { briscaLiteGameDefinition } from "./definition";
 import type {
     BriscaLiteContext,
@@ -11,7 +12,7 @@ import type {
 
 export function createBriscaLiteMachine(playerNames: string[], options?: BriscaLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? spanishDeckDefinition;
-    const cardsPerPlayer = options?.cardsPerPlayer ?? 3;
+    const cardsPerPlayer = options?.cardsPerPlayer ?? briscaLiteConfig.openingHandSize;
     const random = options?.random ?? Math.random;
     const definitionOptions: BriscaLiteOptions = {
         deckDefinition,

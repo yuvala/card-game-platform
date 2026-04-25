@@ -1,6 +1,7 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
 import { getPileCards } from "../../engine/game/piles";
+import { briscaLiteConfig } from "./config";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
     advanceToNextPlayer,
@@ -54,7 +55,11 @@ export const briscaLiteGameDefinition: GameDefinition<
     id: "rewriteBriscaLite",
     name: "Brisca-lite",
     setup: ({ playerNames, options }) => {
-        return createInitialContext(playerNames, options.deckDefinition, options.cardsPerPlayer ?? 3);
+        return createInitialContext(
+            playerNames,
+            options.deckDefinition,
+            options.cardsPerPlayer ?? briscaLiteConfig.openingHandSize
+        );
     },
     getLegalMoves: (state, actorId) => {
         const currentPlayer = state.players[state.turnIndex];

@@ -1,93 +1,75 @@
 import { createActor } from "xstate";
 
-import type { SupportedDeckId } from "../engine/cards/deckDefinitions";
 import {
+    type CardGameCatalogOptions,
     defineGameCatalogEntry,
     type CardGameActorRuntime,
     type AnyGameCatalogEntry
 } from "../engine/game/catalog";
+import type { CardGameConfig } from "../engine/game/config";
+import type { GameDefinition } from "../engine/game/definition";
+import type { CardGameViewModelFactory } from "../engine/game/viewModel";
+import { briscaLiteConfig } from "./briscaLite/config";
 import { briscaLiteGameDefinition } from "./briscaLite/definition";
 import { createBriscaLiteMachine } from "./briscaLite/machine";
 import type { BriscaLiteOptions, BriscaLiteViewSnapshot } from "./briscaLite/types";
+import { pokerLiteConfig } from "./pokerLite/config";
 import { pokerLiteGameDefinition } from "./pokerLite/definition";
 import { createPokerLiteMachine } from "./pokerLite/machine";
 import type { PokerLiteOptions, PokerLiteViewSnapshot } from "./pokerLite/types";
+import { warLiteConfig } from "./warLite/config";
 import { warLiteGameDefinition } from "./warLite/definition";
 import { createWarLiteMachine } from "./warLite/machine";
 import type { WarLiteOptions, WarLiteViewSnapshot } from "./warLite/types";
 
-const pokerLiteSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
-const warLiteSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
-const briscaLiteSupportedDeckIds = ["spanish", "italian"] as const satisfies readonly SupportedDeckId[];
+function createConfiguredCatalogEntry<TSnapshot, TOptions extends CardGameCatalogOptions>(input: {
+    config: CardGameConfig;
+    definition: GameDefinition<any, any, any, any, TOptions, any, TSnapshot>;
+    createMachine: (playerNames: string[], options: TOptions) => Parameters<typeof createActor>[0];
+}) {
+    const { config, definition, createMachine } = input;
 
-const pokerLiteCatalogEntry = defineGameCatalogEntry<PokerLiteViewSnapshot, PokerLiteOptions>({
-    id: "poker-lite",
-    label: "Poker Lite",
-    description: "Prototype high-card ruleset for the rewrite runtime. Every player reveals and plays a card each round.",
-    minPlayers: 2,
-    maxPlayers: 8,
-    defaultPlayerCount: 3,
-    supportedDeckIds: pokerLiteSupportedDeckIds,
-    defaultDeckId: "french",
+    return defineGameCatalogEntry<TSnapshot, TOptions>({
+        id: config.id,
+        label: config.label,
+        description: config.description,
+        minPlayers: config.minPlayers,
+        maxPlayers: config.maxPlayers,
+        defaultPlayerCount: config.defaultPlayerCount,
+        playerCountOptions: config.playerCountOptions,
+        supportedDeckIds: config.supportedDeckIds,
+        defaultDeckId: config.defaultDeckId,
+        definition,
+        getViewModel: ((snapshot: TSnapshot) => {
+            const toViewModel = definition.toViewModel;
+            if (!toViewModel) {
+                throw new Error(config.label + " game definition is missing a view model adapter.");
+            }
+
+            return toViewModel(snapshot);
+        }) as CardGameViewModelFactory<TSnapshot>,
+        createActor: (playerNames, options) => {
+            return createActor(createMachine(playerNames, options)) as CardGameActorRuntime<TSnapshot>;
+        }
+    });
+}
+
+const pokerLiteCatalogEntry = createConfiguredCatalogEntry<PokerLiteViewSnapshot, PokerLiteOptions>({
+    config: pokerLiteConfig,
     definition: pokerLiteGameDefinition,
-    getViewModel: (snapshot) => {
-        const toViewModel = pokerLiteGameDefinition.toViewModel;
-        if (!toViewModel) {
-            throw new Error("Poker Lite game definition is missing a view model adapter.");
-        }
-
-        return toViewModel(snapshot);
-    },
-    createActor: (playerNames, options) => {
-        return createActor(createPokerLiteMachine(playerNames, options)) as CardGameActorRuntime<PokerLiteViewSnapshot>;
-    }
+    createMachine: createPokerLiteMachine
 });
 
-const warLiteCatalogEntry = defineGameCatalogEntry<WarLiteViewSnapshot, WarLiteOptions>({
-    id: "war-lite",
-    label: "War Lite",
-    description: "Two hidden stacks. Each battle flips the top card from both players, and the higher rank wins the point.",
-    minPlayers: 2,
-    maxPlayers: 2,
-    defaultPlayerCount: 2,
-    supportedDeckIds: warLiteSupportedDeckIds,
-    defaultDeckId: "french",
+const warLiteCatalogEntry = createConfiguredCatalogEntry<WarLiteViewSnapshot, WarLiteOptions>({
+    config: warLiteConfig,
     definition: warLiteGameDefinition,
-    getViewModel: (snapshot) => {
-        const toViewModel = warLiteGameDefinition.toViewModel;
-        if (!toViewModel) {
-            throw new Error("War Lite game definition is missing a view model adapter.");
-        }
-
-        return toViewModel(snapshot);
-    },
-    createActor: (playerNames, options) => {
-        return createActor(createWarLiteMachine(playerNames, options)) as CardGameActorRuntime<WarLiteViewSnapshot>;
-    }
+    createMachine: createWarLiteMachine
 });
 
-const briscaLiteCatalogEntry = defineGameCatalogEntry<BriscaLiteViewSnapshot, BriscaLiteOptions>({
-    id: "brisca-lite",
-    label: "Brisca-lite",
-    description: "Trump-led trick play on the 40-card Iberian decks. Winner draws first and scores one point per trick.",
-    minPlayers: 2,
-    maxPlayers: 5,
-    defaultPlayerCount: 2,
-    playerCountOptions: [2, 4, 5],
-    supportedDeckIds: briscaLiteSupportedDeckIds,
-    defaultDeckId: "spanish",
+const briscaLiteCatalogEntry = createConfiguredCatalogEntry<BriscaLiteViewSnapshot, BriscaLiteOptions>({
+    config: briscaLiteConfig,
     definition: briscaLiteGameDefinition,
-    getViewModel: (snapshot) => {
-        const toViewModel = briscaLiteGameDefinition.toViewModel;
-        if (!toViewModel) {
-            throw new Error("Brisca-lite game definition is missing a view model adapter.");
-        }
-
-        return toViewModel(snapshot);
-    },
-    createActor: (playerNames, options) => {
-        return createActor(createBriscaLiteMachine(playerNames, options)) as CardGameActorRuntime<BriscaLiteViewSnapshot>;
-    }
+    createMachine: createBriscaLiteMachine
 });
 
 export const gameCatalog = {

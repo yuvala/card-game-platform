@@ -1,13 +1,12 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
-import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
-import type { CardPileMap } from "../../engine/game/types";
+import type { DeckDefinition } from "../../engine/cards/types";
+import { createConfiguredPiles } from "../../engine/game/config";
 import {
-    createCardPile,
     moveTopCardBetweenPiles,
     setPileCards
 } from "../../engine/game/piles";
+import { pokerLiteConfig } from "./config";
 import {
-    POKER_LITE_DISCARD_PILE_ID,
     POKER_LITE_STOCK_PILE_ID,
     getPokerLiteHandPileId,
     type PokerLiteContext,
@@ -33,39 +32,6 @@ function resolveCardsPerPlayer(
     return Math.max(1, Math.min(requestedCardsPerPlayer, supportedCardsPerPlayer));
 }
 
-function createInitialPiles(players: readonly PokerLitePlayer[]): CardPileMap<CardInstance> {
-    const piles: CardPileMap<CardInstance> = {
-        [POKER_LITE_STOCK_PILE_ID]: createCardPile<CardInstance>({
-            id: POKER_LITE_STOCK_PILE_ID,
-            role: "stock",
-            label: "Draw Pile",
-            isFaceUp: false,
-            isVisibleToAll: false
-        }),
-        [POKER_LITE_DISCARD_PILE_ID]: createCardPile<CardInstance>({
-            id: POKER_LITE_DISCARD_PILE_ID,
-            role: "discard",
-            label: "Discard",
-            isFaceUp: true,
-            isVisibleToAll: true
-        })
-    };
-
-    return players.reduce<CardPileMap<CardInstance>>((nextPiles, player) => {
-        return {
-            ...nextPiles,
-            [getPokerLiteHandPileId(player.id)]: createCardPile<CardInstance>({
-                id: getPokerLiteHandPileId(player.id),
-                role: "hand",
-                ownerId: player.id,
-                label: player.name + " Hand",
-                isFaceUp: true,
-                isVisibleToAll: true
-            })
-        };
-    }, piles);
-}
-
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
@@ -77,7 +43,7 @@ export function createInitialContext(
     return {
         deckDefinition,
         playedCardHistory: [],
-        piles: createInitialPiles(players),
+        piles: createConfiguredPiles(pokerLiteConfig, players),
         roundCards: [],
         players,
         turnIndex: 0,

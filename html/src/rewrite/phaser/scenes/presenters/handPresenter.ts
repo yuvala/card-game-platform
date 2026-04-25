@@ -46,10 +46,6 @@ function getOutlineColor(input: {
             return 0xffd166;
         }
 
-        if (isHovered && isCurrentTurn) {
-            return 0xd4f0a7;
-        }
-
         return isCurrentTurn ? 0x9dc08b : 0x17352b;
     }
 
@@ -57,7 +53,24 @@ function getOutlineColor(input: {
         return 0xffd166;
     }
 
-    return isHovered ? 0xd4f0a7 : CARD_BACK_STROKE;
+    return CARD_BACK_STROKE;
+}
+
+function getOutlineStyle(input: {
+    isSelected: boolean;
+    isHovered: boolean;
+    isFaceUp: boolean;
+    isCurrentTurn: boolean;
+}): { width: number; alpha: number } {
+    if (input.isSelected) {
+        return { width: 2, alpha: 0.95 };
+    }
+
+    if (input.isCurrentTurn) {
+        return { width: 1, alpha: 0.44 };
+    }
+
+    return { width: 1, alpha: input.isFaceUp ? 0.16 : 0.28 };
 }
 
 export function syncHandPresentation(input: HandPresentationInput): void {
@@ -103,15 +116,14 @@ export function syncHandPresentation(input: HandPresentationInput): void {
                 slot.hitTarget.input.enabled = slotState.interactiveEnabled;
             }
 
-            slot.outline.setStrokeStyle(
-                3,
-                getOutlineColor({
-                    isSelected: slotState.isSelected,
-                    isHovered: slotState.isHovered,
-                    isFaceUp: card?.isFaceUp ?? false,
-                    isCurrentTurn: player.isCurrentTurn
-                })
-            );
+            const outlineInput = {
+                isSelected: slotState.isSelected,
+                isHovered: slotState.isHovered,
+                isFaceUp: card?.isFaceUp ?? false,
+                isCurrentTurn: player.isCurrentTurn
+            };
+            const outlineStyle = getOutlineStyle(outlineInput);
+            slot.outline.setStrokeStyle(outlineStyle.width, getOutlineColor(outlineInput), outlineStyle.alpha);
 
             textureApi.applyCardTexture(slot.image, card, "compact");
         }

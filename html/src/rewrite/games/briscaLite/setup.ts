@@ -1,22 +1,19 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
-import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
-import type { CardPileMap } from "../../engine/game/types";
+import type { DeckDefinition } from "../../engine/cards/types";
+import { createConfiguredPiles } from "../../engine/game/config";
 import {
-    createCardPile,
     getPileCards,
     moveTopCardBetweenPiles,
     setPileCards
 } from "../../engine/game/piles";
+import { briscaLiteConfig } from "./config";
 import type { BriscaLiteContext, BriscaLitePlayer } from "./types";
 import {
     BRISCA_LITE_STOCK_PILE_ID,
     BRISCA_LITE_TRICK_PILE_ID,
     BRISCA_LITE_TRUMP_PILE_ID,
-    getBriscaLiteCapturePileId,
     getBriscaLiteHandPileId
 } from "./types";
-
-const DEFAULT_CARDS_PER_PLAYER = 3;
 
 function createPlayers(names: string[]): BriscaLitePlayer[] {
     return names.map((name, index) => ({
@@ -34,55 +31,7 @@ function resolveCardsPerPlayer(
     const totalCards = deckDefinition.suits.length * deckDefinition.ranks.length;
     const supportedCardsPerPlayer = Math.floor(totalCards / Math.max(playerCount, 1));
 
-    return Math.max(1, Math.min(DEFAULT_CARDS_PER_PLAYER, requestedCardsPerPlayer, supportedCardsPerPlayer));
-}
-
-function createInitialPiles(players: readonly BriscaLitePlayer[]): CardPileMap<CardInstance> {
-    const piles: CardPileMap<CardInstance> = {
-        [BRISCA_LITE_STOCK_PILE_ID]: createCardPile<CardInstance>({
-            id: BRISCA_LITE_STOCK_PILE_ID,
-            role: "stock",
-            label: "Stock",
-            isFaceUp: false,
-            isVisibleToAll: false
-        }),
-        [BRISCA_LITE_TRUMP_PILE_ID]: createCardPile<CardInstance>({
-            id: BRISCA_LITE_TRUMP_PILE_ID,
-            role: "trump",
-            label: "Trump",
-            isFaceUp: true,
-            isVisibleToAll: true
-        }),
-        [BRISCA_LITE_TRICK_PILE_ID]: createCardPile<CardInstance>({
-            id: BRISCA_LITE_TRICK_PILE_ID,
-            role: "table",
-            label: "Trick",
-            isFaceUp: true,
-            isVisibleToAll: true
-        })
-    };
-
-    return players.reduce<CardPileMap<CardInstance>>((nextPiles, player) => {
-        return {
-            ...nextPiles,
-            [getBriscaLiteHandPileId(player.id)]: createCardPile<CardInstance>({
-                id: getBriscaLiteHandPileId(player.id),
-                role: "hand",
-                ownerId: player.id,
-                label: player.name + " Hand",
-                isFaceUp: false,
-                isVisibleToAll: false
-            }),
-            [getBriscaLiteCapturePileId(player.id)]: createCardPile<CardInstance>({
-                id: getBriscaLiteCapturePileId(player.id),
-                role: "capture",
-                ownerId: player.id,
-                label: player.name + " Capture",
-                isFaceUp: true,
-                isVisibleToAll: false
-            })
-        };
-    }, piles);
+    return Math.max(1, Math.min(briscaLiteConfig.openingHandSize, requestedCardsPerPlayer, supportedCardsPerPlayer));
 }
 
 export function syncBriscaLiteContextFromPiles(context: BriscaLiteContext): BriscaLiteContext {
@@ -99,7 +48,7 @@ export function syncBriscaLiteContextFromPiles(context: BriscaLiteContext): Bris
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
-    requestedCardsPerPlayer: number = DEFAULT_CARDS_PER_PLAYER
+    requestedCardsPerPlayer: number = briscaLiteConfig.openingHandSize
 ): BriscaLiteContext {
     const players = createPlayers(playerNames);
     const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, players.length, requestedCardsPerPlayer);
@@ -108,7 +57,7 @@ export function createInitialContext(
     return {
         deckDefinition,
         playedCardHistory: [],
-        piles: createInitialPiles(players),
+        piles: createConfiguredPiles(briscaLiteConfig, players),
         roundCards: [],
         players,
         turnIndex: 0,
@@ -132,7 +81,7 @@ export function createInitialContext(
 export function createShuffledContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
-    requestedCardsPerPlayer: number = DEFAULT_CARDS_PER_PLAYER,
+    requestedCardsPerPlayer: number = briscaLiteConfig.openingHandSize,
     random: () => number = Math.random
 ): BriscaLiteContext {
     const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);

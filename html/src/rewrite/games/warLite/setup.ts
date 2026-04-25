@@ -1,16 +1,14 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
-import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
-import type { CardPileMap } from "../../engine/game/types";
+import type { DeckDefinition } from "../../engine/cards/types";
+import { createConfiguredPiles } from "../../engine/game/config";
 import {
-    createCardPile,
     drawTopCardFromPile,
     getPileCards,
     setPileCards
 } from "../../engine/game/piles";
+import { warLiteConfig } from "./config";
 import type { WarLiteContext, WarLitePlayer } from "./types";
 import {
-    WAR_LITE_BATTLE_PILE_ID,
-    WAR_LITE_DISCARD_PILE_ID,
     WAR_LITE_STOCK_PILE_ID,
     getWarLiteHandPileId
 } from "./types";
@@ -28,46 +26,6 @@ function resolveCardsPerPlayer(deckDefinition: DeckDefinition, playerCount: numb
     return Math.max(1, Math.floor(totalCards / Math.max(playerCount, 1)));
 }
 
-function createInitialPiles(players: readonly WarLitePlayer[]): CardPileMap<CardInstance> {
-    const piles: CardPileMap<CardInstance> = {
-        [WAR_LITE_STOCK_PILE_ID]: createCardPile<CardInstance>({
-            id: WAR_LITE_STOCK_PILE_ID,
-            role: "stock",
-            label: "Stock",
-            isFaceUp: false,
-            isVisibleToAll: false
-        }),
-        [WAR_LITE_BATTLE_PILE_ID]: createCardPile<CardInstance>({
-            id: WAR_LITE_BATTLE_PILE_ID,
-            role: "table",
-            label: "Battle",
-            isFaceUp: true,
-            isVisibleToAll: true
-        }),
-        [WAR_LITE_DISCARD_PILE_ID]: createCardPile<CardInstance>({
-            id: WAR_LITE_DISCARD_PILE_ID,
-            role: "discard",
-            label: "Battle Log",
-            isFaceUp: true,
-            isVisibleToAll: true
-        })
-    };
-
-    return players.reduce<CardPileMap<CardInstance>>((nextPiles, player) => {
-        return {
-            ...nextPiles,
-            [getWarLiteHandPileId(player.id)]: createCardPile<CardInstance>({
-                id: getWarLiteHandPileId(player.id),
-                role: "hand",
-                ownerId: player.id,
-                label: player.name + " Stack",
-                isFaceUp: false,
-                isVisibleToAll: false
-            })
-        };
-    }, piles);
-}
-
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition
@@ -78,7 +36,7 @@ export function createInitialContext(
     return {
         deckDefinition,
         playedCardHistory: [],
-        piles: createInitialPiles(players),
+        piles: createConfiguredPiles(warLiteConfig, players),
         roundCards: [],
         players,
         turnIndex: 0,
