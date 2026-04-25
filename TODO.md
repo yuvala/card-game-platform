@@ -2,8 +2,7 @@
 
 ## Priority 1: Fix
 
-- Add automated tests for `engine/game/piles.ts`.
-- Add transition tests for the shared machine flow and for each game machine.
+- Add deeper rules/state assertions for the concrete games beyond the current machine-flow coverage.
 - Decide whether `discardPile` should remain explicit history data or move to a cleaner history model.
 - Review UI states manually for crowded tables:
   - `5-6` players
