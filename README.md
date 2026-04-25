@@ -43,6 +43,7 @@ The rewrite currently includes a Create Game flow and these games:
 ## Docs
 
 - `docs/rewrite-architecture.md` - architecture notes for the Phaser + XState rewrite and future multi-game support
+- `TODO.md` - prioritized fix/build/optimize backlog for the rewrite
 
 ## Main Files
 
