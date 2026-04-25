@@ -65,10 +65,6 @@ function createInitialPiles(players: readonly RewritePlayer[]): CardPileMap<Card
     }, piles);
 }
 
-export function syncDrawPokerContextFromPiles(context: RewriteGameContext): RewriteGameContext {
-    return context;
-}
-
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,

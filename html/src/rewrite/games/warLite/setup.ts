@@ -68,10 +68,6 @@ function createInitialPiles(players: readonly WarLitePlayer[]): CardPileMap<Card
     }, piles);
 }
 
-export function syncWarLiteContextFromPiles(context: WarLiteContext): WarLiteContext {
-    return context;
-}
-
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition
