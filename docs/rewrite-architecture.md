@@ -14,6 +14,7 @@ The rewrite is already beyond a single `pokerLite` prototype. It currently inclu
 
 - a game catalog and Create Game flow
 - three concrete games: `poker-lite`, `war-lite`, and `brisca-lite`
+- per-game `GameConfig` files for metadata and pile setup
 - generic `piles` as the source of truth for card locations
 - a shared `machineFactory` for the common `XState` shell
 - shared `Phaser` scenes that render through a generic view model
@@ -65,6 +66,8 @@ Current rewrite code is split into these areas:
   Base session, player, turn, options, and event types.
 - `html/src/rewrite/engine/game/definition.ts`
   The generic game contract used by concrete games.
+- `html/src/rewrite/engine/game/config.ts`
+  Shared game config and pile config helpers.
 - `html/src/rewrite/engine/game/piles.ts`
   Generic pile helpers such as create, move, draw, append, and clear.
 - `html/src/rewrite/engine/game/machineFactory.ts`
@@ -85,6 +88,10 @@ Current rewrite code is split into these areas:
   Generic `Phaser` scenes and game bootstrap.
 - `html/src/rewrite/phaser/scenes/layout/`
   Pure layout helpers for seats, hands, table cards, and pile placement.
+- `html/src/rewrite/phaser/scenes/presenters/`
+  Presentation helpers for hands, piles, and table cards.
+- `html/src/rewrite/phaser/scenes/factories/`
+  Phaser display-object factories for reusable visuals.
 
 ## Visual Overview
 
@@ -144,6 +151,15 @@ classDiagram
         +toViewModel()
     }
 
+    class GameConfig {
+        +id
+        +label
+        +supportedDeckIds
+        +defaultDeckId
+        +openingHandSize
+        +piles
+    }
+
     class PokerLiteDefinition
     class MachineFactory
     class CardPileMap
@@ -152,6 +168,7 @@ classDiagram
     class UIScene
 
     GameDefinition <|.. PokerLiteDefinition
+    PokerLiteDefinition --> GameConfig : uses setup metadata
     PokerLiteDefinition --> CardPileMap : uses
     MachineFactory --> PokerLiteDefinition : drives
     PokerLiteDefinition --> CardGameViewModel : builds
@@ -197,6 +214,7 @@ Each game should own its own module under:
 
 Recommended files:
 
+- `config.ts`
 - `types.ts`
 - `definition.ts`
 - `setup.ts`
@@ -207,6 +225,8 @@ Expected responsibilities:
 
 - `types.ts`
   Game-specific state and helper types.
+- `config.ts`
+  Game metadata and pile definitions such as stock, hand, trump, trick, and capture piles.
 - `definition.ts`
   The public contract that plugs the game into the engine shell.
 - `setup.ts`
@@ -224,8 +244,11 @@ The generic game contract now lives at:
 
 Concrete games implement it through files such as:
 
+- `html/src/rewrite/games/pokerLite/config.ts`
 - `html/src/rewrite/games/pokerLite/definition.ts`
+- `html/src/rewrite/games/warLite/config.ts`
 - `html/src/rewrite/games/warLite/definition.ts`
+- `html/src/rewrite/games/briscaLite/config.ts`
 - `html/src/rewrite/games/briscaLite/definition.ts`
 
 Example shape:
@@ -253,6 +276,22 @@ This lets the engine ask a game:
 - what happens after a move
 - when the game ends
 - what the UI should render
+
+## Game Config
+
+The rewrite separates stable game metadata from rule execution through:
+
+- `html/src/rewrite/engine/game/config.ts`
+
+Each concrete game config defines:
+
+- catalog metadata such as label, description, player counts, and supported decks
+- default setup values such as `openingHandSize`
+- pile definitions such as stock, discard, hand, trick, trump, and capture piles
+
+The setup layer uses `createConfiguredPiles(...)` so table piles and per-player piles are created consistently across games.
+
+Rules still stay in each game module. `GameConfig` does not decide who can play, who wins, or how scoring works.
 
 ### Runtime Flow
 
@@ -394,10 +433,10 @@ It should not be the long-term home for all seat math, pile placement rules, and
 
 ## Recommended Next Steps
 
-1. Continue removing transitional legacy fields where `piles` already provide the same information.
-2. Replace more scene-local layout assumptions with view-model-driven layout hints where useful.
-3. Keep `playedCardHistory` only where explicit played-card history is actually needed.
-4. Add tests around pile helpers and machine transitions so architecture changes stay safe.
+1. Continue replacing scene-local layout assumptions with view-model-driven layout hints where useful.
+2. Keep `playedCardHistory` only where explicit played-card history is actually needed.
+3. Add deeper rule edge-case tests beyond the current engine, config, and machine coverage.
+4. Tighten typing around the generic catalog helper and machine factory.
 5. Move to a fuller `Brisca` ruleset only after the current `Brisca-lite` contract remains stable.
 
 ## Short Version

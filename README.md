@@ -18,13 +18,13 @@ npm run dev
 Open:
 
 ```text
-http://127.0.0.1:8000/game.html
+http://127.0.0.1:8000/rewrite.html
 ```
 
-Rewrite sandbox:
+Legacy reference:
 
 ```text
-http://127.0.0.1:8000/rewrite.html
+http://127.0.0.1:8000/game.html
 ```
 
 The rewrite currently includes a Create Game flow and these games:
@@ -37,7 +37,7 @@ The rewrite currently includes a Create Game flow and these games:
 
 - `npm run dev` - start the Vite dev server
 - `npm run build` - run TypeScript checks and create a production build in `dist/`
-- `npm run test-rewrite` - run the lightweight rewrite engine tests (`piles`, shared machine flow, and concrete game machine flow)
+- `npm run test-rewrite` - run the lightweight rewrite engine tests (`piles`, game config, shared machine flow, and concrete game machine flow)
 - `npm run preview` - preview the production build
 - `npm run serve:legacy` - run the old static Node.js server for comparison
 
@@ -52,9 +52,11 @@ The rewrite currently includes a Create Game flow and these games:
 - `html/rewrite.html` - Phaser + XState rewrite entrypoint
 - `html/src/` - TypeScript game logic and bootstrapping
 - `html/src/rewrite/` - parallel greenfield rewrite scaffold
-- `html/src/rewrite/engine/game/` - generic game contracts, piles, catalog, and machine factory
+- `html/src/rewrite/engine/game/` - generic game contracts, config, piles, catalog, and machine factory
 - `html/src/rewrite/games/` - concrete game modules and game catalog
 - `html/src/rewrite/phaser/scenes/layout/` - pure layout helpers used by the rewrite scenes
+- `html/src/rewrite/phaser/scenes/presenters/` - scene presentation helpers for hands, piles, and table cards
+- `html/src/rewrite/phaser/scenes/factories/` - Phaser display-object factories used by the rewrite scenes
 - `html/css/main.css` - styles
 - `html/css/rewrite.css` - rewrite shell styles
 - `html/data/players.json` - player seed data

@@ -168,9 +168,11 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                     return;
                 }
 
+                const nextGame = getSelectedGame(entries, nextGameId);
                 selection = normalizeSelection(entries, {
                     ...selection,
-                    gameId: nextGameId
+                    gameId: nextGame.id,
+                    deckId: nextGame.defaultDeckId
                 });
                 render();
             });

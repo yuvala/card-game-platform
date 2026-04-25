@@ -4,6 +4,7 @@
 
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
+- Review the new `GameConfig` layer after the next feature pass and decide whether more setup defaults belong there.
 - Review UI states manually for crowded tables:
   - `5-6` players
   - trick-taking layouts
@@ -18,7 +19,7 @@
   - proper supported player counts
   - 40/48-card variant decision
 - Continue shrinking [html/src/rewrite/phaser/scenes/TableScene.ts](/d:/yuval/card/cardGame/html/src/rewrite/phaser/scenes/TableScene.ts:1) by moving more layout intent into view-model/layout hints where useful.
-- Tighten typing around `machineFactory` and reduce catalog-side casts.
+- Tighten typing around `machineFactory`, the configured catalog helper, and remaining catalog-side casts.
 - Continue removing transitional legacy shapes where `piles` already cover the same meaning.
 
 ## Priority 3: Optimize
