@@ -75,7 +75,7 @@ export function createInitialContext(
 
     return {
         deckDefinition,
-        discardPile: [],
+        playedCardHistory: [],
         piles: createInitialPiles(players),
         roundCards: [],
         players,
@@ -127,7 +127,7 @@ export function dealOpeningHands(context: RewriteGameContext): RewriteGameContex
         piles,
         turnIndex: 0,
         round: 1,
-        discardPile: [],
+        playedCardHistory: [],
         roundCards: [],
         lastPlayedCard: null,
         selectedCardId: null,

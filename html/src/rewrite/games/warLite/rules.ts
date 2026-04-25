@@ -124,7 +124,7 @@ export function finalizeBattle(context: WarLiteContext): WarLiteContext {
                 score: player.score + 1
             };
         }),
-        discardPile: context.discardPile.concat(context.roundCards),
+        playedCardHistory: context.playedCardHistory.concat(context.roundCards),
         lastPlayedCard: leadCard,
         winningPlayerIds,
         statusText:

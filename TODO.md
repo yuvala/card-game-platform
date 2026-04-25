@@ -3,7 +3,7 @@
 ## Priority 1: Fix
 
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
-- Decide whether `discardPile` should remain explicit history data or move to a cleaner history model.
+- Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
 - Review UI states manually for crowded tables:
   - `5-6` players
   - trick-taking layouts

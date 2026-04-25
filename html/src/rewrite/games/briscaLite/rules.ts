@@ -358,7 +358,7 @@ export function advanceToNextTrick(context: BriscaLiteContext): BriscaLiteContex
     return {
         ...collectedContext,
         ...nextRoundState,
-        discardPile: collectedContext.discardPile.concat(collectedContext.roundCards),
+        playedCardHistory: collectedContext.playedCardHistory.concat(collectedContext.roundCards),
         roundCards: [],
         round: collectedContext.round + 1,
         turnIndex: nextLeaderIndex,
@@ -410,7 +410,7 @@ export function finishGame(context: BriscaLiteContext): BriscaLiteContext {
 
     return {
         ...collectedContext,
-        discardPile: collectedContext.discardPile.concat(collectedContext.roundCards),
+        playedCardHistory: collectedContext.playedCardHistory.concat(collectedContext.roundCards),
         winningPlayerIds,
         statusText:
             collectedContext.deckDefinition.name +

@@ -288,7 +288,7 @@ That means:
 
 This avoids keeping the same card location in multiple places at once.
 
-The one notable remaining exception is `discardPile` in some game contexts, where it still acts as played-card history rather than a raw card zone.
+The main remaining history concern is now `playedCardHistory` in some game contexts. It is explicit history data, not a raw card zone.
 
 Example shape:
 
@@ -396,7 +396,7 @@ It should not be the long-term home for all seat math, pile placement rules, and
 
 1. Continue removing transitional legacy fields where `piles` already provide the same information.
 2. Replace more scene-local layout assumptions with view-model-driven layout hints where useful.
-3. Keep `discardPile` only where it is truly history data and not just another card zone.
+3. Keep `playedCardHistory` only where explicit played-card history is actually needed.
 4. Add tests around pile helpers and machine transitions so architecture changes stay safe.
 5. Move to a fuller `Brisca` ruleset only after the current `Brisca-lite` contract remains stable.
 

@@ -107,7 +107,7 @@ export function createInitialContext(
 
     return {
         deckDefinition,
-        discardPile: [],
+        playedCardHistory: [],
         piles: createInitialPiles(players),
         roundCards: [],
         players,
@@ -172,7 +172,7 @@ export function dealOpeningHands(context: BriscaLiteContext): BriscaLiteContext 
         piles,
         turnIndex: 0,
         round: 1,
-        discardPile: [],
+        playedCardHistory: [],
         roundCards: [],
         lastPlayedCard: null,
         selectedCardId: null,

@@ -132,7 +132,7 @@ export function commitPlayedCard(context: RewriteGameContext): RewriteGameContex
     return {
         ...context,
         piles: playedCardState.piles,
-        discardPile: context.discardPile.concat(playedCard),
+        playedCardHistory: context.playedCardHistory.concat(playedCard),
         roundCards: context.roundCards.concat(playedCard),
         lastPlayedCard: playedCard,
         selectedCardId: null

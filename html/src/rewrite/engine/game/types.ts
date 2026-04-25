@@ -46,7 +46,7 @@ export interface CardGameSession<
     TPlayedCard
 > extends CardGameTurn<TPlayedCard> {
     deckDefinition: DeckDefinition;
-    discardPile: TPlayedCard[];
+    playedCardHistory: TPlayedCard[];
     piles: CardPileMap<TCard>;
     players: TPlayer[];
     cardsPerPlayer: number;

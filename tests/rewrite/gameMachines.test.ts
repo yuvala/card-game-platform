@@ -81,7 +81,7 @@ async function runDrawPokerMachineTest() {
 
     assert(snapshot.value === "gameOver", "Draw Poker should finish after both one-card turns.");
     assert(snapshot.context.roundCards.length === 2, "Draw Poker should keep both played cards in the last round.");
-    assert(snapshot.context.discardPile.length === 2, "Draw Poker should record both plays in discard history.");
+    assert(snapshot.context.playedCardHistory.length === 2, "Draw Poker should record both plays in played-card history.");
     assert(
         getPileCards(snapshot.context.piles, "discard").length === 2,
         "Draw Poker discard pile should contain both played cards."
@@ -129,8 +129,8 @@ async function runWarLiteMachineTest() {
 
     const afterBattle = actor.getSnapshot();
     assert(
-        afterBattle.context.discardPile.length === 2,
-        "War Lite should move both revealed cards into discard history after one battle."
+        afterBattle.context.playedCardHistory.length === 2,
+        "War Lite should move both revealed cards into played-card history after one battle."
     );
     assert(
         getPileCards(afterBattle.context.piles, WAR_LITE_DISCARD_PILE_ID).length === 2,
@@ -207,7 +207,7 @@ async function runBriscaLiteMachineTest() {
     snapshot = actor.getSnapshot();
 
     assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
-    assert(snapshot.context.discardPile.length === 2, "Brisca-lite should record both played cards in discard history.");
+    assert(snapshot.context.playedCardHistory.length === 2, "Brisca-lite should record both played cards in played-card history.");
     assert(
         getPileCards(snapshot.context.piles, BRISCA_LITE_TRICK_PILE_ID).length === 0,
         "Brisca-lite trick pile should be empty after the trick is collected."
