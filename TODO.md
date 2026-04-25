@@ -4,7 +4,6 @@
 
 - Add automated tests for `engine/game/piles.ts`.
 - Add transition tests for the shared machine flow and for each game machine.
-- Reduce layout fragility in [html/src/rewrite/phaser/scenes/TableScene.ts](/d:/yuval/card/cardGame/html/src/rewrite/phaser/scenes/TableScene.ts:1).
 - Decide whether `discardPile` should remain explicit history data or move to a cleaner history model.
 - Review UI states manually for crowded tables:
   - `5-6` players
@@ -19,7 +18,7 @@
   - real point values
   - proper supported player counts
   - 40/48-card variant decision
-- Keep moving layout intent out of `TableScene` and into cleaner view-model/layout hints where useful.
+- Continue shrinking [html/src/rewrite/phaser/scenes/TableScene.ts](/d:/yuval/card/cardGame/html/src/rewrite/phaser/scenes/TableScene.ts:1) by moving more layout intent into view-model/layout hints where useful.
 - Tighten typing around `machineFactory` and reduce catalog-side casts.
 - Continue removing transitional legacy shapes where `piles` already cover the same meaning.
 

@@ -83,6 +83,8 @@ Current rewrite code is split into these areas:
   Registration of currently available games.
 - `html/src/rewrite/phaser/`
   Generic `Phaser` scenes and game bootstrap.
+- `html/src/rewrite/phaser/scenes/layout/`
+  Pure layout helpers for seats, hands, table cards, and pile placement.
 
 ## Visual Overview
 
@@ -366,7 +368,8 @@ Think about the system like this:
 - `engine/cards` = what cards exist
 - `engine/game` = what a playable game session looks like
 - `games/<name>` = the rules for one specific game
-- `phaser/scenes` = how a session is drawn on screen
+- `phaser/scenes/layout` = where table geometry is computed
+- `phaser/scenes` = where a session is orchestrated and drawn on screen
 
 The UI should never ask:
 
@@ -379,6 +382,15 @@ The UI should only ask:
 - "What do I draw?"
 - "What can the player click?"
 - "What text should I show?"
+
+`TableScene` should act mostly like a director:
+
+- subscribe to the current view model
+- ask layout helpers for positions
+- create or reuse display objects
+- apply visual state and animations
+
+It should not be the long-term home for all seat math, pile placement rules, and card spacing formulas.
 
 ## Recommended Next Steps
 

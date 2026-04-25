@@ -1,0 +1,25 @@
+import { REWRITE_HEIGHT, TABLE_CENTER_Y } from "../../layout";
+
+export const CARD_WIDTH = 60;
+export const CARD_HEIGHT = 88;
+export const PRIMARY_PILE_FRAME_WIDTH = 120;
+export const PRIMARY_PILE_FRAME_HEIGHT = 156;
+export const DISCARD_CARD_WIDTH = 70;
+export const DISCARD_CARD_HEIGHT = 98;
+export const PRIMARY_PILE_VERTICAL_SHIFT = Math.round(REWRITE_HEIGHT * 0.1);
+export const PRIMARY_PILE_TARGET_CENTER_Y = TABLE_CENTER_Y;
+export const TABLE_CARD_WIDTH = 74;
+export const TABLE_CARD_HEIGHT = 104;
+export const OWNED_PILE_CARD_WIDTH = 42;
+export const OWNED_PILE_CARD_HEIGHT = 60;
+export const SUPPLEMENTAL_PILE_CARD_WIDTH = 52;
+export const SUPPLEMENTAL_PILE_CARD_HEIGHT = 74;
+export const DEFAULT_HAND_SLOT_COUNT = 5;
+export const CARD_BACK_STROKE = 0xc4b06a;
+export const TABLE_TEXT_RESOLUTION = 2;
+export const SELECTED_CARD_SCALE = 1;
+export const HOVER_CARD_SCALE = 1.01;
+export const SELECTED_CARD_LIFT_Y = -8;
+export const SELECTED_CARD_SHIFT_X = 5;
+export const HOVER_CARD_LIFT_Y = -4;
+export const HOVER_CARD_SHIFT_X = 3;

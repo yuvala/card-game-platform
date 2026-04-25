@@ -53,6 +53,7 @@ The rewrite currently includes a Create Game flow and these games:
 - `html/src/rewrite/` - parallel greenfield rewrite scaffold
 - `html/src/rewrite/engine/game/` - generic game contracts, piles, catalog, and machine factory
 - `html/src/rewrite/games/` - concrete game modules and game catalog
+- `html/src/rewrite/phaser/scenes/layout/` - pure layout helpers used by the rewrite scenes
 - `html/css/main.css` - styles
 - `html/css/rewrite.css` - rewrite shell styles
 - `html/data/players.json` - player seed data

@@ -15,49 +15,39 @@ import {
     getCardBackTextureKey,
     getCardFaceTextureKey
 } from "../cards/CardTextureFactory";
-import { REWRITE_HEIGHT, TABLE_CENTER_X, TABLE_CENTER_Y, TABLE_WIDTH } from "../layout";
+import { TABLE_CENTER_X, TABLE_WIDTH } from "../layout";
+import {
+    CARD_BACK_STROKE,
+    CARD_HEIGHT,
+    CARD_WIDTH,
+    DEFAULT_HAND_SLOT_COUNT,
+    DISCARD_CARD_HEIGHT,
+    DISCARD_CARD_WIDTH,
+    HOVER_CARD_SCALE,
+    OWNED_PILE_CARD_HEIGHT,
+    OWNED_PILE_CARD_WIDTH,
+    PRIMARY_PILE_FRAME_HEIGHT,
+    PRIMARY_PILE_FRAME_WIDTH,
+    SELECTED_CARD_SCALE,
+    SUPPLEMENTAL_PILE_CARD_HEIGHT,
+    SUPPLEMENTAL_PILE_CARD_WIDTH,
+    TABLE_CARD_HEIGHT,
+    TABLE_CARD_WIDTH,
+    TABLE_TEXT_RESOLUTION
+} from "./layout/constants";
+import { getHandSlotDisplayStates } from "./layout/handLayouts";
+import {
+    getOwnedPilePosition,
+    getPrimaryPileLayout,
+    getSupplementalPilePosition
+} from "./layout/pileLayouts";
+import { getSeatLayouts } from "./layout/seatLayouts";
+import { getTableCardPosition } from "./layout/tableCardLayouts";
+import type { HandSlotOrigin, SeatLayout } from "./layout/types";
 
-const CARD_WIDTH = 60;
-const CARD_HEIGHT = 88;
-const PRIMARY_PILE_FRAME_WIDTH = 120;
-const PRIMARY_PILE_FRAME_HEIGHT = 156;
-const DISCARD_CARD_WIDTH = 70;
-const DISCARD_CARD_HEIGHT = 98;
-const PRIMARY_PILE_VERTICAL_SHIFT = Math.round(REWRITE_HEIGHT * 0.1);
-const PRIMARY_PILE_TARGET_CENTER_Y = TABLE_CENTER_Y;
-const TABLE_CARD_WIDTH = 74;
-const TABLE_CARD_HEIGHT = 104;
-const OWNED_PILE_CARD_WIDTH = 42;
-const OWNED_PILE_CARD_HEIGHT = 60;
-const SUPPLEMENTAL_PILE_CARD_WIDTH = 52;
-const SUPPLEMENTAL_PILE_CARD_HEIGHT = 74;
-const DEFAULT_HAND_SLOT_COUNT = 5;
-const CARD_BACK_STROKE = 0xc4b06a;
-const TABLE_TEXT_RESOLUTION = 2;
-const SELECTED_CARD_SCALE = 1;
-const HOVER_CARD_SCALE = 1.01;
-const SELECTED_CARD_LIFT_Y = -8;
-const SELECTED_CARD_SHIFT_X = 5;
-const HOVER_CARD_LIFT_Y = -4;
-const HOVER_CARD_SHIFT_X = 3;
-
-interface SeatLayout {
-    labelX: number;
-    labelY: number;
-    labelAlign: "left" | "center" | "right";
-    handCenterX: number;
-    handCenterY: number;
-    gapX: number;
-    gapY: number;
-    angle: number;
-}
-
-interface CardSlot {
+interface CardSlot extends HandSlotOrigin {
     container: Phaser.GameObjects.Container;
     hitTarget: Phaser.GameObjects.Rectangle;
-    originX: number;
-    originY: number;
-    originAngle: number;
     image: Phaser.GameObjects.Image;
     outline: Phaser.GameObjects.Rectangle;
 }
@@ -97,21 +87,6 @@ interface SupplementalPileVisual {
 interface CardDisplaySize {
     width: number;
     height: number;
-}
-
-interface PrimaryPileLayout {
-    drawY: number;
-    discardY: number;
-    frameWidth: number;
-    frameHeight: number;
-    drawTitleOffsetY: number;
-    discardTitleOffsetY: number;
-    discardTextOffsetY: number;
-    discardCardWidth: number;
-    discardCardHeight: number;
-    titleFontSize: number;
-    countFontSize: number;
-    deckCountFontSize: number;
 }
 
 export class TableScene<TSnapshot> extends Phaser.Scene {
@@ -334,10 +309,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         }
 
         this.destroySeatVisuals();
-        const seatLayouts = this.getSeatLayouts(viewModel.players.length);
+        const seatLayouts = getSeatLayouts(viewModel.players.length);
 
         viewModel.players.forEach((player, index) => {
-            const layout = seatLayouts[index] ?? this.getFallbackSeatLayout(index, viewModel.players.length);
+            const layout = seatLayouts[index];
             const badge = this.createSeatBadge(layout);
 
             this.seatBadges.set(player.id, badge);
@@ -396,7 +371,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             const ownerPileIndex = ownerCounts.get(ownerId) ?? 0;
             ownerCounts.set(ownerId, ownerPileIndex + 1);
 
-            const position = this.getOwnedPilePosition(ownerId, badge.container, ownerPileIndex);
+            const position = getOwnedPilePosition(ownerPileIndex, this.handSlots.get(ownerId) ?? [], {
+                x: badge.container.x,
+                y: badge.container.y
+            });
             visual.container.setPosition(position.x, position.y);
             visual.labelText.setText(pile.label);
             visual.countText.setText(pile.countLabel);
@@ -443,7 +421,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         supplementalPiles.forEach((pile, index) => {
             const visual = this.supplementalPileVisuals.get(pile.id) ?? this.createSupplementalPileVisual(pile.id);
-            const position = this.getSupplementalPilePosition(index);
+            const position = getSupplementalPilePosition(index);
 
             visual.container.setPosition(position.x, position.y);
             visual.labelText.setText(pile.label);
@@ -460,143 +438,6 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 visual.image.setAlpha(pile.cardCount > 0 ? 0.96 : 0.32);
             }
         });
-    }
-
-    private getSeatLayouts(playerCount: number): SeatLayout[] {
-        const layouts = this.getTemplateSeatLayouts(playerCount);
-        if (layouts.length > 0) {
-            return layouts;
-        }
-
-        return Array.from({ length: playerCount }, (_, index) => this.getFallbackSeatLayout(index, playerCount));
-    }
-
-    private getTemplateSeatLayouts(playerCount: number): SeatLayout[] {
-        switch (playerCount) {
-            case 0:
-                return [];
-            case 1:
-                return [this.createBottomSeat(TABLE_CENTER_X)];
-            case 2:
-                return [
-                    this.createBottomSeat(TABLE_CENTER_X),
-                    this.createHorizontalSeat(TABLE_CENTER_X, 140, 82, 60)
-                ];
-            case 3:
-                return [
-                    this.createBottomSeat(TABLE_CENTER_X),
-                    this.createVerticalSeat("right", 366, 56),
-                    this.createVerticalSeat("left", 366, 56)
-                ];
-            case 4:
-                return [
-                    this.createBottomSeat(TABLE_CENTER_X),
-                    this.createVerticalSeat("right", 366, 56),
-                    this.createHorizontalSeat(TABLE_CENTER_X, 140, 82, 60),
-                    this.createVerticalSeat("left", 366, 56)
-                ];
-            case 5:
-                return [
-                    this.createBottomSeat(TABLE_CENTER_X),
-                    this.createVerticalSeat("right", 366, 56),
-                    this.createHorizontalSeat(TABLE_WIDTH - 256, 178, 110, 52),
-                    this.createHorizontalSeat(256, 178, 110, 52),
-                    this.createVerticalSeat("left", 366, 56)
-                ];
-            case 6:
-                return [
-                    this.createBottomSeat(TABLE_CENTER_X),
-                    this.createVerticalSeat("right", 468, 32),
-                    this.createVerticalSeat("right", 214, 32),
-                    this.createHorizontalSeat(TABLE_CENTER_X, 140, 82, 60),
-                    this.createVerticalSeat("left", 214, 32),
-                    this.createVerticalSeat("left", 468, 32)
-                ];
-            default:
-                return [];
-        }
-    }
-
-    private getFallbackSeatLayout(playerIndex: number, playerCount: number): SeatLayout {
-        if (playerIndex === 0) {
-            return this.createBottomSeat(TABLE_CENTER_X);
-        }
-
-        const upperSeatCount = Math.max(playerCount - 1, 1);
-        const progress = upperSeatCount === 1 ? 0.5 : (playerIndex - 1) / (upperSeatCount - 1);
-        const angleDegrees = 215 + progress * 110;
-        const angleRadians = Phaser.Math.DegToRad(angleDegrees);
-        const seatX = TABLE_CENTER_X + Math.cos(angleRadians) * 300;
-        const seatY = TABLE_CENTER_Y + Math.sin(angleRadians) * 210;
-
-        if (Math.abs(seatX - TABLE_CENTER_X) < 92) {
-            return this.createHorizontalSeat(
-                Phaser.Math.Clamp(seatX, 240, TABLE_WIDTH - 240),
-                Phaser.Math.Clamp(seatY + 58, 132, 182),
-                94,
-                54
-            );
-        }
-
-        if (seatX < TABLE_CENTER_X) {
-            return this.createVerticalSeat(
-                "left",
-                Phaser.Math.Clamp(seatY + 30, 180, 460),
-                36
-            );
-        }
-
-        return this.createVerticalSeat(
-            "right",
-            Phaser.Math.Clamp(seatY + 30, 180, 460),
-            36
-        );
-    }
-
-    private createBottomSeat(centerX: number): SeatLayout {
-        return {
-            labelX: centerX,
-            labelY: 548,
-            labelAlign: "center",
-            handCenterX: centerX,
-            handCenterY: 638,
-            gapX: 74,
-            gapY: 0,
-            angle: 0
-        };
-    }
-
-    private createHorizontalSeat(centerX: number, labelY: number, handCenterY: number, gapX: number): SeatLayout {
-        return {
-            labelX: centerX,
-            labelY,
-            labelAlign: "center",
-            handCenterX: centerX,
-            handCenterY,
-            gapX,
-            gapY: 0,
-            angle: 0
-        };
-    }
-
-    private createVerticalSeat(
-        side: "left" | "right",
-        handCenterY: number,
-        gapY: number
-    ): SeatLayout {
-        const isRight = side === "right";
-        const handCenterX = isRight ? TABLE_WIDTH - 120 : 120;
-
-        return {
-            labelX: handCenterX + (isRight ? -84 : 84),
-            labelY: handCenterY,
-            labelAlign: isRight ? "right" : "left",
-            handCenterX,
-            handCenterY,
-            gapX: 0,
-            gapY,
-            angle: isRight ? 90 : -90
-        };
     }
 
     private ensureCardTextures(viewModel: CardGameViewModel): void {
@@ -651,91 +492,57 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private updateHandSlots(viewModel: CardGameViewModel): void {
         viewModel.players.forEach((player) => {
             const slots = this.handSlots.get(player.id) || [];
-            const visibleCardCount = player.hand.length;
-            const baseStartX = slots[0]?.originX ?? 0;
-            const baseStartY = slots[0]?.originY ?? 0;
-            const baseGapX = slots.length > 1 ? slots[1].originX - slots[0].originX : 0;
-            const baseGapY = slots.length > 1 ? slots[1].originY - slots[0].originY : 0;
-            const visibleSlots = slots.slice(0, visibleCardCount);
-            const baseCenterX = visibleSlots.length > 0
-                ? (visibleSlots[0].originX + visibleSlots[visibleSlots.length - 1].originX) / 2
-                : baseStartX;
-            const baseCenterY = visibleSlots.length > 0
-                ? (visibleSlots[0].originY + visibleSlots[visibleSlots.length - 1].originY) / 2
-                : baseStartY;
-            let layoutStartX = baseStartX;
-            let layoutStartY = baseStartY;
-            let layoutGapX = baseGapX;
-            let layoutGapY = baseGapY;
-
-            if (player.isCurrentTurn && visibleCardCount > 1) {
-                if (layoutGapX !== 0 && Math.abs(layoutGapX) < 74) {
-                    layoutGapX = Math.sign(layoutGapX) * 74;
-                }
-
-                if (layoutGapY !== 0 && Math.abs(layoutGapY) < 72) {
-                    layoutGapY = Math.sign(layoutGapY) * 72;
-                }
-
-                if (layoutGapX !== 0) {
-                    layoutStartX = baseCenterX - ((visibleCardCount - 1) * layoutGapX) / 2;
-                }
-
-                if (layoutGapY !== 0) {
-                    layoutStartY = baseCenterY - ((visibleCardCount - 1) * layoutGapY) / 2;
-                }
-            }
+            const slotStates = getHandSlotDisplayStates({
+                slots,
+                cards: player.hand,
+                isCurrentTurn: player.isCurrentTurn,
+                canInteract: player.canInteract,
+                selectedCardId: viewModel.selectedCardId,
+                hoveredSlotIndexes: new Set(
+                    slots.flatMap((slot, slotIndex) => {
+                        return slot.container.getData("isHovered") === true ? [slotIndex] : [];
+                    })
+                ),
+                hasAnimation: Boolean(viewModel.animation)
+            });
 
             for (let slotIndex = 0; slotIndex < slots.length; slotIndex += 1) {
                 const slot = slots[slotIndex];
                 const card = player.hand[slotIndex];
-                const isSelected = viewModel.selectedCardId === card?.id;
-                const isHovered = slot.container.getData("isHovered") === true;
-                if (!viewModel.animation) {
-                    const selectedOffsetX = slot.originAngle === 0
-                        ? 0
-                        : (slot.originAngle > 0 ? -SELECTED_CARD_SHIFT_X : SELECTED_CARD_SHIFT_X);
-                    const selectedOffsetY = slot.originAngle === 0 ? SELECTED_CARD_LIFT_Y : 0;
-                    const hoverOffsetX = !isSelected && isHovered
-                        ? (slot.originAngle > 0 ? -HOVER_CARD_SHIFT_X : (slot.originAngle < 0 ? HOVER_CARD_SHIFT_X : 0))
-                        : 0;
-                    const hoverOffsetY = !isSelected && isHovered
-                        ? (slot.originAngle === 0 ? HOVER_CARD_LIFT_Y : 0)
-                        : 0;
-                    const slotX = layoutStartX + layoutGapX * slotIndex + (isSelected ? selectedOffsetX : hoverOffsetX);
-                    const slotY = layoutStartY + layoutGapY * slotIndex + (isSelected ? selectedOffsetY : hoverOffsetY);
-                    slot.container.setPosition(slotX, slotY);
-                    slot.hitTarget.setPosition(slotX, slotY);
-                    slot.container.setAngle(slot.originAngle);
-                    slot.hitTarget.setAngle(slot.originAngle);
+                const slotState = slotStates[slotIndex];
+                if (slotState.position) {
+                    slot.container.setPosition(slotState.position.x, slotState.position.y);
+                    slot.hitTarget.setPosition(slotState.position.x, slotState.position.y);
+                    slot.container.setAngle(slotState.angle ?? slot.originAngle);
+                    slot.hitTarget.setAngle(slotState.angle ?? slot.originAngle);
                     slot.container.setAlpha(1);
                 }
 
-                slot.container.setVisible(Boolean(card));
-                slot.hitTarget.setVisible(Boolean(card));
-                slot.container.setData("cardId", card?.id ?? null);
-                slot.container.setData("isSelected", isSelected);
-                if (!card || !player.canInteract) {
+                slot.container.setVisible(slotState.visible);
+                slot.hitTarget.setVisible(slotState.visible);
+                slot.container.setData("cardId", slotState.cardId);
+                slot.container.setData("isSelected", slotState.isSelected);
+                if (!card || !slotState.interactiveEnabled) {
                     slot.container.setData("isHovered", false);
                 }
-                const slotScale = isSelected ? SELECTED_CARD_SCALE : (isHovered ? HOVER_CARD_SCALE : 1);
-                const slotDepth = isSelected ? 30 + slotIndex : (isHovered ? 20 + slotIndex : slotIndex);
-                slot.container.setScale(slotScale);
+                slot.container.setScale(slotState.scale);
                 slot.hitTarget.setScale(1);
-                slot.container.setDepth(slotDepth);
-                slot.hitTarget.setDepth(slotDepth + 0.5);
+                slot.container.setDepth(slotState.depth);
+                slot.hitTarget.setDepth(slotState.depth + 0.5);
                 if (slot.hitTarget.input) {
-                    slot.hitTarget.input.enabled = Boolean(card && player.canInteract);
+                    slot.hitTarget.input.enabled = slotState.interactiveEnabled;
                 }
                 slot.outline.setStrokeStyle(
                     3,
-                    isSelected ? 0xffd166 : (isHovered && player.isCurrentTurn ? 0xd4f0a7 : (player.isCurrentTurn ? 0x9dc08b : 0x17352b))
+                    slotState.isSelected
+                        ? 0xffd166
+                        : (slotState.isHovered && player.isCurrentTurn ? 0xd4f0a7 : (player.isCurrentTurn ? 0x9dc08b : 0x17352b))
                 );
                 this.applyCardTexture(slot.image, card ?? null, "compact");
                 if (card && !card.isFaceUp) {
                     slot.outline.setStrokeStyle(
                         3,
-                        isSelected ? 0xffd166 : (isHovered ? 0xd4f0a7 : CARD_BACK_STROKE)
+                        slotState.isSelected ? 0xffd166 : (slotState.isHovered ? 0xd4f0a7 : CARD_BACK_STROKE)
                     );
                 }
             }
@@ -790,7 +597,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         tableCards.forEach((card, index) => {
             const visual = this.tableCardVisuals[index];
-            const position = this.getTableCardPosition(index, tableCards.length);
+            const position = getTableCardPosition(index, tableCards.length);
             visual.container.setPosition(position.x, position.y);
             visual.caption.setText(card.caption ?? "");
             visual.container.setVisible(true);
@@ -893,103 +700,30 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private updatePrimaryPileLayout(playerCount: number): void {
-        const layout = this.getPrimaryPileLayout(playerCount);
-        const shiftedDrawY = layout.drawY + PRIMARY_PILE_VERTICAL_SHIFT;
-        const shiftedDiscardY = layout.discardY + PRIMARY_PILE_VERTICAL_SHIFT;
-        const centerOffsetY = PRIMARY_PILE_TARGET_CENTER_Y - ((shiftedDrawY + shiftedDiscardY) / 2);
-        const drawY = shiftedDrawY + centerOffsetY;
-        const discardY = shiftedDiscardY + centerOffsetY;
+        const layout = getPrimaryPileLayout(playerCount);
 
         this.drawPileFrame
-            .setPosition(TABLE_CENTER_X, drawY)
+            .setPosition(TABLE_CENTER_X, layout.drawCenterY)
             .setSize(layout.frameWidth, layout.frameHeight);
         this.drawPileTitle
-            .setPosition(TABLE_CENTER_X, drawY - layout.drawTitleOffsetY)
+            .setPosition(TABLE_CENTER_X, layout.drawCenterY - layout.drawTitleOffsetY)
             .setFontSize(`${layout.titleFontSize}px`);
         this.deckText
-            .setPosition(TABLE_CENTER_X, drawY)
+            .setPosition(TABLE_CENTER_X, layout.drawCenterY)
             .setFontSize(`${layout.deckCountFontSize}px`);
 
         this.discardPileFrame
-            .setPosition(TABLE_CENTER_X, discardY)
+            .setPosition(TABLE_CENTER_X, layout.discardCenterY)
             .setSize(layout.frameWidth, layout.frameHeight);
         this.discardPileTitle
-            .setPosition(TABLE_CENTER_X, discardY - layout.discardTitleOffsetY)
+            .setPosition(TABLE_CENTER_X, layout.discardCenterY - layout.discardTitleOffsetY)
             .setFontSize(`${layout.titleFontSize}px`);
         this.discardText
-            .setPosition(TABLE_CENTER_X, discardY + layout.discardTextOffsetY)
+            .setPosition(TABLE_CENTER_X, layout.discardCenterY + layout.discardTextOffsetY)
             .setFontSize(`${layout.countFontSize}px`);
-        this.discardCard.setPosition(TABLE_CENTER_X, discardY);
+        this.discardCard.setPosition(TABLE_CENTER_X, layout.discardCenterY);
         this.setCardDisplaySize(this.discardCardImage, layout.discardCardWidth, layout.discardCardHeight);
         this.discardCardOutline.setSize(layout.discardCardWidth + 4, layout.discardCardHeight + 4);
-    }
-
-    private getPrimaryPileLayout(playerCount: number): PrimaryPileLayout {
-        switch (playerCount) {
-            case 1:
-            case 2:
-            case 3:
-            case 4:
-                return {
-                    frameWidth: PRIMARY_PILE_FRAME_WIDTH,
-                    frameHeight: PRIMARY_PILE_FRAME_HEIGHT,
-                    drawY: 224,
-                    discardY: 432,
-                    drawTitleOffsetY: 56,
-                    discardTitleOffsetY: 66,
-                    discardTextOffsetY: 74,
-                    discardCardWidth: DISCARD_CARD_WIDTH,
-                    discardCardHeight: DISCARD_CARD_HEIGHT,
-                    titleFontSize: 18,
-                    countFontSize: 18,
-                    deckCountFontSize: 24
-                };
-            case 5:
-                return {
-                    frameWidth: 104,
-                    frameHeight: 132,
-                    drawY: 220,
-                    discardY: 390,
-                    drawTitleOffsetY: 46,
-                    discardTitleOffsetY: 52,
-                    discardTextOffsetY: 60,
-                    discardCardWidth: 62,
-                    discardCardHeight: 88,
-                    titleFontSize: 16,
-                    countFontSize: 15,
-                    deckCountFontSize: 20
-                };
-            case 6:
-                return {
-                    frameWidth: 96,
-                    frameHeight: 120,
-                    drawY: 232,
-                    discardY: 382,
-                    drawTitleOffsetY: 42,
-                    discardTitleOffsetY: 48,
-                    discardTextOffsetY: 54,
-                    discardCardWidth: 58,
-                    discardCardHeight: 82,
-                    titleFontSize: 15,
-                    countFontSize: 14,
-                    deckCountFontSize: 18
-                };
-            default:
-                return {
-                    frameWidth: PRIMARY_PILE_FRAME_WIDTH,
-                    frameHeight: PRIMARY_PILE_FRAME_HEIGHT,
-                    drawY: 184,
-                    discardY: 392,
-                    drawTitleOffsetY: 56,
-                    discardTitleOffsetY: 66,
-                    discardTextOffsetY: 74,
-                    discardCardWidth: DISCARD_CARD_WIDTH,
-                    discardCardHeight: DISCARD_CARD_HEIGHT,
-                    titleFontSize: 18,
-                    countFontSize: 18,
-                    deckCountFontSize: 24
-                };
-        }
     }
 
     private setCardDisplaySize(image: Phaser.GameObjects.Image, width: number, height: number): void {
@@ -1078,80 +812,6 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.supplementalPileVisuals.set(pileId, visual);
         return visual;
-    }
-
-    private getOwnedPilePosition(
-        ownerId: string,
-        badgeContainer: Phaser.GameObjects.Container,
-        ownerPileIndex: number
-    ): { x: number; y: number } {
-        const slots = this.handSlots.get(ownerId) ?? [];
-        const horizontalOffset = ownerPileIndex * 58;
-
-        if (slots.length > 0) {
-            const minX = Math.min(...slots.map((slot) => slot.originX));
-            const maxX = Math.max(...slots.map((slot) => slot.originX));
-            const minY = Math.min(...slots.map((slot) => slot.originY));
-            const maxY = Math.max(...slots.map((slot) => slot.originY));
-            const anchorAngle = slots[0].originAngle;
-
-            if (anchorAngle === 0) {
-                return {
-                    x: maxX + 92 + horizontalOffset,
-                    y: (minY + maxY) / 2 - (minY > TABLE_CENTER_Y ? 6 : -6)
-                };
-            }
-
-            if (anchorAngle > 0) {
-                return {
-                    x: minX - 84 - horizontalOffset,
-                    y: (minY + maxY) / 2
-                };
-            }
-
-            return {
-                x: maxX + 84 + horizontalOffset,
-                y: (minY + maxY) / 2
-            };
-        }
-
-        const x = badgeContainer.x;
-        const y = badgeContainer.y;
-
-        if (x > TABLE_CENTER_X + 110) {
-            return {
-                x: x - 96 - horizontalOffset,
-                y: y + 16
-            };
-        }
-
-        if (x < TABLE_CENTER_X - 110) {
-            return {
-                x: x + 96 + horizontalOffset,
-                y: y + 16
-            };
-        }
-
-        if (y < TABLE_CENTER_Y) {
-            return {
-                x: x + 92 + horizontalOffset,
-                y: y + 18
-            };
-        }
-
-        return {
-            x: x + 110 + horizontalOffset,
-            y: y - 8
-        };
-    }
-
-    private getSupplementalPilePosition(index: number): { x: number; y: number } {
-        const row = Math.floor(index / 2);
-        const column = index % 2;
-        const x = column === 0 ? TABLE_CENTER_X - 182 : TABLE_CENTER_X + 182;
-        const y = 168 + row * 124;
-
-        return { x, y };
     }
 
     private applyCardTexture(
@@ -1256,17 +916,4 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         };
     }
 
-    private getTableCardPosition(index: number, cardCount: number): { x: number; y: number } {
-        if (cardCount <= 1) {
-            return { x: TABLE_CENTER_X, y: 392 };
-        }
-
-        const spacing = 156;
-        const startX = TABLE_CENTER_X - (spacing * (cardCount - 1)) / 2;
-
-        return {
-            x: startX + spacing * index,
-            y: 392
-        };
-    }
 }
