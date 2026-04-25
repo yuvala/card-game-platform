@@ -5,12 +5,13 @@ import {
     spanishDeckDefinition
 } from "../../html/src/rewrite/engine/cards/deckDefinitions";
 import { getPileCards } from "../../html/src/rewrite/engine/game/piles";
+import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
 import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
-import { getBriscaLiteHandPileId } from "../../html/src/rewrite/games/briscaLite/types";
+import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "../../html/src/rewrite/games/briscaLite/types";
 import { createRewriteGameMachine } from "../../html/src/rewrite/games/drawPoker/machine";
 import { getDrawPokerHandPileId } from "../../html/src/rewrite/games/drawPoker/types";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
-import { getWarLiteHandPileId } from "../../html/src/rewrite/games/warLite/types";
+import { getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
 
 declare const process: { exitCode?: number };
 
@@ -80,11 +81,23 @@ async function runDrawPokerMachineTest() {
 
     assert(snapshot.value === "gameOver", "Draw Poker should finish after both one-card turns.");
     assert(snapshot.context.roundCards.length === 2, "Draw Poker should keep both played cards in the last round.");
+    assert(snapshot.context.discardPile.length === 2, "Draw Poker should record both plays in discard history.");
+    assert(
+        getPileCards(snapshot.context.piles, "discard").length === 2,
+        "Draw Poker discard pile should contain both played cards."
+    );
     assert(
         snapshot.context.players.every((player) => {
             return getPileCards(snapshot.context.piles, getDrawPokerHandPileId(player.id)).length === 0;
         }),
         "Draw Poker hands should be empty when the short test reaches game over."
+    );
+    const highestScore = Math.max(...snapshot.context.players.map((player) => player.score));
+    assert(highestScore === 1, "Draw Poker short test should award exactly one point.");
+    assert(snapshot.context.winningPlayerIds.length === 1, "Draw Poker short test should resolve to a single winner.");
+    assert(
+        snapshot.context.statusText.includes("finished"),
+        "Draw Poker should expose a finished status message at game over."
     );
 }
 
@@ -120,14 +133,31 @@ async function runWarLiteMachineTest() {
         "War Lite should move both revealed cards into discard history after one battle."
     );
     assert(
+        getPileCards(afterBattle.context.piles, WAR_LITE_DISCARD_PILE_ID).length === 2,
+        "War Lite discard pile should contain the two revealed battle cards."
+    );
+    assert(
+        getPileCards(afterBattle.context.piles, WAR_LITE_BATTLE_PILE_ID).length === 0,
+        "War Lite battle pile should be empty after battle resolution."
+    );
+    assert(afterBattle.context.roundCards.length === 0, "War Lite should clear roundCards before the next battle.");
+    assert(
+        afterBattle.context.players.reduce((sum, player) => sum + player.score, 0) === 1,
+        "War Lite short test should award one battle win after the first reveal."
+    );
+    assert(
         afterBattle.context.players.every((player) => {
-            return getPileCards(afterBattle.context.piles, getWarLiteHandPileId(player.id)).length >= 0;
+            return getPileCards(afterBattle.context.piles, getWarLiteHandPileId(player.id)).length === 25;
         }),
-        "War Lite should keep valid stack piles after resolving the battle."
+        "War Lite should reduce each player stack by exactly one card after the first battle."
     );
     assert(
         afterBattle.context.round === 2 || afterBattle.value === "gameOver",
         "War Lite should advance to the next battle or finish after resolving one battle."
+    );
+    assert(
+        afterBattle.context.statusText.includes("Battle 2"),
+        "War Lite should announce the next battle after resolving the first one."
     );
 }
 
@@ -163,6 +193,54 @@ async function runBriscaLiteMachineTest() {
     assert(
         getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(currentPlayer.id)).length === 0,
         "Brisca-lite should remove the played card from the first player's hand pile."
+    );
+
+    const secondPlayer = snapshot.context.players[snapshot.context.turnIndex];
+    const secondHand = getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(secondPlayer.id));
+    assert(secondHand.length === 1, "Brisca-lite second player should still have one card before responding.");
+
+    actor.send({ type: "SELECT_CARD", cardId: secondHand[0].id });
+    actor.send({ type: "PLAY_CARD" });
+    actor.send({ type: "ANIMATION_DONE" });
+
+    await waitFor(() => actor.getSnapshot().context.round === 2);
+    snapshot = actor.getSnapshot();
+
+    assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
+    assert(snapshot.context.discardPile.length === 2, "Brisca-lite should record both played cards in discard history.");
+    assert(
+        getPileCards(snapshot.context.piles, BRISCA_LITE_TRICK_PILE_ID).length === 0,
+        "Brisca-lite trick pile should be empty after the trick is collected."
+    );
+    assert(
+        snapshot.context.players.reduce((sum, player) => sum + player.score, 0) === 1,
+        "Brisca-lite short test should award one trick point after the first trick."
+    );
+    assert(
+        snapshot.context.players.some((player) => {
+            return getPileCards(snapshot.context.piles, getBriscaLiteCapturePileId(player.id)).length === 2;
+        }),
+        "Brisca-lite should move the resolved trick into one capture pile."
+    );
+    assert(
+        snapshot.context.players.every((player) => {
+            return getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(player.id)).length === 1;
+        }),
+        "Brisca-lite should refill both hands after the first trick while stock remains."
+    );
+    assert(
+        getPileCards(snapshot.context.piles, BRISCA_LITE_STOCK_PILE_ID).length === 35,
+        "Brisca-lite stock should drop by two cards after refilling both players."
+    );
+    assert(
+        getPileCards(snapshot.context.piles, BRISCA_LITE_TRUMP_PILE_ID).length === 1,
+        "Brisca-lite should keep the trump pile until the stock is exhausted."
+    );
+    assert(snapshot.context.trickWinnerId === null, "Brisca-lite should clear trickWinnerId before the next trick begins.");
+    assert(snapshot.context.leadPlayerId !== null, "Brisca-lite should keep the next lead player after resolving the trick.");
+    assert(
+        snapshot.context.statusText.includes("Trick 2"),
+        "Brisca-lite should announce the next trick after resolving the current one."
     );
 }
 

@@ -2,7 +2,7 @@
 
 ## Priority 1: Fix
 
-- Add deeper rules/state assertions for the concrete games beyond the current machine-flow coverage.
+- Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
 - Decide whether `discardPile` should remain explicit history data or move to a cleaner history model.
 - Review UI states manually for crowded tables:
   - `5-6` players
