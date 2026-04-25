@@ -3,7 +3,6 @@ import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
 import type { CardPileMap } from "../../engine/game/types";
 import {
     createCardPile,
-    getPileCards,
     moveTopCardBetweenPiles,
     setPileCards
 } from "../../engine/game/piles";
@@ -18,7 +17,6 @@ function createPlayers(names: string[]): RewritePlayer[] {
     return names.map((name, index) => ({
         id: "p" + (index + 1),
         name,
-        hand: [],
         score: 0
     }));
 }
@@ -68,16 +66,7 @@ function createInitialPiles(players: readonly RewritePlayer[]): CardPileMap<Card
 }
 
 export function syncDrawPokerContextFromPiles(context: RewriteGameContext): RewriteGameContext {
-    return {
-        ...context,
-        players: context.players.map((player) => {
-            return {
-                ...player,
-                hand: getPileCards(context.piles, getDrawPokerHandPileId(player.id))
-            };
-        }),
-        drawPile: getPileCards(context.piles, DRAW_POKER_STOCK_PILE_ID)
-    };
+    return context;
 }
 
 export function createInitialContext(
@@ -90,7 +79,6 @@ export function createInitialContext(
 
     return {
         deckDefinition,
-        drawPile: [],
         discardPile: [],
         piles: createInitialPiles(players),
         roundCards: [],
@@ -117,11 +105,11 @@ export function createShuffledContext(
 ): RewriteGameContext {
     const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);
 
-    return syncDrawPokerContextFromPiles({
+    return {
         ...baseContext,
         piles: setPileCards(baseContext.piles, DRAW_POKER_STOCK_PILE_ID, shuffleDeck(createDeck(deckDefinition), random)),
         statusText: "Shuffling the " + deckDefinition.name + "..."
-    });
+    };
 }
 
 export function dealOpeningHands(context: RewriteGameContext): RewriteGameContext {
@@ -138,7 +126,7 @@ export function dealOpeningHands(context: RewriteGameContext): RewriteGameContex
         });
     }
 
-    return syncDrawPokerContextFromPiles({
+    return {
         ...context,
         piles,
         turnIndex: 0,
@@ -154,5 +142,5 @@ export function dealOpeningHands(context: RewriteGameContext): RewriteGameContex
             " cards to each player from the " +
             context.deckDefinition.name +
             "."
-    });
+    };
 }

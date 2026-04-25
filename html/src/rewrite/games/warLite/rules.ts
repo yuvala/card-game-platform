@@ -4,7 +4,6 @@ import {
     getPileCards,
     moveTopCardBetweenPiles
 } from "../../engine/game/piles";
-import { syncWarLiteContextFromPiles } from "./setup";
 import type { WarLiteContext, WarLitePlayedCard, WarLitePlayer } from "./types";
 import {
     WAR_LITE_BATTLE_PILE_ID,
@@ -81,7 +80,7 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
     const rankedCards = rankPlayedCards(playedCards);
     const leadingCard = rankedCards[0] ?? null;
 
-    return syncWarLiteContextFromPiles({
+    return {
         ...context,
         piles,
         roundCards: playedCards,
@@ -93,7 +92,7 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
                 return playedCard.playerName + " flips " + playedCard.card.displayLabel;
             })
             .join(". ") + "."
-    });
+    };
 }
 
 export function finalizeBattle(context: WarLiteContext): WarLiteContext {
@@ -112,14 +111,10 @@ export function finalizeBattle(context: WarLiteContext): WarLiteContext {
         appendCardsToPile(context.piles, WAR_LITE_DISCARD_PILE_ID, battleCards),
         WAR_LITE_BATTLE_PILE_ID
     );
-    const syncedContext = syncWarLiteContextFromPiles({
-        ...context,
-        piles
-    });
-
     return {
-        ...syncedContext,
-        players: syncedContext.players.map((player) => {
+        ...context,
+        piles,
+        players: context.players.map((player) => {
             if (!winningPlayerIds.includes(player.id)) {
                 return player;
             }

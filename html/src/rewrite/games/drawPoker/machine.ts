@@ -1,26 +1,9 @@
-import { ActorRefFrom, SnapshotFrom, assign, setup } from "xstate";
+import { ActorRefFrom, SnapshotFrom } from "xstate";
 
 import { frenchDeckDefinition } from "../../engine/cards/deckDefinitions";
+import { createCardGameMachine } from "../../engine/game/machineFactory";
 import { drawPokerGameDefinition } from "./definition";
 import type { RewriteGameContext, RewriteGameEvent, RewriteGameOptions } from "./types";
-
-function getCurrentActorId(context: RewriteGameContext): string | null {
-    return context.players[context.turnIndex]?.id ?? null;
-}
-
-function hasLegalMove(context: RewriteGameContext, moveType: string): boolean {
-    return drawPokerGameDefinition.getLegalMoves(context, getCurrentActorId(context)).some((move) => {
-        return move.type === moveType;
-    });
-}
-
-function applyDefinitionMove(context: RewriteGameContext, move: Parameters<typeof drawPokerGameDefinition.applyMove>[1]) {
-    return drawPokerGameDefinition.applyMove(context, move).state;
-}
-
-function getAutomaticMove(context: RewriteGameContext) {
-    return drawPokerGameDefinition.getAutomaticMove?.(context) ?? null;
-}
 
 export function createRewriteGameMachine(playerNames: string[], options?: RewriteGameOptions) {
     const deckDefinition = options?.deckDefinition ?? frenchDeckDefinition;
@@ -32,137 +15,55 @@ export function createRewriteGameMachine(playerNames: string[], options?: Rewrit
         random
     };
 
-    return setup({
-        types: {
-            context: {} as RewriteGameContext,
-            events: {} as RewriteGameEvent
+    return createCardGameMachine<RewriteGameContext, RewriteGameEvent, Parameters<typeof drawPokerGameDefinition.applyMove>[1], RewriteGameOptions>({
+        definition: drawPokerGameDefinition,
+        playerNames,
+        definitionOptions,
+        prepareShuffleMove: {
+            type: "prepare-shuffle",
+            random
         },
-        actions: {
-            resetToIdle: assign(() => drawPokerGameDefinition.setup({
-                playerNames,
-                options: definitionOptions
-            })),
-            prepareShuffle: assign(({ context }) => applyDefinitionMove(context, {
-                type: "prepare-shuffle",
-                random
-            })),
-            prepareDeal: assign(({ context }) => applyDefinitionMove(context, {
-                type: "deal-opening-hands"
-            })),
-            beginTurn: assign(({ context }) => applyDefinitionMove(context, {
+        prepareDealMove: {
+            type: "deal-opening-hands"
+        },
+        getCurrentActorId: (context) => context.players[context.turnIndex]?.id ?? null,
+        flow: {
+            readyState: "playerTurn",
+            resolvingState: "resolvingTurn",
+            shuffleDelayMs: 650,
+            dealDelayMs: 900,
+            resolveDelayMs: 700,
+            prepareReadyMove: {
                 type: "begin-turn"
-            })),
-            selectCard: assign(({ context, event }) => {
-                if (event.type !== "SELECT_CARD") {
-                    return context;
-                }
-
-                return applyDefinitionMove(context, {
-                    type: "select-card",
-                    cardId: event.cardId
-                });
+            },
+            selectCardMove: (cardId) => ({
+                type: "select-card",
+                cardId
             }),
-            queuePlayedCard: assign(({ context }) => applyDefinitionMove(context, {
+            playMove: {
                 type: "queue-play"
-            })),
-            commitPlayedCard: assign(({ context }) => applyDefinitionMove(context, {
-                type: "commit-play"
-            })),
-            finalizeTurn: assign(({ context }) => applyDefinitionMove(context, {
+            },
+            playGuardMoveType: "queue-play",
+            animation: {
+                kind: "event",
+                state: "animatingPlay",
+                commitMove: {
+                    type: "commit-play"
+                }
+            },
+            finalizeMove: {
                 type: "finalize-turn"
-            })),
-            advanceAfterResolution: assign(({ context }) => {
-                const move = getAutomaticMove(context);
-                return move ? applyDefinitionMove(context, move) : context;
-            })
-        },
-        guards: {
-            currentPlayerCanPlay: ({ context }) => hasLegalMove(context, "queue-play"),
-            shouldAdvanceNextPlayer: ({ context }) => getAutomaticMove(context)?.type === "advance-next-player",
-            shouldAdvanceNextRound: ({ context }) => getAutomaticMove(context)?.type === "advance-next-round"
-        }
-    }).createMachine({
-        id: drawPokerGameDefinition.id,
-        initial: "idle",
-        context: drawPokerGameDefinition.setup({
-            playerNames,
-            options: definitionOptions
-        }),
-        states: {
-            idle: {
-                entry: "resetToIdle",
-                on: {
-                    START: {
-                        target: "shuffling",
-                        actions: "prepareShuffle"
-                    }
-                }
             },
-            shuffling: {
-                after: {
-                    650: {
-                        target: "dealing",
-                        actions: "prepareDeal"
-                    }
+            resolutionTargets: [
+                {
+                    automaticMoveType: "advance-next-player",
+                    target: "playerTurn"
+                },
+                {
+                    automaticMoveType: "advance-next-round",
+                    target: "playerTurn"
                 }
-            },
-            dealing: {
-                after: {
-                    900: {
-                        target: "playerTurn",
-                        actions: "beginTurn"
-                    }
-                }
-            },
-            playerTurn: {
-                on: {
-                    SELECT_CARD: {
-                        actions: "selectCard"
-                    },
-                    PLAY_CARD: {
-                        target: "animatingPlay",
-                        guard: "currentPlayerCanPlay",
-                        actions: "queuePlayedCard"
-                    }
-                }
-            },
-            animatingPlay: {
-                on: {
-                    ANIMATION_DONE: {
-                        target: "resolvingTurn",
-                        actions: "commitPlayedCard"
-                    }
-                }
-            },
-            resolvingTurn: {
-                entry: "finalizeTurn",
-                after: {
-                    700: [
-                        {
-                            guard: "shouldAdvanceNextPlayer",
-                            target: "playerTurn",
-                            actions: "advanceAfterResolution"
-                        },
-                        {
-                            guard: "shouldAdvanceNextRound",
-                            target: "playerTurn",
-                            actions: "advanceAfterResolution"
-                        },
-                        {
-                            target: "gameOver",
-                            actions: "advanceAfterResolution"
-                        }
-                    ]
-                }
-            },
-            gameOver: {
-                on: {
-                    RESTART: {
-                        target: "idle",
-                        actions: "resetToIdle"
-                    }
-                }
-            }
+            ]
         }
     });
 }

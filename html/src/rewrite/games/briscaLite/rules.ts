@@ -102,7 +102,7 @@ function getWinnerIndex(context: BriscaLiteContext, winnerId: string | null): nu
 function drawCardsForPlayers(
     context: BriscaLiteContext,
     winnerId: string | null
-): Pick<BriscaLiteContext, "piles" | "players" | "drawPile" | "trumpCard" | "trumpSuitId"> {
+): Pick<BriscaLiteContext, "piles" | "trumpCard" | "trumpSuitId"> {
     let piles = context.piles;
     const winnerIndex = getWinnerIndex(context, winnerId);
 
@@ -138,8 +138,6 @@ function drawCardsForPlayers(
 
     return {
         piles: nextContext.piles,
-        players: nextContext.players,
-        drawPile: nextContext.drawPile,
         trumpCard: nextContext.trumpCard,
         trumpSuitId: nextContext.trumpSuitId
     };
@@ -204,14 +202,20 @@ export function setTrickStatus(context: BriscaLiteContext): BriscaLiteContext {
 
 export function selectCard(context: BriscaLiteContext, cardId: string): BriscaLiteContext {
     const currentPlayer = getCurrentPlayer(context);
-    const clickedCard = currentPlayer?.hand.find((card) => card.id === cardId);
+    const clickedCard = currentPlayer
+        ? getPileCards(context.piles, getBriscaLiteHandPileId(currentPlayer.id)).find((card) => {
+            return card.id === cardId;
+        }) ?? null
+        : null;
     if (!clickedCard) {
         return context;
     }
 
     const selectedCardId = context.selectedCardId === cardId ? null : cardId;
     const selectedCard = selectedCardId
-        ? currentPlayer.hand.find((card) => card.id === selectedCardId) ?? null
+        ? getPileCards(context.piles, getBriscaLiteHandPileId(currentPlayer.id)).find((card) => {
+            return card.id === selectedCardId;
+        }) ?? null
         : null;
 
     return {

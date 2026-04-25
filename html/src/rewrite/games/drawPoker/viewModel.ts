@@ -23,8 +23,12 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
     const isPlayerTurn = snapshot.matches("playerTurn");
+    const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
     const drawCards = getPileCards(snapshot.context.piles, DRAW_POKER_STOCK_PILE_ID);
     const discardCards = getPileCards(snapshot.context.piles, DRAW_POKER_DISCARD_PILE_ID);
+    const currentHandCards = currentPlayerId
+        ? getPileCards(snapshot.context.piles, getDrawPokerHandPileId(currentPlayerId))
+        : [];
     const discardTopCard =
         snapshot.matches("animatingPlay") || discardCards.length === 0
             ? null
@@ -39,10 +43,10 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
                   key:
                       snapshot.context.lastPlayedCard.id +
                       "-" +
-                      snapshot.context.discardPile.length +
+                      discardCards.length +
                       "-" +
-                      snapshot.context.players[snapshot.context.turnIndex]?.hand.length,
-                  playerId: snapshot.context.players[snapshot.context.turnIndex]?.id ?? "",
+                      currentHandCards.length,
+                  playerId: currentPlayerId ?? "",
                   cardId: snapshot.context.lastPlayedCard.card.id
               }
             : null;

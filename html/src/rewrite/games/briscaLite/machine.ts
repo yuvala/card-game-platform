@@ -1,30 +1,13 @@
-import { ActorRefFrom, SnapshotFrom, assign, setup } from "xstate";
+import { ActorRefFrom, SnapshotFrom } from "xstate";
 
 import { spanishDeckDefinition } from "../../engine/cards/deckDefinitions";
+import { createCardGameMachine } from "../../engine/game/machineFactory";
 import { briscaLiteGameDefinition } from "./definition";
 import type {
     BriscaLiteContext,
     BriscaLiteEvent,
     BriscaLiteOptions
 } from "./types";
-
-function getCurrentActorId(context: BriscaLiteContext): string | null {
-    return context.players[context.turnIndex]?.id ?? null;
-}
-
-function hasLegalMove(context: BriscaLiteContext, moveType: string): boolean {
-    return briscaLiteGameDefinition.getLegalMoves(context, getCurrentActorId(context)).some((move) => {
-        return move.type === moveType;
-    });
-}
-
-function applyDefinitionMove(context: BriscaLiteContext, move: Parameters<typeof briscaLiteGameDefinition.applyMove>[1]) {
-    return briscaLiteGameDefinition.applyMove(context, move).state;
-}
-
-function getAutomaticMove(context: BriscaLiteContext) {
-    return briscaLiteGameDefinition.getAutomaticMove?.(context) ?? null;
-}
 
 export function createBriscaLiteMachine(playerNames: string[], options?: BriscaLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? spanishDeckDefinition;
@@ -36,137 +19,55 @@ export function createBriscaLiteMachine(playerNames: string[], options?: BriscaL
         random
     };
 
-    return setup({
-        types: {
-            context: {} as BriscaLiteContext,
-            events: {} as BriscaLiteEvent
+    return createCardGameMachine<BriscaLiteContext, BriscaLiteEvent, Parameters<typeof briscaLiteGameDefinition.applyMove>[1], BriscaLiteOptions>({
+        definition: briscaLiteGameDefinition,
+        playerNames,
+        definitionOptions,
+        prepareShuffleMove: {
+            type: "prepare-shuffle",
+            random
         },
-        actions: {
-            resetToIdle: assign(() => briscaLiteGameDefinition.setup({
-                playerNames,
-                options: definitionOptions
-            })),
-            prepareShuffle: assign(({ context }) => applyDefinitionMove(context, {
-                type: "prepare-shuffle",
-                random
-            })),
-            prepareDeal: assign(({ context }) => applyDefinitionMove(context, {
-                type: "deal-opening-hands"
-            })),
-            beginTrick: assign(({ context }) => applyDefinitionMove(context, {
+        prepareDealMove: {
+            type: "deal-opening-hands"
+        },
+        getCurrentActorId: (context) => context.players[context.turnIndex]?.id ?? null,
+        flow: {
+            readyState: "playerTurn",
+            resolvingState: "resolvingTurn",
+            shuffleDelayMs: 650,
+            dealDelayMs: 900,
+            resolveDelayMs: 850,
+            prepareReadyMove: {
                 type: "begin-trick"
-            })),
-            selectCard: assign(({ context, event }) => {
-                if (event.type !== "SELECT_CARD") {
-                    return context;
-                }
-
-                return applyDefinitionMove(context, {
-                    type: "select-card",
-                    cardId: event.cardId
-                });
+            },
+            selectCardMove: (cardId) => ({
+                type: "select-card",
+                cardId
             }),
-            queuePlayedCard: assign(({ context }) => applyDefinitionMove(context, {
+            playMove: {
                 type: "queue-play"
-            })),
-            commitPlayedCard: assign(({ context }) => applyDefinitionMove(context, {
-                type: "commit-play"
-            })),
-            finalizeTurn: assign(({ context }) => applyDefinitionMove(context, {
+            },
+            playGuardMoveType: "queue-play",
+            animation: {
+                kind: "event",
+                state: "animatingPlay",
+                commitMove: {
+                    type: "commit-play"
+                }
+            },
+            finalizeMove: {
                 type: "finalize-turn"
-            })),
-            advanceAfterResolution: assign(({ context }) => {
-                const move = getAutomaticMove(context);
-                return move ? applyDefinitionMove(context, move) : context;
-            })
-        },
-        guards: {
-            currentPlayerCanPlay: ({ context }) => hasLegalMove(context, "queue-play"),
-            shouldAdvanceNextPlayer: ({ context }) => getAutomaticMove(context)?.type === "advance-next-player",
-            shouldAdvanceNextTrick: ({ context }) => getAutomaticMove(context)?.type === "advance-next-trick"
-        }
-    }).createMachine({
-        id: briscaLiteGameDefinition.id,
-        initial: "idle",
-        context: briscaLiteGameDefinition.setup({
-            playerNames,
-            options: definitionOptions
-        }),
-        states: {
-            idle: {
-                entry: "resetToIdle",
-                on: {
-                    START: {
-                        target: "shuffling",
-                        actions: "prepareShuffle"
-                    }
-                }
             },
-            shuffling: {
-                after: {
-                    650: {
-                        target: "dealing",
-                        actions: "prepareDeal"
-                    }
+            resolutionTargets: [
+                {
+                    automaticMoveType: "advance-next-player",
+                    target: "playerTurn"
+                },
+                {
+                    automaticMoveType: "advance-next-trick",
+                    target: "playerTurn"
                 }
-            },
-            dealing: {
-                after: {
-                    900: {
-                        target: "playerTurn",
-                        actions: "beginTrick"
-                    }
-                }
-            },
-            playerTurn: {
-                on: {
-                    SELECT_CARD: {
-                        actions: "selectCard"
-                    },
-                    PLAY_CARD: {
-                        target: "animatingPlay",
-                        guard: "currentPlayerCanPlay",
-                        actions: "queuePlayedCard"
-                    }
-                }
-            },
-            animatingPlay: {
-                on: {
-                    ANIMATION_DONE: {
-                        target: "resolvingTurn",
-                        actions: "commitPlayedCard"
-                    }
-                }
-            },
-            resolvingTurn: {
-                entry: "finalizeTurn",
-                after: {
-                    850: [
-                        {
-                            guard: "shouldAdvanceNextPlayer",
-                            target: "playerTurn",
-                            actions: "advanceAfterResolution"
-                        },
-                        {
-                            guard: "shouldAdvanceNextTrick",
-                            target: "playerTurn",
-                            actions: "advanceAfterResolution"
-                        },
-                        {
-                            target: "gameOver",
-                            actions: "advanceAfterResolution"
-                        }
-                    ]
-                }
-            },
-            gameOver: {
-                on: {
-                    RESTART: {
-                        target: "idle",
-                        actions: "resetToIdle"
-                    }
-                }
-            }
+            ]
         }
     });
 }

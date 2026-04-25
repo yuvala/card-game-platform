@@ -1,5 +1,4 @@
 import { getPileCards, moveCardBetweenPiles } from "../../engine/game/piles";
-import { syncDrawPokerContextFromPiles } from "./setup";
 import type { RewriteGameContext, RewritePlayedCard, RewritePlayer } from "./types";
 import {
     DRAW_POKER_DISCARD_PILE_ID,
@@ -130,14 +129,14 @@ export function commitPlayedCard(context: RewriteGameContext): RewriteGameContex
         (card) => card.id === previewCard.id
     );
 
-    return syncDrawPokerContextFromPiles({
+    return {
         ...context,
         piles: playedCardState.piles,
         discardPile: context.discardPile.concat(playedCard),
         roundCards: context.roundCards.concat(playedCard),
         lastPlayedCard: playedCard,
         selectedCardId: null
-    });
+    };
 }
 
 export function finalizeTurn(context: RewriteGameContext): RewriteGameContext {

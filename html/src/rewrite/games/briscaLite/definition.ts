@@ -1,5 +1,6 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
+import { getPileCards } from "../../engine/game/piles";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
     advanceToNextPlayer,
@@ -19,6 +20,7 @@ import type {
     BriscaLiteOptions,
     BriscaLiteViewSnapshot
 } from "./types";
+import { getBriscaLiteHandPileId } from "./types";
 
 export type BriscaLiteMove =
     | { type: "prepare-shuffle"; random?: () => number }
@@ -60,7 +62,10 @@ export const briscaLiteGameDefinition: GameDefinition<
             return [];
         }
 
-        const moves: BriscaLiteMove[] = currentPlayer.hand.map((card) => ({
+        const moves: BriscaLiteMove[] = getPileCards(
+            state.piles,
+            getBriscaLiteHandPileId(currentPlayer.id)
+        ).map((card) => ({
             type: "select-card",
             cardId: card.id
         }));

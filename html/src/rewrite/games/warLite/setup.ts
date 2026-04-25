@@ -19,7 +19,6 @@ function createPlayers(names: string[]): WarLitePlayer[] {
     return names.slice(0, 2).map((name, index) => ({
         id: "p" + (index + 1),
         name,
-        hand: [],
         score: 0
     }));
 }
@@ -70,16 +69,7 @@ function createInitialPiles(players: readonly WarLitePlayer[]): CardPileMap<Card
 }
 
 export function syncWarLiteContextFromPiles(context: WarLiteContext): WarLiteContext {
-    return {
-        ...context,
-        players: context.players.map((player) => {
-            return {
-                ...player,
-                hand: getPileCards(context.piles, getWarLiteHandPileId(player.id))
-            };
-        }),
-        drawPile: getPileCards(context.piles, WAR_LITE_STOCK_PILE_ID)
-    };
+    return context;
 }
 
 export function createInitialContext(
@@ -91,7 +81,6 @@ export function createInitialContext(
 
     return {
         deckDefinition,
-        drawPile: [],
         discardPile: [],
         piles: createInitialPiles(players),
         roundCards: [],
@@ -118,11 +107,11 @@ export function createShuffledContext(
     const baseContext = createInitialContext(playerNames, deckDefinition);
     const shuffledDeck = shuffleDeck(createDeck(deckDefinition), random).reverse();
 
-    return syncWarLiteContextFromPiles({
+    return {
         ...baseContext,
         piles: setPileCards(baseContext.piles, WAR_LITE_STOCK_PILE_ID, shuffledDeck),
         statusText: "Shuffling the " + deckDefinition.name + " for War Lite..."
-    });
+    };
 }
 
 export function dealOpeningHands(context: WarLiteContext): WarLiteContext {
@@ -147,7 +136,7 @@ export function dealOpeningHands(context: WarLiteContext): WarLiteContext {
         dealingIndex += 1;
     }
 
-    return syncWarLiteContextFromPiles({
+    return {
         ...context,
         piles,
         turnIndex: 0,
@@ -161,5 +150,5 @@ export function dealOpeningHands(context: WarLiteContext): WarLiteContext {
             "The " +
             context.deckDefinition.name +
             " is split. Press Play Card to reveal the first battle."
-    });
+    };
 }

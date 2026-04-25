@@ -29,7 +29,6 @@ export type CardPileMap<TCard> = Record<string, CardPile<TCard>>;
 export interface CardGamePlayer<TCard> {
     id: string;
     name: string;
-    hand: TCard[];
 }
 
 export interface CardGameTurn<TPlayedCard> {
@@ -47,7 +46,6 @@ export interface CardGameSession<
     TPlayedCard
 > extends CardGameTurn<TPlayedCard> {
     deckDefinition: DeckDefinition;
-    drawPile: TCard[];
     discardPile: TPlayedCard[];
     piles: CardPileMap<TCard>;
     players: TPlayer[];

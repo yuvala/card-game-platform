@@ -82,19 +82,20 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                 label: card.displayLabel,
                 isFaceUp: true
             }));
+            const handCount = faceUpCards.length;
 
             return {
                 id: player.id,
                 iconLabel: getPlayerIconLabel(player.name),
                 nameLabel: player.name,
                 metaLabel:
-                    String(player.hand.length) +
+                    String(handCount) +
                     " cards | " +
                     String(player.score) +
                     " tricks",
                 hand: revealHand
                     ? faceUpCards
-                    : createHiddenPreviewCards(faceUpCards, Math.min(player.hand.length, 3)),
+                    : createHiddenPreviewCards(faceUpCards, Math.min(handCount, 3)),
                 isCurrentTurn,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
                 canInteract: isCurrentTurn && isPlayerTurn

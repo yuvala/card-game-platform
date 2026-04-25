@@ -22,7 +22,6 @@ function createPlayers(names: string[]): BriscaLitePlayer[] {
     return names.map((name, index) => ({
         id: "p" + (index + 1),
         name,
-        hand: [],
         score: 0
     }));
 }
@@ -87,20 +86,11 @@ function createInitialPiles(players: readonly BriscaLitePlayer[]): CardPileMap<C
 }
 
 export function syncBriscaLiteContextFromPiles(context: BriscaLiteContext): BriscaLiteContext {
-    const players = context.players.map((player) => {
-        return {
-            ...player,
-            hand: getPileCards(context.piles, getBriscaLiteHandPileId(player.id))
-        };
-    });
-    const drawPile = getPileCards(context.piles, BRISCA_LITE_STOCK_PILE_ID);
     const trumpCards = getPileCards(context.piles, BRISCA_LITE_TRUMP_PILE_ID);
     const trumpCard = trumpCards[trumpCards.length - 1] ?? null;
 
     return {
         ...context,
-        players,
-        drawPile,
         trumpCard,
         trumpSuitId: trumpCard?.suitId ?? null
     };
@@ -117,7 +107,6 @@ export function createInitialContext(
 
     return {
         deckDefinition,
-        drawPile: [],
         discardPile: [],
         piles: createInitialPiles(players),
         roundCards: [],

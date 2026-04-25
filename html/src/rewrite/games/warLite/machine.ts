@@ -1,22 +1,9 @@
-import { ActorRefFrom, SnapshotFrom, assign, setup } from "xstate";
+import { ActorRefFrom, SnapshotFrom } from "xstate";
 
 import { frenchDeckDefinition } from "../../engine/cards/deckDefinitions";
+import { createCardGameMachine } from "../../engine/game/machineFactory";
 import { warLiteGameDefinition } from "./definition";
 import type { WarLiteContext, WarLiteEvent, WarLiteOptions } from "./types";
-
-function hasLegalMove(context: WarLiteContext, moveType: string): boolean {
-    return warLiteGameDefinition.getLegalMoves(context).some((move) => {
-        return move.type === moveType;
-    });
-}
-
-function applyDefinitionMove(context: WarLiteContext, move: Parameters<typeof warLiteGameDefinition.applyMove>[1]) {
-    return warLiteGameDefinition.applyMove(context, move).state;
-}
-
-function getAutomaticMove(context: WarLiteContext) {
-    return warLiteGameDefinition.getAutomaticMove?.(context) ?? null;
-}
 
 export function createWarLiteMachine(playerNames: string[], options?: WarLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? frenchDeckDefinition;
@@ -26,114 +13,44 @@ export function createWarLiteMachine(playerNames: string[], options?: WarLiteOpt
         random
     };
 
-    return setup({
-        types: {
-            context: {} as WarLiteContext,
-            events: {} as WarLiteEvent
+    return createCardGameMachine<WarLiteContext, WarLiteEvent, Parameters<typeof warLiteGameDefinition.applyMove>[1], WarLiteOptions>({
+        definition: warLiteGameDefinition,
+        playerNames,
+        definitionOptions,
+        prepareShuffleMove: {
+            type: "prepare-shuffle",
+            random
         },
-        actions: {
-            resetToIdle: assign(() => warLiteGameDefinition.setup({
-                playerNames,
-                options: definitionOptions
-            })),
-            prepareShuffle: assign(({ context }) => applyDefinitionMove(context, {
-                type: "prepare-shuffle",
-                random
-            })),
-            prepareDeal: assign(({ context }) => applyDefinitionMove(context, {
-                type: "deal-opening-hands"
-            })),
-            prepareBattle: assign(({ context }) => applyDefinitionMove(context, {
+        prepareDealMove: {
+            type: "deal-opening-hands"
+        },
+        flow: {
+            readyState: "battleReady",
+            resolvingState: "resolvingBattle",
+            shuffleDelayMs: 650,
+            dealDelayMs: 900,
+            resolveDelayMs: 1200,
+            prepareReadyMove: {
                 type: "prepare-battle"
-            })),
-            revealBattle: assign(({ context }) => applyDefinitionMove(context, {
+            },
+            playMove: {
                 type: "reveal-battle"
-            })),
-            finalizeBattle: assign(({ context }) => applyDefinitionMove(context, {
+            },
+            playGuardMoveType: "reveal-battle",
+            animation: {
+                kind: "timed",
+                state: "revealingBattle",
+                delayMs: 900
+            },
+            finalizeMove: {
                 type: "finalize-battle"
-            })),
-            advanceAfterResolution: assign(({ context }) => {
-                const move = getAutomaticMove(context);
-                return move ? applyDefinitionMove(context, move) : context;
-            })
-        },
-        guards: {
-            canRevealBattle: ({ context }) => hasLegalMove(context, "reveal-battle"),
-            shouldAdvanceNextRound: ({ context }) => getAutomaticMove(context)?.type === "advance-next-round"
-        }
-    }).createMachine({
-        id: warLiteGameDefinition.id,
-        initial: "idle",
-        context: warLiteGameDefinition.setup({
-            playerNames,
-            options: definitionOptions
-        }),
-        states: {
-            idle: {
-                entry: "resetToIdle",
-                on: {
-                    START: {
-                        target: "shuffling",
-                        actions: "prepareShuffle"
-                    }
-                }
             },
-            shuffling: {
-                after: {
-                    650: {
-                        target: "dealing",
-                        actions: "prepareDeal"
-                    }
+            resolutionTargets: [
+                {
+                    automaticMoveType: "advance-next-round",
+                    target: "battleReady"
                 }
-            },
-            dealing: {
-                after: {
-                    900: {
-                        target: "battleReady",
-                        actions: "prepareBattle"
-                    }
-                }
-            },
-            battleReady: {
-                on: {
-                    PLAY_CARD: {
-                        target: "revealingBattle",
-                        guard: "canRevealBattle",
-                        actions: "revealBattle"
-                    }
-                }
-            },
-            revealingBattle: {
-                after: {
-                    900: {
-                        target: "resolvingBattle"
-                    }
-                }
-            },
-            resolvingBattle: {
-                entry: "finalizeBattle",
-                after: {
-                    1200: [
-                        {
-                            guard: "shouldAdvanceNextRound",
-                            target: "battleReady",
-                            actions: "advanceAfterResolution"
-                        },
-                        {
-                            target: "gameOver",
-                            actions: "advanceAfterResolution"
-                        }
-                    ]
-                }
-            },
-            gameOver: {
-                on: {
-                    RESTART: {
-                        target: "idle",
-                        actions: "resetToIdle"
-                    }
-                }
-            }
+            ]
         }
     });
 }

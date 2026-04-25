@@ -3,6 +3,7 @@ import { createActor } from "xstate";
 import type { SupportedDeckId } from "../engine/cards/deckDefinitions";
 import {
     defineGameCatalogEntry,
+    type CardGameActorRuntime,
     type AnyGameCatalogEntry
 } from "../engine/game/catalog";
 import { briscaLiteGameDefinition } from "./briscaLite/definition";
@@ -38,7 +39,7 @@ const drawPokerCatalogEntry = defineGameCatalogEntry<RewriteGameViewSnapshot, Re
         return toViewModel(snapshot);
     },
     createActor: (playerNames, options) => {
-        return createActor(createRewriteGameMachine(playerNames, options));
+        return createActor(createRewriteGameMachine(playerNames, options)) as CardGameActorRuntime<RewriteGameViewSnapshot>;
     }
 });
 
@@ -61,7 +62,7 @@ const warLiteCatalogEntry = defineGameCatalogEntry<WarLiteViewSnapshot, WarLiteO
         return toViewModel(snapshot);
     },
     createActor: (playerNames, options) => {
-        return createActor(createWarLiteMachine(playerNames, options));
+        return createActor(createWarLiteMachine(playerNames, options)) as CardGameActorRuntime<WarLiteViewSnapshot>;
     }
 });
 
@@ -85,7 +86,7 @@ const briscaLiteCatalogEntry = defineGameCatalogEntry<BriscaLiteViewSnapshot, Br
         return toViewModel(snapshot);
     },
     createActor: (playerNames, options) => {
-        return createActor(createBriscaLiteMachine(playerNames, options));
+        return createActor(createBriscaLiteMachine(playerNames, options)) as CardGameActorRuntime<BriscaLiteViewSnapshot>;
     }
 });
 
