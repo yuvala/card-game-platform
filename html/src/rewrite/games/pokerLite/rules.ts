@@ -1,18 +1,20 @@
 import { getPileCards, moveCardBetweenPiles } from "../../engine/game/piles";
-import type { RewriteGameContext, RewritePlayedCard, RewritePlayer } from "./types";
 import {
-    DRAW_POKER_DISCARD_PILE_ID,
-    getDrawPokerHandPileId
+    POKER_LITE_DISCARD_PILE_ID,
+    getPokerLiteHandPileId,
+    type PokerLiteContext,
+    type PokerLitePlayedCard,
+    type PokerLitePlayer
 } from "./types";
 
-function getCurrentPlayer(context: RewriteGameContext): RewritePlayer {
+function getCurrentPlayer(context: PokerLiteContext): PokerLitePlayer {
     return context.players[context.turnIndex];
 }
 
-function getPreviewCard(context: RewriteGameContext) {
+function getPreviewCard(context: PokerLiteContext) {
     const player = getCurrentPlayer(context);
     if (context.selectedCardId) {
-        return getPileCards(context.piles, getDrawPokerHandPileId(player.id)).find((card) => {
+        return getPileCards(context.piles, getPokerLiteHandPileId(player.id)).find((card) => {
             return card.id === context.selectedCardId;
         }) ?? null;
     }
@@ -20,17 +22,17 @@ function getPreviewCard(context: RewriteGameContext) {
     return null;
 }
 
-function rankPlayedCards(roundCards: RewritePlayedCard[]): RewritePlayedCard[] {
+function rankPlayedCards(roundCards: PokerLitePlayedCard[]): PokerLitePlayedCard[] {
     return roundCards.slice().sort((leftCard, rightCard) => {
         return rightCard.card.sortOrder - leftCard.card.sortOrder;
     });
 }
 
-export function canCurrentPlayerPlay(context: RewriteGameContext): boolean {
+export function canCurrentPlayerPlay(context: PokerLiteContext): boolean {
     return Boolean(getPreviewCard(context));
 }
 
-export function setTurnStatus(context: RewriteGameContext): RewriteGameContext {
+export function setTurnStatus(context: PokerLiteContext): PokerLiteContext {
     const currentPlayer = getCurrentPlayer(context);
     const selectedCard = getPreviewCard(context);
 
@@ -59,9 +61,9 @@ export function setTurnStatus(context: RewriteGameContext): RewriteGameContext {
     };
 }
 
-export function selectCard(context: RewriteGameContext, cardId: string): RewriteGameContext {
+export function selectCard(context: PokerLiteContext, cardId: string): PokerLiteContext {
     const currentPlayer = getCurrentPlayer(context);
-    const clickedCard = getPileCards(context.piles, getDrawPokerHandPileId(currentPlayer.id)).find((card) => {
+    const clickedCard = getPileCards(context.piles, getPokerLiteHandPileId(currentPlayer.id)).find((card) => {
         return card.id === cardId;
     });
 
@@ -71,7 +73,7 @@ export function selectCard(context: RewriteGameContext, cardId: string): Rewrite
 
     const selectedCardId = context.selectedCardId === cardId ? null : cardId;
     const selectedCard = selectedCardId
-        ? getPileCards(context.piles, getDrawPokerHandPileId(currentPlayer.id)).find((card) => {
+        ? getPileCards(context.piles, getPokerLiteHandPileId(currentPlayer.id)).find((card) => {
             return card.id === selectedCardId;
         }) ?? null
         : null;
@@ -85,7 +87,7 @@ export function selectCard(context: RewriteGameContext, cardId: string): Rewrite
     };
 }
 
-export function queuePlayedCard(context: RewriteGameContext): RewriteGameContext {
+export function queuePlayedCard(context: PokerLiteContext): PokerLiteContext {
     const currentPlayer = getCurrentPlayer(context);
     const previewCard = getPreviewCard(context);
 
@@ -107,7 +109,7 @@ export function queuePlayedCard(context: RewriteGameContext): RewriteGameContext
     };
 }
 
-export function commitPlayedCard(context: RewriteGameContext): RewriteGameContext {
+export function commitPlayedCard(context: PokerLiteContext): PokerLiteContext {
     const currentPlayer = getCurrentPlayer(context);
     const previewCard = getPreviewCard(context);
 
@@ -115,7 +117,7 @@ export function commitPlayedCard(context: RewriteGameContext): RewriteGameContex
         return context;
     }
 
-    const playedCard: RewritePlayedCard = {
+    const playedCard: PokerLitePlayedCard = {
         id: "played-" + context.round + "-" + context.turnIndex,
         card: previewCard,
         playerId: currentPlayer.id,
@@ -124,8 +126,8 @@ export function commitPlayedCard(context: RewriteGameContext): RewriteGameContex
     };
     const playedCardState = moveCardBetweenPiles(
         context.piles,
-        getDrawPokerHandPileId(currentPlayer.id),
-        DRAW_POKER_DISCARD_PILE_ID,
+        getPokerLiteHandPileId(currentPlayer.id),
+        POKER_LITE_DISCARD_PILE_ID,
         (card) => card.id === previewCard.id
     );
 
@@ -139,7 +141,7 @@ export function commitPlayedCard(context: RewriteGameContext): RewriteGameContex
     };
 }
 
-export function finalizeTurn(context: RewriteGameContext): RewriteGameContext {
+export function finalizeTurn(context: PokerLiteContext): PokerLiteContext {
     const lastPlayedCard = context.lastPlayedCard;
     if (!lastPlayedCard) {
         return context;
@@ -188,7 +190,7 @@ export function finalizeTurn(context: RewriteGameContext): RewriteGameContext {
     };
 }
 
-export function advanceToNextPlayer(context: RewriteGameContext): RewriteGameContext {
+export function advanceToNextPlayer(context: PokerLiteContext): PokerLiteContext {
     return {
         ...context,
         turnIndex: context.turnIndex + 1,
@@ -196,7 +198,7 @@ export function advanceToNextPlayer(context: RewriteGameContext): RewriteGameCon
     };
 }
 
-export function advanceToNextRound(context: RewriteGameContext): RewriteGameContext {
+export function advanceToNextRound(context: PokerLiteContext): PokerLiteContext {
     return {
         ...context,
         round: context.round + 1,
@@ -207,17 +209,17 @@ export function advanceToNextRound(context: RewriteGameContext): RewriteGameCont
     };
 }
 
-export function hasMorePlayersInRound(context: RewriteGameContext): boolean {
+export function hasMorePlayersInRound(context: PokerLiteContext): boolean {
     return context.turnIndex < context.players.length - 1;
 }
 
-export function hasMoreRoundsRemaining(context: RewriteGameContext): boolean {
+export function hasMoreRoundsRemaining(context: PokerLiteContext): boolean {
     return context.round < context.maxRounds && context.players.some((player) => {
-        return getPileCards(context.piles, getDrawPokerHandPileId(player.id)).length > 0;
+        return getPileCards(context.piles, getPokerLiteHandPileId(player.id)).length > 0;
     });
 }
 
-export function finishGame(context: RewriteGameContext): RewriteGameContext {
+export function finishGame(context: PokerLiteContext): PokerLiteContext {
     const highestScore = context.players.reduce((bestScore, player) => {
         return Math.max(bestScore, player.score);
     }, 0);

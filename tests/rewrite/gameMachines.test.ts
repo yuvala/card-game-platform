@@ -8,8 +8,8 @@ import { getPileCards } from "../../html/src/rewrite/engine/game/piles";
 import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
 import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
 import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "../../html/src/rewrite/games/briscaLite/types";
-import { createRewriteGameMachine } from "../../html/src/rewrite/games/drawPoker/machine";
-import { getDrawPokerHandPileId } from "../../html/src/rewrite/games/drawPoker/types";
+import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
+import { getPokerLiteHandPileId } from "../../html/src/rewrite/games/pokerLite/types";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
 import { getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
 
@@ -39,8 +39,8 @@ async function waitFor(condition: () => boolean, timeoutMs = 4000) {
     }
 }
 
-async function runDrawPokerMachineTest() {
-    const machine = createRewriteGameMachine(["Avi", "Dany"], {
+async function runPokerLiteMachineTest() {
+    const machine = createPokerLiteMachine(["Avi", "Dany"], {
         deckDefinition: frenchDeckDefinition,
         cardsPerPlayer: 1,
         random: () => 0.5
@@ -53,8 +53,8 @@ async function runDrawPokerMachineTest() {
 
     let snapshot = actor.getSnapshot();
     const currentPlayer = snapshot.context.players[snapshot.context.turnIndex];
-    const currentHand = getPileCards(snapshot.context.piles, getDrawPokerHandPileId(currentPlayer.id));
-    assert(currentHand.length === 1, "Draw Poker should deal one card to the current player in the short test setup.");
+    const currentHand = getPileCards(snapshot.context.piles, getPokerLiteHandPileId(currentPlayer.id));
+    assert(currentHand.length === 1, "Poker Lite should deal one card to the current player in the short test setup.");
 
     actor.send({ type: "SELECT_CARD", cardId: currentHand[0].id });
     actor.send({ type: "PLAY_CARD" });
@@ -66,11 +66,11 @@ async function runDrawPokerMachineTest() {
     });
 
     snapshot = actor.getSnapshot();
-    assert(snapshot.context.roundCards.length === 1, "Draw Poker should keep one played card after the first turn resolves.");
+    assert(snapshot.context.roundCards.length === 1, "Poker Lite should keep one played card after the first turn resolves.");
 
     const secondPlayer = snapshot.context.players[snapshot.context.turnIndex];
-    const secondHand = getPileCards(snapshot.context.piles, getDrawPokerHandPileId(secondPlayer.id));
-    assert(secondHand.length === 1, "Draw Poker second player should still have one card before playing.");
+    const secondHand = getPileCards(snapshot.context.piles, getPokerLiteHandPileId(secondPlayer.id));
+    assert(secondHand.length === 1, "Poker Lite second player should still have one card before playing.");
 
     actor.send({ type: "SELECT_CARD", cardId: secondHand[0].id });
     actor.send({ type: "PLAY_CARD" });
@@ -79,25 +79,25 @@ async function runDrawPokerMachineTest() {
     await waitFor(() => actor.getSnapshot().value === "gameOver");
     snapshot = actor.getSnapshot();
 
-    assert(snapshot.value === "gameOver", "Draw Poker should finish after both one-card turns.");
-    assert(snapshot.context.roundCards.length === 2, "Draw Poker should keep both played cards in the last round.");
-    assert(snapshot.context.playedCardHistory.length === 2, "Draw Poker should record both plays in played-card history.");
+    assert(snapshot.value === "gameOver", "Poker Lite should finish after both one-card turns.");
+    assert(snapshot.context.roundCards.length === 2, "Poker Lite should keep both played cards in the last round.");
+    assert(snapshot.context.playedCardHistory.length === 2, "Poker Lite should record both plays in played-card history.");
     assert(
         getPileCards(snapshot.context.piles, "discard").length === 2,
-        "Draw Poker discard pile should contain both played cards."
+        "Poker Lite discard pile should contain both played cards."
     );
     assert(
         snapshot.context.players.every((player) => {
-            return getPileCards(snapshot.context.piles, getDrawPokerHandPileId(player.id)).length === 0;
+            return getPileCards(snapshot.context.piles, getPokerLiteHandPileId(player.id)).length === 0;
         }),
-        "Draw Poker hands should be empty when the short test reaches game over."
+        "Poker Lite hands should be empty when the short test reaches game over."
     );
     const highestScore = Math.max(...snapshot.context.players.map((player) => player.score));
-    assert(highestScore === 1, "Draw Poker short test should award exactly one point.");
-    assert(snapshot.context.winningPlayerIds.length === 1, "Draw Poker short test should resolve to a single winner.");
+    assert(highestScore === 1, "Poker Lite short test should award exactly one point.");
+    assert(snapshot.context.winningPlayerIds.length === 1, "Poker Lite short test should resolve to a single winner.");
     assert(
         snapshot.context.statusText.includes("finished"),
-        "Draw Poker should expose a finished status message at game over."
+        "Poker Lite should expose a finished status message at game over."
     );
 }
 
@@ -245,7 +245,7 @@ async function runBriscaLiteMachineTest() {
 }
 
 async function main() {
-    await runDrawPokerMachineTest();
+    await runPokerLiteMachineTest();
     await runWarLiteMachineTest();
     await runBriscaLiteMachineTest();
     console.log("gameMachines.test.ts passed");

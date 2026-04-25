@@ -9,37 +9,37 @@ import {
 import { briscaLiteGameDefinition } from "./briscaLite/definition";
 import { createBriscaLiteMachine } from "./briscaLite/machine";
 import type { BriscaLiteOptions, BriscaLiteViewSnapshot } from "./briscaLite/types";
-import { drawPokerGameDefinition } from "./drawPoker/definition";
-import { createRewriteGameMachine } from "./drawPoker/machine";
-import type { RewriteGameOptions, RewriteGameViewSnapshot } from "./drawPoker/types";
+import { pokerLiteGameDefinition } from "./pokerLite/definition";
+import { createPokerLiteMachine } from "./pokerLite/machine";
+import type { PokerLiteOptions, PokerLiteViewSnapshot } from "./pokerLite/types";
 import { warLiteGameDefinition } from "./warLite/definition";
 import { createWarLiteMachine } from "./warLite/machine";
 import type { WarLiteOptions, WarLiteViewSnapshot } from "./warLite/types";
 
-const drawPokerSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
+const pokerLiteSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
 const warLiteSupportedDeckIds = ["french", "spanish", "italian"] as const satisfies readonly SupportedDeckId[];
 const briscaLiteSupportedDeckIds = ["spanish", "italian"] as const satisfies readonly SupportedDeckId[];
 
-const drawPokerCatalogEntry = defineGameCatalogEntry<RewriteGameViewSnapshot, RewriteGameOptions>({
-    id: "draw-poker",
-    label: "Draw Poker",
-    description: "Prototype ruleset for the rewrite runtime. Every player reveals and plays a card each round.",
-    minPlayers: 1,
-    maxPlayers: 6,
+const pokerLiteCatalogEntry = defineGameCatalogEntry<PokerLiteViewSnapshot, PokerLiteOptions>({
+    id: "poker-lite",
+    label: "Poker Lite",
+    description: "Prototype high-card ruleset for the rewrite runtime. Every player reveals and plays a card each round.",
+    minPlayers: 2,
+    maxPlayers: 8,
     defaultPlayerCount: 3,
-    supportedDeckIds: drawPokerSupportedDeckIds,
+    supportedDeckIds: pokerLiteSupportedDeckIds,
     defaultDeckId: "french",
-    definition: drawPokerGameDefinition,
+    definition: pokerLiteGameDefinition,
     getViewModel: (snapshot) => {
-        const toViewModel = drawPokerGameDefinition.toViewModel;
+        const toViewModel = pokerLiteGameDefinition.toViewModel;
         if (!toViewModel) {
-            throw new Error("Draw Poker game definition is missing a view model adapter.");
+            throw new Error("Poker Lite game definition is missing a view model adapter.");
         }
 
         return toViewModel(snapshot);
     },
     createActor: (playerNames, options) => {
-        return createActor(createRewriteGameMachine(playerNames, options)) as CardGameActorRuntime<RewriteGameViewSnapshot>;
+        return createActor(createPokerLiteMachine(playerNames, options)) as CardGameActorRuntime<PokerLiteViewSnapshot>;
     }
 });
 
@@ -91,22 +91,27 @@ const briscaLiteCatalogEntry = defineGameCatalogEntry<BriscaLiteViewSnapshot, Br
 });
 
 export const gameCatalog = {
-    "draw-poker": drawPokerCatalogEntry,
+    "poker-lite": pokerLiteCatalogEntry,
     "war-lite": warLiteCatalogEntry,
     "brisca-lite": briscaLiteCatalogEntry
 } satisfies Record<string, AnyGameCatalogEntry>;
 
 export type GameCatalogId = keyof typeof gameCatalog;
 
-export const DEFAULT_GAME_ID: GameCatalogId = "draw-poker";
+export const DEFAULT_GAME_ID: GameCatalogId = "poker-lite";
 
 export const gameCatalogEntries = Object.values(gameCatalog);
+
+const legacyGameCatalogAliases: Record<string, GameCatalogId> = {
+    "draw-poker": "poker-lite"
+};
 
 export function getGameCatalogEntryById(gameId: string | null | undefined): AnyGameCatalogEntry | null {
     if (!gameId) {
         return null;
     }
 
-    const normalizedGameId = gameId.toLowerCase() as GameCatalogId;
-    return gameCatalog[normalizedGameId] ?? null;
+    const normalizedGameId = gameId.toLowerCase();
+    const resolvedGameId = legacyGameCatalogAliases[normalizedGameId] ?? (normalizedGameId as GameCatalogId);
+    return gameCatalog[resolvedGameId] ?? null;
 }

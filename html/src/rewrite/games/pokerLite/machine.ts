@@ -2,21 +2,21 @@ import { ActorRefFrom, SnapshotFrom } from "xstate";
 
 import { frenchDeckDefinition } from "../../engine/cards/deckDefinitions";
 import { createCardGameMachine } from "../../engine/game/machineFactory";
-import { drawPokerGameDefinition } from "./definition";
-import type { RewriteGameContext, RewriteGameEvent, RewriteGameOptions } from "./types";
+import { pokerLiteGameDefinition } from "./definition";
+import type { PokerLiteContext, PokerLiteEvent, PokerLiteOptions } from "./types";
 
-export function createRewriteGameMachine(playerNames: string[], options?: RewriteGameOptions) {
+export function createPokerLiteMachine(playerNames: string[], options?: PokerLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? frenchDeckDefinition;
     const cardsPerPlayer = options?.cardsPerPlayer ?? 5;
     const random = options?.random ?? Math.random;
-    const definitionOptions: RewriteGameOptions = {
+    const definitionOptions: PokerLiteOptions = {
         deckDefinition,
         cardsPerPlayer,
         random
     };
 
-    return createCardGameMachine<RewriteGameContext, RewriteGameEvent, Parameters<typeof drawPokerGameDefinition.applyMove>[1], RewriteGameOptions>({
-        definition: drawPokerGameDefinition,
+    return createCardGameMachine<PokerLiteContext, PokerLiteEvent, Parameters<typeof pokerLiteGameDefinition.applyMove>[1], PokerLiteOptions>({
+        definition: pokerLiteGameDefinition,
         playerNames,
         definitionOptions,
         prepareShuffleMove: {
@@ -68,6 +68,6 @@ export function createRewriteGameMachine(playerNames: string[], options?: Rewrit
     });
 }
 
-export type RewriteGameMachine = ReturnType<typeof createRewriteGameMachine>;
-export type RewriteGameActor = ActorRefFrom<RewriteGameMachine>;
-export type RewriteGameSnapshot = SnapshotFrom<RewriteGameMachine>;
+export type PokerLiteMachine = ReturnType<typeof createPokerLiteMachine>;
+export type PokerLiteActor = ActorRefFrom<PokerLiteMachine>;
+export type PokerLiteSnapshot = SnapshotFrom<PokerLiteMachine>;

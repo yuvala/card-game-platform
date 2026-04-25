@@ -29,7 +29,7 @@ http://127.0.0.1:8000/rewrite.html
 
 The rewrite currently includes a Create Game flow and these games:
 
-- `Draw Poker`
+- `Poker Lite`
 - `War Lite`
 - `Brisca-lite`
 

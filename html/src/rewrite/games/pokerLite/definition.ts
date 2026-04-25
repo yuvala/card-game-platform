@@ -13,15 +13,15 @@ import {
     selectCard,
     setTurnStatus
 } from "./rules";
-import { getDrawPokerViewModel } from "./viewModel";
 import type {
-    RewriteGameContext,
-    RewriteGameOptions,
-    RewriteGameViewSnapshot
+    PokerLiteContext,
+    PokerLiteOptions,
+    PokerLiteViewSnapshot
 } from "./types";
-import { getDrawPokerHandPileId } from "./types";
+import { getPokerLiteViewModel } from "./viewModel";
+import { getPokerLiteHandPileId } from "./types";
 
-export type DrawPokerMove =
+export type PokerLiteMove =
     | { type: "prepare-shuffle"; random?: () => number }
     | { type: "deal-opening-hands" }
     | { type: "begin-turn" }
@@ -33,31 +33,31 @@ export type DrawPokerMove =
     | { type: "advance-next-round" }
     | { type: "finish-game" };
 
-function getPlayerNames(context: RewriteGameContext): string[] {
+function getPlayerNames(context: PokerLiteContext): string[] {
     return context.players.map((player) => player.name);
 }
 
-function hasMorePlayersInRound(context: RewriteGameContext): boolean {
+function hasMorePlayersInRound(context: PokerLiteContext): boolean {
     return context.turnIndex < context.players.length - 1;
 }
 
-function areAllHandsEmpty(state: RewriteGameContext): boolean {
+function areAllHandsEmpty(state: PokerLiteContext): boolean {
     return state.players.every((player) => {
-        return getPileCards(state.piles, getDrawPokerHandPileId(player.id)).length === 0;
+        return getPileCards(state.piles, getPokerLiteHandPileId(player.id)).length === 0;
     });
 }
 
-export const drawPokerGameDefinition: GameDefinition<
-    RewriteGameContext,
-    DrawPokerMove,
+export const pokerLiteGameDefinition: GameDefinition<
+    PokerLiteContext,
+    PokerLiteMove,
     CardGameViewModel,
     never,
-    RewriteGameOptions,
+    PokerLiteOptions,
     string,
-    RewriteGameViewSnapshot
+    PokerLiteViewSnapshot
 > = {
-    id: "rewriteDrawPoker",
-    name: "Draw Poker",
+    id: "rewritePokerLite",
+    name: "Poker Lite",
     setup: ({ playerNames, options }) => {
         return createInitialContext(playerNames, options.deckDefinition, options.cardsPerPlayer);
     },
@@ -67,7 +67,7 @@ export const drawPokerGameDefinition: GameDefinition<
             return [];
         }
 
-        const moves: DrawPokerMove[] = getPileCards(state.piles, getDrawPokerHandPileId(currentPlayer.id)).map((card) => ({
+        const moves: PokerLiteMove[] = getPileCards(state.piles, getPokerLiteHandPileId(currentPlayer.id)).map((card) => ({
             type: "select-card",
             cardId: card.id
         }));
@@ -135,13 +135,13 @@ export const drawPokerGameDefinition: GameDefinition<
             return { type: "advance-next-player" };
         }
 
-        if (drawPokerGameDefinition.isGameOver(state)) {
+        if (pokerLiteGameDefinition.isGameOver(state)) {
             return { type: "finish-game" };
         }
 
         return { type: "advance-next-round" };
     },
     toViewModel: (snapshot) => {
-        return getDrawPokerViewModel(snapshot);
+        return getPokerLiteViewModel(snapshot);
     }
 };

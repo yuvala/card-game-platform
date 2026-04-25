@@ -6,14 +6,15 @@ import {
     moveTopCardBetweenPiles,
     setPileCards
 } from "../../engine/game/piles";
-import type { RewriteGameContext, RewritePlayer } from "./types";
 import {
-    DRAW_POKER_DISCARD_PILE_ID,
-    DRAW_POKER_STOCK_PILE_ID,
-    getDrawPokerHandPileId
+    POKER_LITE_DISCARD_PILE_ID,
+    POKER_LITE_STOCK_PILE_ID,
+    getPokerLiteHandPileId,
+    type PokerLiteContext,
+    type PokerLitePlayer
 } from "./types";
 
-function createPlayers(names: string[]): RewritePlayer[] {
+function createPlayers(names: string[]): PokerLitePlayer[] {
     return names.map((name, index) => ({
         id: "p" + (index + 1),
         name,
@@ -32,17 +33,17 @@ function resolveCardsPerPlayer(
     return Math.max(1, Math.min(requestedCardsPerPlayer, supportedCardsPerPlayer));
 }
 
-function createInitialPiles(players: readonly RewritePlayer[]): CardPileMap<CardInstance> {
+function createInitialPiles(players: readonly PokerLitePlayer[]): CardPileMap<CardInstance> {
     const piles: CardPileMap<CardInstance> = {
-        [DRAW_POKER_STOCK_PILE_ID]: createCardPile<CardInstance>({
-            id: DRAW_POKER_STOCK_PILE_ID,
+        [POKER_LITE_STOCK_PILE_ID]: createCardPile<CardInstance>({
+            id: POKER_LITE_STOCK_PILE_ID,
             role: "stock",
             label: "Draw Pile",
             isFaceUp: false,
             isVisibleToAll: false
         }),
-        [DRAW_POKER_DISCARD_PILE_ID]: createCardPile<CardInstance>({
-            id: DRAW_POKER_DISCARD_PILE_ID,
+        [POKER_LITE_DISCARD_PILE_ID]: createCardPile<CardInstance>({
+            id: POKER_LITE_DISCARD_PILE_ID,
             role: "discard",
             label: "Discard",
             isFaceUp: true,
@@ -53,8 +54,8 @@ function createInitialPiles(players: readonly RewritePlayer[]): CardPileMap<Card
     return players.reduce<CardPileMap<CardInstance>>((nextPiles, player) => {
         return {
             ...nextPiles,
-            [getDrawPokerHandPileId(player.id)]: createCardPile<CardInstance>({
-                id: getDrawPokerHandPileId(player.id),
+            [getPokerLiteHandPileId(player.id)]: createCardPile<CardInstance>({
+                id: getPokerLiteHandPileId(player.id),
                 role: "hand",
                 ownerId: player.id,
                 label: player.name + " Hand",
@@ -69,7 +70,7 @@ export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
     requestedCardsPerPlayer: number = 5
-): RewriteGameContext {
+): PokerLiteContext {
     const players = createPlayers(playerNames);
     const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, playerNames.length, requestedCardsPerPlayer);
 
@@ -98,25 +99,25 @@ export function createShuffledContext(
     deckDefinition: DeckDefinition,
     requestedCardsPerPlayer: number = 5,
     random: () => number = Math.random
-): RewriteGameContext {
+): PokerLiteContext {
     const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);
 
     return {
         ...baseContext,
-        piles: setPileCards(baseContext.piles, DRAW_POKER_STOCK_PILE_ID, shuffleDeck(createDeck(deckDefinition), random)),
+        piles: setPileCards(baseContext.piles, POKER_LITE_STOCK_PILE_ID, shuffleDeck(createDeck(deckDefinition), random)),
         statusText: "Shuffling the " + deckDefinition.name + "..."
     };
 }
 
-export function dealOpeningHands(context: RewriteGameContext): RewriteGameContext {
+export function dealOpeningHands(context: PokerLiteContext): PokerLiteContext {
     let piles = context.piles;
 
     for (let cardIndex = 0; cardIndex < context.cardsPerPlayer; cardIndex += 1) {
         context.players.forEach((player) => {
             const nextState = moveTopCardBetweenPiles(
                 piles,
-                DRAW_POKER_STOCK_PILE_ID,
-                getDrawPokerHandPileId(player.id)
+                POKER_LITE_STOCK_PILE_ID,
+                getPokerLiteHandPileId(player.id)
             );
             piles = nextState.piles;
         });

@@ -1,11 +1,11 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import { getPileCards } from "../../engine/game/piles";
-import type { RewriteGameViewSnapshot } from "./types";
 import {
-    DRAW_POKER_DISCARD_PILE_ID,
-    DRAW_POKER_STOCK_PILE_ID,
-    getDrawPokerHandPileId
+    POKER_LITE_DISCARD_PILE_ID,
+    POKER_LITE_STOCK_PILE_ID,
+    getPokerLiteHandPileId,
+    type PokerLiteViewSnapshot
 } from "./types";
 
 function getPlayerIconLabel(playerName: string): string {
@@ -19,15 +19,15 @@ function getPlayerIconLabel(playerName: string): string {
     return initials || "P";
 }
 
-export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGameViewModel {
+export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
     const isPlayerTurn = snapshot.matches("playerTurn");
     const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
-    const drawCards = getPileCards(snapshot.context.piles, DRAW_POKER_STOCK_PILE_ID);
-    const discardCards = getPileCards(snapshot.context.piles, DRAW_POKER_DISCARD_PILE_ID);
+    const drawCards = getPileCards(snapshot.context.piles, POKER_LITE_STOCK_PILE_ID);
+    const discardCards = getPileCards(snapshot.context.piles, POKER_LITE_DISCARD_PILE_ID);
     const currentHandCards = currentPlayerId
-        ? getPileCards(snapshot.context.piles, getDrawPokerHandPileId(currentPlayerId))
+        ? getPileCards(snapshot.context.piles, getPokerLiteHandPileId(currentPlayerId))
         : [];
     const discardTopCard =
         snapshot.matches("animatingPlay") || discardCards.length === 0
@@ -81,11 +81,11 @@ export function getDrawPokerViewModel(snapshot: RewriteGameViewSnapshot): CardGa
                 iconLabel: getPlayerIconLabel(player.name),
                 nameLabel: player.name,
                 metaLabel:
-                    String(getPileCards(snapshot.context.piles, getDrawPokerHandPileId(player.id)).length) +
+                    String(getPileCards(snapshot.context.piles, getPokerLiteHandPileId(player.id)).length) +
                     " cards | " +
                     String(player.score) +
                     " pts",
-                hand: getPileCards(snapshot.context.piles, getDrawPokerHandPileId(player.id)).map((card) => ({
+                hand: getPileCards(snapshot.context.piles, getPokerLiteHandPileId(player.id)).map((card) => ({
                     id: card.id,
                     label: card.displayLabel,
                     isFaceUp: true

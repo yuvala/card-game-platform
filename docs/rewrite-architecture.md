@@ -10,10 +10,10 @@ The goal is not to build one giant state shape that magically fits every card ga
 
 ## Current Status
 
-The rewrite is already beyond a single `drawPoker` prototype. It currently includes:
+The rewrite is already beyond a single `pokerLite` prototype. It currently includes:
 
 - a game catalog and Create Game flow
-- three concrete games: `draw-poker`, `war-lite`, and `brisca-lite`
+- three concrete games: `poker-lite`, `war-lite`, and `brisca-lite`
 - generic `piles` as the source of truth for card locations
 - a shared `machineFactory` for the common `XState` shell
 - shared `Phaser` scenes that render through a generic view model
@@ -22,7 +22,7 @@ This document therefore describes both the design goal and the parts that are al
 
 ## Why This Exists
 
-The rewrite started with `drawPoker`, but the long-term goal is broader:
+The rewrite started with `pokerLite`, but the long-term goal is broader:
 
 - support multiple card games on the same runtime
 - keep game rules separate from rendering
@@ -73,7 +73,7 @@ Current rewrite code is split into these areas:
   Generic actor and view model contracts used by the UI.
 - `html/src/rewrite/engine/game/catalog.ts`
   Shared catalog metadata and runtime entry contract.
-- `html/src/rewrite/games/drawPoker/`
+- `html/src/rewrite/games/pokerLite/`
   Concrete game implementation.
 - `html/src/rewrite/games/warLite/`
   Concrete game implementation.
@@ -101,7 +101,7 @@ flowchart LR
     end
 
     subgraph GameModule
-        DrawPoker[games/drawPoker]
+        PokerLite[games/pokerLite]
         WarLite[games/warLite]
         BriscaLite[games/briscaLite]
         FutureGame[games/futureGame]
@@ -112,15 +112,15 @@ flowchart LR
         Scenes[Phaser scenes]
     end
 
-    Cards --> DrawPoker
+    Cards --> PokerLite
     Cards --> WarLite
     Cards --> BriscaLite
     Cards --> FutureGame
-    GameCore --> DrawPoker
+    GameCore --> PokerLite
     GameCore --> WarLite
     GameCore --> BriscaLite
     GameCore --> FutureGame
-    DrawPoker --> MachineFactory
+    PokerLite --> MachineFactory
     WarLite --> MachineFactory
     BriscaLite --> MachineFactory
     FutureGame --> MachineFactory
@@ -144,17 +144,17 @@ classDiagram
         +toViewModel()
     }
 
-    class DrawPokerDefinition
+    class PokerLiteDefinition
     class MachineFactory
     class CardPileMap
     class CardGameViewModel
     class TableScene
     class UIScene
 
-    GameDefinition <|.. DrawPokerDefinition
-    DrawPokerDefinition --> CardPileMap : uses
-    MachineFactory --> DrawPokerDefinition : drives
-    DrawPokerDefinition --> CardGameViewModel : builds
+    GameDefinition <|.. PokerLiteDefinition
+    PokerLiteDefinition --> CardPileMap : uses
+    MachineFactory --> PokerLiteDefinition : drives
+    PokerLiteDefinition --> CardGameViewModel : builds
     TableScene --> CardGameViewModel : renders
     UIScene --> CardGameViewModel : renders
 ```
@@ -224,7 +224,7 @@ The generic game contract now lives at:
 
 Concrete games implement it through files such as:
 
-- `html/src/rewrite/games/drawPoker/definition.ts`
+- `html/src/rewrite/games/pokerLite/definition.ts`
 - `html/src/rewrite/games/warLite/definition.ts`
 - `html/src/rewrite/games/briscaLite/definition.ts`
 
