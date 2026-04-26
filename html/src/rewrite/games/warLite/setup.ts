@@ -1,7 +1,7 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
 import type { DeckDefinition } from "../../engine/cards/types";
 import { createConfiguredPiles } from "../../engine/game/config";
-import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
+import { createDealCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import {
     drawTopCardFromPile,
     getPileCards,
@@ -92,8 +92,7 @@ export function dealOpeningHands(context: WarLiteContext): { state: WarLiteConte
             drawResult.card,
             ...getPileCards(drawResult.piles, toPileId)
         ]);
-        effects.push(createMoveCardEffect({
-            reason: "deal",
+        effects.push(createDealCardEffect({
             card: drawResult.card,
             fromPileId: WAR_LITE_STOCK_PILE_ID,
             toPileId,

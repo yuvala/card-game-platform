@@ -1,7 +1,7 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
 import type { DeckDefinition } from "../../engine/cards/types";
 import { createConfiguredPiles } from "../../engine/game/config";
-import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
+import { createDealCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import {
     moveTopCardBetweenPiles,
     setPileCards
@@ -92,8 +92,7 @@ export function dealOpeningHands(context: PokerLiteContext): { state: PokerLiteC
             );
             piles = nextState.piles;
             if (nextState.card) {
-                effects.push(createMoveCardEffect({
-                    reason: "deal",
+                effects.push(createDealCardEffect({
                     card: nextState.card,
                     fromPileId: POKER_LITE_STOCK_PILE_ID,
                     toPileId,

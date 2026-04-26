@@ -4,7 +4,11 @@ import {
     getPileCards,
     moveTopCardBetweenPiles
 } from "../../engine/game/piles";
-import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
+import {
+    createCollectCardEffect,
+    createPlayCardEffect,
+    type CardGameEffect
+} from "../../engine/game/effects";
 import type { WarLiteContext, WarLitePlayedCard, WarLitePlayer } from "./types";
 import {
     WAR_LITE_BATTLE_PILE_ID,
@@ -85,8 +89,7 @@ export function revealBattleWithEffects(context: WarLiteContext): { state: WarLi
             playerName: player.name,
             round: context.round
         });
-        effects.push(createMoveCardEffect({
-            reason: "play",
+        effects.push(createPlayCardEffect({
             card: topCard,
             fromPileId,
             fromOwnerId: player.id,
@@ -139,8 +142,7 @@ export function finalizeBattleWithEffects(context: WarLiteContext): { state: War
     const leadCard = winningCards[0] ?? rankedCards[0] ?? context.roundCards[0];
     const battleCards = getPileCards(context.piles, WAR_LITE_BATTLE_PILE_ID);
     const effects = battleCards.map((card, index) => {
-        return createMoveCardEffect({
-            reason: "collect",
+        return createCollectCardEffect({
             card,
             fromPileId: WAR_LITE_BATTLE_PILE_ID,
             fromIndex: index,

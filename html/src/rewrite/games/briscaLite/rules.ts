@@ -1,5 +1,10 @@
 import type { CardInstance } from "../../engine/cards/types";
-import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
+import {
+    createCollectCardEffect,
+    createDrawCardEffect,
+    createPlayCardEffect,
+    type CardGameEffect
+} from "../../engine/game/effects";
 import {
     appendCardsToPile,
     clearPile,
@@ -123,8 +128,7 @@ function drawCardsForPlayers(
         );
         piles = stockDraw.piles;
         if (stockDraw.card) {
-            effects.push(createMoveCardEffect({
-                reason: "draw",
+            effects.push(createDrawCardEffect({
                 card: stockDraw.card,
                 fromPileId: BRISCA_LITE_STOCK_PILE_ID,
                 toPileId,
@@ -143,8 +147,7 @@ function drawCardsForPlayers(
         );
         piles = trumpDraw.piles;
         if (trumpDraw.card) {
-            effects.push(createMoveCardEffect({
-                reason: "draw",
+            effects.push(createDrawCardEffect({
                 card: trumpDraw.card,
                 fromPileId: BRISCA_LITE_TRUMP_PILE_ID,
                 toPileId,
@@ -185,8 +188,7 @@ function collectTrickToWinnerWithEffects(context: BriscaLiteContext): { state: B
     const capturePileId = getBriscaLiteCapturePileId(context.trickWinnerId);
     const captureCardCount = getPileCards(context.piles, capturePileId).length;
     const effects = trickCards.map((card, index) => {
-        return createMoveCardEffect({
-            reason: "collect",
+        return createCollectCardEffect({
             card,
             fromPileId: BRISCA_LITE_TRICK_PILE_ID,
             fromIndex: index,
@@ -311,8 +313,7 @@ export function queuePlayedCardWithEffects(context: BriscaLiteContext): { state:
             selectedCardId: selectedCard.id
         },
         effects: [
-            createMoveCardEffect({
-                reason: "play",
+            createPlayCardEffect({
                 card: selectedCard,
                 fromPileId,
                 fromOwnerId: currentPlayer.id,

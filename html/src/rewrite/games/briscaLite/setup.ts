@@ -1,7 +1,7 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
 import type { DeckDefinition } from "../../engine/cards/types";
 import { createConfiguredPiles } from "../../engine/game/config";
-import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
+import { createDealCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import {
     getPileCards,
     moveTopCardBetweenPiles,
@@ -111,8 +111,7 @@ export function dealOpeningHands(context: BriscaLiteContext): { state: BriscaLit
             );
             piles = nextState.piles;
             if (nextState.card) {
-                effects.push(createMoveCardEffect({
-                    reason: "deal",
+                effects.push(createDealCardEffect({
                     card: nextState.card,
                     fromPileId: BRISCA_LITE_STOCK_PILE_ID,
                     toPileId,
@@ -132,8 +131,7 @@ export function dealOpeningHands(context: BriscaLiteContext): { state: BriscaLit
     );
     piles = trumpDraw.piles;
     if (trumpDraw.card) {
-        effects.push(createMoveCardEffect({
-            reason: "deal",
+        effects.push(createDealCardEffect({
             card: trumpDraw.card,
             fromPileId: BRISCA_LITE_STOCK_PILE_ID,
             toPileId: BRISCA_LITE_TRUMP_PILE_ID,

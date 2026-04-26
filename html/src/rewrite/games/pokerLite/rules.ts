@@ -1,4 +1,4 @@
-import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
+import { createPlayCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import { getPileCards, moveCardBetweenPiles } from "../../engine/game/piles";
 import {
     POKER_LITE_DISCARD_PILE_ID,
@@ -122,8 +122,7 @@ export function queuePlayedCardWithEffects(context: PokerLiteContext): { state: 
             selectedCardId: previewCard.id
         },
         effects: [
-            createMoveCardEffect({
-                reason: "play",
+            createPlayCardEffect({
                 card: previewCard,
                 fromPileId,
                 fromOwnerId: currentPlayer.id,
