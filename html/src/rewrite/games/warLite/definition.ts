@@ -38,6 +38,10 @@ function areAllStacksEmpty(state: WarLiteContext): boolean {
     });
 }
 
+function hasMorePlayersToReveal(state: WarLiteContext): boolean {
+    return state.roundCards.length > 0 && state.roundCards.length < state.players.length;
+}
+
 export const warLiteGameDefinition: GameDefinition<
     WarLiteContext,
     WarLiteMove,
@@ -91,6 +95,10 @@ export const warLiteGameDefinition: GameDefinition<
     getAutomaticMove: (state) => {
         if (areAllStacksEmpty(state)) {
             return { type: "finish-game" };
+        }
+
+        if (hasMorePlayersToReveal(state)) {
+            return { type: "prepare-battle" };
         }
 
         return { type: "advance-next-round" };

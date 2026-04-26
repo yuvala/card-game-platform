@@ -4,6 +4,7 @@ import {
     WAR_LITE_BATTLE_PILE_ID,
     WAR_LITE_DISCARD_PILE_ID,
     WAR_LITE_STOCK_PILE_ID,
+    getWarLiteCapturePileId,
     getWarLiteHandPileId
 } from "./types";
 
@@ -49,6 +50,15 @@ export const warLiteConfig = defineCardGameConfig({
             visibility: "face-down",
             getPlayerPileId: getWarLiteHandPileId,
             getPlayerPileLabel: (playerName) => playerName + " Stack"
+        },
+        {
+            id: "won",
+            role: "capture",
+            label: "Won",
+            owner: "player",
+            visibility: "face-up",
+            getPlayerPileId: getWarLiteCapturePileId,
+            getPlayerPileLabel: (playerName) => playerName + " Won"
         }
     ]
 });

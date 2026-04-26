@@ -11,6 +11,7 @@ export interface CardGameViewCard {
     id: string;
     label: string;
     isFaceUp: boolean;
+    stackCount?: number;
 }
 
 export interface CardGameViewPlayer {
@@ -22,6 +23,7 @@ export interface CardGameViewPlayer {
     isCurrentTurn: boolean;
     isRoundWinner: boolean;
     canInteract: boolean;
+    cardClickAction?: "select" | "play";
 }
 
 export interface CardGameViewControls {

@@ -47,6 +47,10 @@ export function createWarLiteMachine(playerNames: string[], options?: WarLiteOpt
             },
             resolutionTargets: [
                 {
+                    automaticMoveType: "prepare-battle",
+                    target: "battleReady"
+                },
+                {
                     automaticMoveType: "advance-next-round",
                     target: "battleReady"
                 }

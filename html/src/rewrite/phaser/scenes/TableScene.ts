@@ -117,6 +117,16 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         const startY = layout.handCenterY - (layout.gapY * (slotCount - 1)) / 2;
 
         for (let i = 0; i < slotCount; i += 1) {
+            const stackBacks = [-8, -4].map((offset) => {
+                const back = this.add.image(offset, offset, this.getActiveBackTextureKey())
+                    .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
+                    .setVisible(false);
+                back.setData("cardDisplaySize", {
+                    width: CARD_WIDTH,
+                    height: CARD_HEIGHT
+                } satisfies CardDisplaySize);
+                return back;
+            });
             const image = this.add.image(0, 0, this.getActiveBackTextureKey())
                 .setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
             image.setData("cardDisplaySize", {
@@ -127,7 +137,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 .setStrokeStyle(1, 0x17352b, 0.28);
             const slotX = startX + layout.gapX * i;
             const slotY = startY + layout.gapY * i;
-            const container = this.add.container(slotX, slotY, [image, outline]).setAngle(layout.angle);
+            const container = this.add.container(slotX, slotY, [...stackBacks, image, outline]).setAngle(layout.angle);
             const hitTarget = this.add.rectangle(
                 slotX,
                 slotY,
@@ -147,6 +157,12 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 }
 
                 const cardId = container.getData("cardId");
+                const cardClickAction = container.getData("cardClickAction");
+                if (cardClickAction === "play") {
+                    this.actor.send({ type: "PLAY_CARD" });
+                    return;
+                }
+
                 if (typeof cardId === "string") {
                     this.actor.send({ type: "SELECT_CARD", cardId });
                 }
@@ -177,6 +193,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 originX: slotX,
                 originY: slotY,
                 originAngle: layout.angle,
+                stackBacks,
                 image,
                 outline
             });

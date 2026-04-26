@@ -1,9 +1,9 @@
-import type { CardGameViewCard, CardGameViewModel } from "../../engine/game/viewModel";
+import type { CardGameViewModel } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import { getPileCards } from "../../engine/game/piles";
 import type { WarLiteViewSnapshot } from "./types";
 import {
-    WAR_LITE_DISCARD_PILE_ID,
+    getWarLiteCapturePileId,
     getWarLiteHandPileId
 } from "./types";
 
@@ -18,27 +18,13 @@ function getPlayerIconLabel(playerName: string): string {
     return initials || "P";
 }
 
-function createHiddenPreviewCards(cards: readonly CardGameViewCard[], count: number): CardGameViewCard[] {
-    return cards.slice(0, count).map((card) => ({
-        ...card,
-        isFaceUp: false
-    }));
-}
-
 export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
+    const isBattleReady = snapshot.matches("battleReady");
+    const nextRevealPlayerId = snapshot.context.players[snapshot.context.roundCards.length]?.id ?? null;
     const remainingStackCards = snapshot.context.players.reduce((count, player) => {
         return count + getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
     }, 0);
-    const discardCards = getPileCards(snapshot.context.piles, WAR_LITE_DISCARD_PILE_ID);
-    const discardTopCard = discardCards[discardCards.length - 1]
-        ? {
-              id: discardCards[discardCards.length - 1].id,
-              label: discardCards[discardCards.length - 1].displayLabel,
-              isFaceUp: true
-          }
-        : null;
-
     return {
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: "Battle " + snapshot.context.round + " / " + snapshot.context.maxRounds,
@@ -49,45 +35,38 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             " | " +
             remainingStackCards +
             " hidden cards still in player stacks",
-        drawPileLabel: String(remainingStackCards) + " hidden cards",
-        discardPileLabel: String(discardCards.length) + " cards revealed",
-        discardCardLabel: discardTopCard?.label ?? null,
+        drawPileLabel: "",
+        discardPileLabel: "",
+        discardCardLabel: null,
         scoreLines: snapshot.context.players.map((player) => {
             return player.name + ": " + player.score + " battle wins";
         }),
         statusText: snapshot.context.statusText,
         selectedCardId: null,
         players: snapshot.context.players.map((player) => {
-            const revealedCard = snapshot.context.roundCards.find((card) => card.playerId === player.id);
-            const hiddenCards = getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).map((card) => ({
+            const stackCards = getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id));
+            const hiddenCards = stackCards.map((card) => ({
                 id: card.id,
                 label: card.displayLabel,
-                isFaceUp: false
+                isFaceUp: false,
+                stackCount: stackCards.length
             }));
-            const previewCards = revealedCard
-                ? [
-                      {
-                          id: revealedCard.card.id,
-                          label: revealedCard.card.displayLabel,
-                          isFaceUp: true
-                      },
-                      ...createHiddenPreviewCards(hiddenCards, 2)
-                  ]
-                : createHiddenPreviewCards(hiddenCards, 3);
+            const stackPreviewCards = hiddenCards[0] ? [hiddenCards[0]] : [];
 
             return {
                 id: player.id,
                 iconLabel: getPlayerIconLabel(player.name),
                 nameLabel: player.name,
                 metaLabel:
-                    String(hiddenCards.length + (revealedCard ? 1 : 0)) +
+                    String(stackCards.length) +
                     " cards | " +
                     String(player.score) +
                     " wins",
-                hand: previewCards,
-                isCurrentTurn: false,
+                hand: stackPreviewCards,
+                isCurrentTurn: isBattleReady && player.id === nextRevealPlayerId,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
-                canInteract: false
+                canInteract: isBattleReady && player.id === nextRevealPlayerId && stackCards.length > 0,
+                cardClickAction: "play"
             };
         }),
         tableCards:
@@ -101,22 +80,26 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                   }))
                 : [],
         piles: [
-            {
-                id: "stack-summary",
-                role: "draw",
-                label: "Stacks",
-                cardCount: remainingStackCards,
-                countLabel: String(remainingStackCards) + " hidden cards",
-                topCard: null
-            },
-            {
-                id: "battle-history",
-                role: "discard",
-                label: "Battle Log",
-                cardCount: discardCards.length,
-                countLabel: String(discardCards.length) + " cards revealed",
-                topCard: discardTopCard
-            }
+            ...snapshot.context.players.map((player) => {
+                const capturedCards = getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id));
+                const topCapturedCard = capturedCards[capturedCards.length - 1] ?? null;
+
+                return {
+                    id: getWarLiteCapturePileId(player.id),
+                    role: "capture",
+                    ownerId: player.id,
+                    label: "Won",
+                    cardCount: capturedCards.length,
+                    countLabel: String(capturedCards.length) + " won",
+                    topCard: topCapturedCard
+                        ? {
+                              id: topCapturedCard.id,
+                              label: topCapturedCard.displayLabel,
+                              isFaceUp: true
+                          }
+                        : null
+                };
+            })
         ],
         controls: {
             canStart: snapshot.matches("idle"),

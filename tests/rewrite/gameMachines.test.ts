@@ -11,7 +11,7 @@ import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "../../html/
 import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
 import { getPokerLiteHandPileId } from "../../html/src/rewrite/games/pokerLite/types";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
-import { getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
+import { getWarLiteCapturePileId, getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
 
 declare const process: { exitCode?: number };
 
@@ -152,15 +152,32 @@ async function runWarLiteMachineTest() {
     actor.send({ type: "PLAY_CARD" });
     let battleSnapshot = actor.getSnapshot();
     assert(
-        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "play").length === 2,
-        "War Lite should emit play effects when revealing both battle cards."
+        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "play").length === 1,
+        "War Lite should emit one play effect when the next player reveals a battle card."
+    );
+
+    await waitFor(() => {
+        const snapshot = actor.getSnapshot();
+        return snapshot.value === "battleReady" && snapshot.context.roundCards.length === 1;
+    });
+    battleSnapshot = actor.getSnapshot();
+    assert(
+        battleSnapshot.context.roundCards.length === 1,
+        "War Lite should wait after the first player reveals one battle card."
+    );
+
+    actor.send({ type: "PLAY_CARD" });
+    battleSnapshot = actor.getSnapshot();
+    assert(
+        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "play").length === 1,
+        "War Lite should emit one play effect when the second player reveals a battle card."
     );
 
     await waitFor(() => actor.getSnapshot().value === "resolvingBattle");
     battleSnapshot = actor.getSnapshot();
     assert(
         battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
-        "War Lite should emit collect effects when moving battle cards to the battle log."
+        "War Lite should emit collect effects after both battle cards are revealed."
     );
 
     await waitFor(() => {
@@ -174,8 +191,14 @@ async function runWarLiteMachineTest() {
         "War Lite should move both revealed cards into played-card history after one battle."
     );
     assert(
-        getPileCards(afterBattle.context.piles, WAR_LITE_DISCARD_PILE_ID).length === 2,
-        "War Lite discard pile should contain the two revealed battle cards."
+        afterBattle.context.players.some((player) => {
+            return getPileCards(afterBattle.context.piles, getWarLiteCapturePileId(player.id)).length === 2;
+        }),
+        "War Lite should move won battle cards into the winner capture pile."
+    );
+    assert(
+        getPileCards(afterBattle.context.piles, WAR_LITE_DISCARD_PILE_ID).length === 0,
+        "War Lite discard pile should remain empty when the battle has a single winner."
     );
     assert(
         getPileCards(afterBattle.context.piles, WAR_LITE_BATTLE_PILE_ID).length === 0,

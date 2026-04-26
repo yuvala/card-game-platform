@@ -115,22 +115,36 @@ function getOwnedPileOwner(viewModel: CardGameViewModel, ownerId: string): Owned
     return viewModel.players.find((player) => player.id === ownerId) ?? null;
 }
 
+function getPrimaryPile(viewModel: CardGameViewModel): CardGameViewPile | null {
+    return viewModel.piles.find((pile) => {
+        return !pile.ownerId && (pile.role === "draw" || pile.role === "stock");
+    }) ?? null;
+}
+
+function getSecondaryPile(viewModel: CardGameViewModel): CardGameViewPile | null {
+    return viewModel.piles.find((pile) => {
+        return !pile.ownerId && (pile.role === "discard" || pile.role === "trump");
+    }) ?? null;
+}
+
 function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisuals): void {
-    const primaryPile = viewModel.piles[0] ?? null;
-    const secondaryPile = viewModel.piles[1] ?? null;
+    const primaryPile = getPrimaryPile(viewModel);
+    const secondaryPile = getSecondaryPile(viewModel);
     const showSecondaryTitle = !(viewModel.tableCards.length > 0 && secondaryPile?.role === "discard");
+    const showPrimaryPile = Boolean(primaryPile) || viewModel.drawPileLabel.length > 0;
+    const showSecondaryPile = Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0;
 
     visuals.drawPileTitle.setText(primaryPile?.label ?? "Draw Pile");
     visuals.deckText.setText(primaryPile?.countLabel ?? viewModel.drawPileLabel);
-    visuals.drawPileTitle.setVisible(Boolean(primaryPile) || viewModel.drawPileLabel.length > 0);
-    visuals.deckText.setVisible(Boolean(primaryPile) || viewModel.drawPileLabel.length > 0);
+    visuals.drawPileFrame.setVisible(showPrimaryPile);
+    visuals.drawPileTitle.setVisible(showPrimaryPile);
+    visuals.deckText.setVisible(showPrimaryPile);
 
     visuals.discardPileTitle.setText(secondaryPile?.label ?? "Discard");
-    visuals.discardPileTitle.setVisible(
-        showSecondaryTitle && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0)
-    );
+    visuals.discardPileFrame.setVisible(showSecondaryPile);
+    visuals.discardPileTitle.setVisible(showSecondaryTitle && showSecondaryPile);
     visuals.discardText.setText(secondaryPile?.countLabel ?? viewModel.discardPileLabel);
-    visuals.discardText.setVisible(Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
+    visuals.discardText.setVisible(showSecondaryPile);
 }
 
 function syncDiscardPileCard(
@@ -138,7 +152,7 @@ function syncDiscardPileCard(
     visuals: PrimaryPileVisuals,
     textureApi: Pick<CardTextureApi, "applyCardTexture" | "applyCardBackTexture">
 ): void {
-    const secondaryPile = viewModel.piles[1] ?? null;
+    const secondaryPile = getSecondaryPile(viewModel);
     if (!secondaryPile) {
         visuals.discardCard.setVisible(false);
         return;
@@ -354,8 +368,8 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         textureApi
     } = input;
 
-    const ownedPiles = viewModel.piles.filter((pile, index) => {
-        return index >= 2 && Boolean(pile.ownerId);
+    const ownedPiles = viewModel.piles.filter((pile) => {
+        return Boolean(pile.ownerId);
     });
     const ownedPileIds = new Set(ownedPiles.map((pile) => pile.id));
 
@@ -427,8 +441,10 @@ export function syncSupplementalPilePresentation(input: SupplementalPilePresenta
         textureApi
     } = input;
 
-    const supplementalPiles = viewModel.piles.filter((pile, index) => {
-        return index >= 2 && !pile.ownerId;
+    const primaryPile = getPrimaryPile(viewModel);
+    const secondaryPile = getSecondaryPile(viewModel);
+    const supplementalPiles = viewModel.piles.filter((pile) => {
+        return !pile.ownerId && pile.id !== primaryPile?.id && pile.id !== secondaryPile?.id;
     });
     const supplementalPileIds = new Set(supplementalPiles.map((pile) => pile.id));
 
