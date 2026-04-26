@@ -23,6 +23,7 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
     const isPlayerTurn = snapshot.matches("playerTurn");
+    const isGameOver = snapshot.matches("gameOver");
     const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
     const drawCards = getPileCards(snapshot.context.piles, POKER_LITE_STOCK_PILE_ID);
     const discardCards = getPileCards(snapshot.context.piles, POKER_LITE_DISCARD_PILE_ID);
@@ -106,6 +107,13 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
             canPlay: isPlayerTurn && hasSelection,
             canRestart: snapshot.matches("gameOver")
         },
+        outcome: isGameOver
+            ? {
+                  title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
+                  detail: snapshot.context.statusText,
+                  winnerPlayerIds: snapshot.context.winningPlayerIds
+              }
+            : null,
         animation: null,
         effects: snapshot.context.lastEffects
     };

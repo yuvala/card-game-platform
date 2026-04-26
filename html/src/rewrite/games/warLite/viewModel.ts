@@ -21,6 +21,7 @@ function getPlayerIconLabel(playerName: string): string {
 export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const isBattleReady = snapshot.matches("battleReady");
+    const isGameOver = snapshot.matches("gameOver");
     const nextRevealPlayerId = snapshot.context.players[snapshot.context.roundCards.length]?.id ?? null;
     const remainingStackCards = snapshot.context.players.reduce((count, player) => {
         return count + getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
@@ -106,6 +107,13 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             canPlay: snapshot.matches("battleReady"),
             canRestart: snapshot.matches("gameOver")
         },
+        outcome: isGameOver
+            ? {
+                  title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
+                  detail: snapshot.context.statusText,
+                  winnerPlayerIds: snapshot.context.winningPlayerIds
+              }
+            : null,
         animation: null,
         effects: snapshot.context.lastEffects
     };

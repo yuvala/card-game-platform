@@ -353,6 +353,7 @@ The view model decides:
 - which player can interact right now
 - which piles are rendered as table piles or player-owned piles
 - which controls are enabled
+- whether the game has a final outcome to show
 - what status, score, and round text the UI shows
 
 This keeps Phaser generic. For example, `War Lite` can show player stacks and capture piles without teaching `TableScene` what a war battle is. `Brisca-lite` can show stock, trump, and capture piles without teaching the engine trump rules.
@@ -364,6 +365,8 @@ The test suite now includes view-model regression checks for the current games. 
 - `Brisca-lite` exposes stock, trump, capture piles, and hides non-current hands.
 
 These tests do not replace manual visual QA, but they catch accidental architecture regressions before Phaser rendering is involved.
+
+Game-over presentation is also modeled here through the generic `outcome` field. Each game decides who won and what summary text to expose; `UIScene` only renders the generic result. This keeps end-game UI reusable across games.
 
 ## Shared Machine Shell
 

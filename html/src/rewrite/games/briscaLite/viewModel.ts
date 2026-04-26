@@ -30,6 +30,7 @@ function createHiddenPreviewCards(cards: readonly CardGameViewCard[], count: num
 export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const isPlayerTurn = snapshot.matches("playerTurn");
+    const isGameOver = snapshot.matches("gameOver");
     const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
     const stockCards = getPileCards(snapshot.context.piles, BRISCA_LITE_STOCK_PILE_ID);
     const trumpCards = getPileCards(snapshot.context.piles, BRISCA_LITE_TRUMP_PILE_ID);
@@ -143,6 +144,13 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             canPlay: isPlayerTurn && Boolean(snapshot.context.selectedCardId),
             canRestart: snapshot.matches("gameOver")
         },
+        outcome: isGameOver
+            ? {
+                  title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
+                  detail: snapshot.context.statusText,
+                  winnerPlayerIds: snapshot.context.winningPlayerIds
+              }
+            : null,
         animation: null,
         effects: snapshot.context.lastEffects
     };

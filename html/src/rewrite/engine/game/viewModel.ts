@@ -32,6 +32,12 @@ export interface CardGameViewControls {
     canRestart: boolean;
 }
 
+export interface CardGameViewOutcome {
+    title: string;
+    detail: string;
+    winnerPlayerIds: string[];
+}
+
 export interface CardGameViewAnimation {
     key: string;
     playerId: string;
@@ -69,6 +75,7 @@ export interface CardGameViewModel {
     tableCards: CardGameViewTableCard[];
     piles: CardGameViewPile[];
     controls: CardGameViewControls;
+    outcome: CardGameViewOutcome | null;
     animation: CardGameViewAnimation | null;
     effects: CardGameEffect[];
 }

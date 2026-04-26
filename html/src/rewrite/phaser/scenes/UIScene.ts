@@ -23,6 +23,8 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
     private roundText!: Phaser.GameObjects.Text;
     private deckText!: Phaser.GameObjects.Text;
     private scoreText!: Phaser.GameObjects.Text;
+    private outcomeTitleText!: Phaser.GameObjects.Text;
+    private outcomeDetailText!: Phaser.GameObjects.Text;
     private statusText!: Phaser.GameObjects.Text;
     private buttons!: ButtonRefs;
 
@@ -78,6 +80,20 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             wordWrap: { width: HUD_WIDTH - 70 },
             lineSpacing: 4
         }).setResolution(UI_TEXT_RESOLUTION);
+
+        this.outcomeTitleText = this.add.text(HUD_X + 34, 348, "", {
+            fontFamily: "Arial",
+            fontSize: "18px",
+            color: "#ffd166",
+            wordWrap: { width: HUD_WIDTH - 70 }
+        }).setResolution(UI_TEXT_RESOLUTION).setVisible(false);
+        this.outcomeDetailText = this.add.text(HUD_X + 34, 376, "", {
+            fontFamily: "Arial",
+            fontSize: "14px",
+            color: "rgba(246,236,210,0.86)",
+            wordWrap: { width: HUD_WIDTH - 70 },
+            lineSpacing: 3
+        }).setResolution(UI_TEXT_RESOLUTION).setVisible(false);
 
         this.buttons = {
             start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Deal Cards", () => {
@@ -158,10 +174,29 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         this.deckText.setText(viewModel.deckLabel);
         this.scoreText.setText(viewModel.scoreLines.join("\n"));
         this.statusText.setText(viewModel.statusText);
+        this.syncOutcome(viewModel);
 
         this.setButtonState(this.buttons.start, viewModel.controls.canStart);
         this.setButtonState(this.buttons.play, viewModel.controls.canPlay);
         this.setButtonState(this.buttons.restart, viewModel.controls.canRestart);
+    }
+
+    private syncOutcome(viewModel: CardGameViewModel): void {
+        const outcome = viewModel.outcome;
+        if (!outcome) {
+            this.outcomeTitleText.setVisible(false);
+            this.outcomeDetailText.setVisible(false);
+            this.statusText.setY(580);
+            return;
+        }
+
+        this.outcomeTitleText
+            .setText(outcome.title)
+            .setVisible(true);
+        this.outcomeDetailText
+            .setText(outcome.detail)
+            .setVisible(true);
+        this.statusText.setY(642);
     }
 
     private setButtonState(button: Phaser.GameObjects.Text, isEnabled: boolean): void {
