@@ -72,7 +72,11 @@ export function createCardGameMachine<
     } = input;
 
     const applyDefinitionMove = (context: TContext, move: TMove): TContext => {
-        return definition.applyMove(context, move).state;
+        const transition = definition.applyMove(context, move);
+        return {
+            ...transition.state,
+            lastEffects: transition.effects ?? []
+        } as TContext;
     };
 
     const getAutomaticMove = (context: TContext): TMove | null => {
@@ -157,8 +161,8 @@ export function createCardGameMachine<
             }
         },
         dealing: {
-            after: {
-                [flow.dealDelayMs]: {
+            on: {
+                ANIMATION_DONE: {
                     target: flow.readyState,
                     actions: assign(({ context }: { context: TContext }) => {
                         return applyDefinitionMove(context, flow.prepareReadyMove);

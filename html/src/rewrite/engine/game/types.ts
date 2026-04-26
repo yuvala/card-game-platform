@@ -1,4 +1,5 @@
 import type { DeckDefinition } from "../cards/types";
+import type { CardGameEffect } from "./effects";
 
 export interface CardGameDefinition {
     id: string;
@@ -46,6 +47,7 @@ export interface CardGameSession<
     TPlayedCard
 > extends CardGameTurn<TPlayedCard> {
     deckDefinition: DeckDefinition;
+    lastEffects: CardGameEffect[];
     playedCardHistory: TPlayedCard[];
     piles: CardPileMap<TCard>;
     players: TPlayer[];

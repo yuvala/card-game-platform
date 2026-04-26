@@ -1,5 +1,6 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
+import type { CardGameEffect } from "../../engine/game/effects";
 import { getPileCards } from "../../engine/game/piles";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
@@ -9,7 +10,7 @@ import {
     commitPlayedCard,
     finalizeTurn,
     finishGame,
-    queuePlayedCard,
+    queuePlayedCardWithEffects,
     selectCard,
     setTurnStatus
 } from "./rules";
@@ -51,7 +52,7 @@ export const pokerLiteGameDefinition: GameDefinition<
     PokerLiteContext,
     PokerLiteMove,
     CardGameViewModel,
-    never,
+    CardGameEffect,
     PokerLiteOptions,
     string,
     PokerLiteViewSnapshot
@@ -90,9 +91,7 @@ export const pokerLiteGameDefinition: GameDefinition<
                     )
                 };
             case "deal-opening-hands":
-                return {
-                    state: dealOpeningHands(state)
-                };
+                return dealOpeningHands(state);
             case "begin-turn":
                 return {
                     state: setTurnStatus(state)
@@ -102,9 +101,7 @@ export const pokerLiteGameDefinition: GameDefinition<
                     state: selectCard(state, move.cardId)
                 };
             case "queue-play":
-                return {
-                    state: queuePlayedCard(state)
-                };
+                return queuePlayedCardWithEffects(state);
             case "commit-play":
                 return {
                     state: commitPlayedCard(state)

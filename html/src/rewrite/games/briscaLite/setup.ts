@@ -1,6 +1,7 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
 import type { DeckDefinition } from "../../engine/cards/types";
 import { createConfiguredPiles } from "../../engine/game/config";
+import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import {
     getPileCards,
     moveTopCardBetweenPiles,
@@ -56,6 +57,7 @@ export function createInitialContext(
 
     return {
         deckDefinition,
+        lastEffects: [],
         playedCardHistory: [],
         piles: createConfiguredPiles(briscaLiteConfig, players),
         roundCards: [],
@@ -90,21 +92,36 @@ export function createShuffledContext(
     return syncBriscaLiteContextFromPiles({
         ...baseContext,
         piles: setPileCards(baseContext.piles, BRISCA_LITE_STOCK_PILE_ID, shuffledDeck),
+        lastEffects: [],
         statusText: "Shuffling the " + deckDefinition.name + " for Brisca-lite..."
     });
 }
 
-export function dealOpeningHands(context: BriscaLiteContext): BriscaLiteContext {
+export function dealOpeningHands(context: BriscaLiteContext): { state: BriscaLiteContext; effects: CardGameEffect[] } {
     let piles = context.piles;
+    const effects: CardGameEffect[] = [];
 
     for (let cardIndex = 0; cardIndex < context.cardsPerPlayer; cardIndex += 1) {
         context.players.forEach((player) => {
+            const toPileId = getBriscaLiteHandPileId(player.id);
             const nextState = moveTopCardBetweenPiles(
                 piles,
                 BRISCA_LITE_STOCK_PILE_ID,
-                getBriscaLiteHandPileId(player.id)
+                toPileId
             );
             piles = nextState.piles;
+            if (nextState.card) {
+                effects.push(createMoveCardEffect({
+                    reason: "deal",
+                    card: nextState.card,
+                    fromPileId: BRISCA_LITE_STOCK_PILE_ID,
+                    toPileId,
+                    toOwnerId: player.id,
+                    toIndex: cardIndex,
+                    isFaceUp: false,
+                    keyPrefix: "deal-" + String(cardIndex) + "-" + player.id
+                }));
+            }
         });
     }
 
@@ -114,22 +131,36 @@ export function dealOpeningHands(context: BriscaLiteContext): BriscaLiteContext 
         BRISCA_LITE_TRUMP_PILE_ID
     );
     piles = trumpDraw.piles;
+    if (trumpDraw.card) {
+        effects.push(createMoveCardEffect({
+            reason: "deal",
+            card: trumpDraw.card,
+            fromPileId: BRISCA_LITE_STOCK_PILE_ID,
+            toPileId: BRISCA_LITE_TRUMP_PILE_ID,
+            isFaceUp: true,
+            keyPrefix: "deal-trump"
+        }));
+    }
+
     const leadPlayerId = context.players[0]?.id ?? null;
 
-    return syncBriscaLiteContextFromPiles({
-        ...context,
-        piles,
-        turnIndex: 0,
-        round: 1,
-        playedCardHistory: [],
-        roundCards: [],
-        lastPlayedCard: null,
-        selectedCardId: null,
-        winningPlayerIds: [],
-        leadPlayerId,
-        trickWinnerId: null,
-        statusText: trumpDraw.card
-            ? context.players[0].name + " leads. Trump is " + trumpDraw.card.displayLabel + "."
-            : context.players[0].name + " leads the first trick."
-    });
+    return {
+        state: syncBriscaLiteContextFromPiles({
+            ...context,
+            piles,
+            turnIndex: 0,
+            round: 1,
+            playedCardHistory: [],
+            roundCards: [],
+            lastPlayedCard: null,
+            selectedCardId: null,
+            winningPlayerIds: [],
+            leadPlayerId,
+            trickWinnerId: null,
+            statusText: trumpDraw.card
+                ? context.players[0].name + " leads. Trump is " + trumpDraw.card.displayLabel + "."
+                : context.players[0].name + " leads the first trick."
+        }),
+        effects
+    };
 }

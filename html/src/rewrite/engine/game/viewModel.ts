@@ -1,4 +1,5 @@
 import type { CardGameEvent } from "./types";
+import type { CardGameEffect } from "./effects";
 
 export interface CardGameActor<TSnapshot> {
     getSnapshot(): TSnapshot;
@@ -67,6 +68,7 @@ export interface CardGameViewModel {
     piles: CardGameViewPile[];
     controls: CardGameViewControls;
     animation: CardGameViewAnimation | null;
+    effects: CardGameEffect[];
 }
 
 export type CardGameViewModelFactory<TSnapshot> = (snapshot: TSnapshot) => CardGameViewModel;

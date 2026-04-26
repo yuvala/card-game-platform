@@ -1,17 +1,18 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
+import type { CardGameEffect } from "../../engine/game/effects";
 import { getPileCards } from "../../engine/game/piles";
 import { briscaLiteConfig } from "./config";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
     advanceToNextPlayer,
-    advanceToNextTrick,
+    advanceToNextTrickWithEffects,
     canCurrentPlayerPlay,
     commitPlayedCard,
     finalizeTurn,
     finishGame,
     hasMoreTricksRemaining,
-    queuePlayedCard,
+    queuePlayedCardWithEffects,
     selectCard,
     setTrickStatus
 } from "./rules";
@@ -47,7 +48,7 @@ export const briscaLiteGameDefinition: GameDefinition<
     BriscaLiteContext,
     BriscaLiteMove,
     CardGameViewModel,
-    never,
+    CardGameEffect,
     BriscaLiteOptions,
     string,
     BriscaLiteViewSnapshot
@@ -93,9 +94,7 @@ export const briscaLiteGameDefinition: GameDefinition<
                     )
                 };
             case "deal-opening-hands":
-                return {
-                    state: dealOpeningHands(state)
-                };
+                return dealOpeningHands(state);
             case "begin-trick":
                 return {
                     state: setTrickStatus(state)
@@ -105,9 +104,7 @@ export const briscaLiteGameDefinition: GameDefinition<
                     state: selectCard(state, move.cardId)
                 };
             case "queue-play":
-                return {
-                    state: queuePlayedCard(state)
-                };
+                return queuePlayedCardWithEffects(state);
             case "commit-play":
                 return {
                     state: commitPlayedCard(state)
@@ -121,9 +118,13 @@ export const briscaLiteGameDefinition: GameDefinition<
                     state: setTrickStatus(advanceToNextPlayer(state))
                 };
             case "advance-next-trick":
-                return {
-                    state: setTrickStatus(advanceToNextTrick(state))
-                };
+                {
+                    const transition = advanceToNextTrickWithEffects(state);
+                    return {
+                        state: setTrickStatus(transition.state),
+                        effects: transition.effects
+                    };
+                }
             case "finish-game":
                 return {
                     state: finishGame(state)

@@ -217,6 +217,8 @@ async function runEventAnimationMachineTest() {
     const actor = createActor(machine);
     actor.start();
     actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
     await waitFor(() => actor.getSnapshot().value === "playerTurn");
 
     let snapshot = actor.getSnapshot();
@@ -299,6 +301,8 @@ async function runTimedAnimationMachineTest() {
     const actor = createActor(machine);
     actor.start();
     actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
     await waitFor(() => actor.getSnapshot().value === "battleReady");
 
     let snapshot = actor.getSnapshot();

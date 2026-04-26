@@ -1,6 +1,7 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
 import type { DeckDefinition } from "../../engine/cards/types";
 import { createConfiguredPiles } from "../../engine/game/config";
+import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import {
     moveTopCardBetweenPiles,
     setPileCards
@@ -42,6 +43,7 @@ export function createInitialContext(
 
     return {
         deckDefinition,
+        lastEffects: [],
         playedCardHistory: [],
         piles: createConfiguredPiles(pokerLiteConfig, players),
         roundCards: [],
@@ -71,39 +73,57 @@ export function createShuffledContext(
     return {
         ...baseContext,
         piles: setPileCards(baseContext.piles, POKER_LITE_STOCK_PILE_ID, shuffleDeck(createDeck(deckDefinition), random)),
+        lastEffects: [],
         statusText: "Shuffling the " + deckDefinition.name + "..."
     };
 }
 
-export function dealOpeningHands(context: PokerLiteContext): PokerLiteContext {
+export function dealOpeningHands(context: PokerLiteContext): { state: PokerLiteContext; effects: CardGameEffect[] } {
     let piles = context.piles;
+    const effects: CardGameEffect[] = [];
 
     for (let cardIndex = 0; cardIndex < context.cardsPerPlayer; cardIndex += 1) {
         context.players.forEach((player) => {
+            const toPileId = getPokerLiteHandPileId(player.id);
             const nextState = moveTopCardBetweenPiles(
                 piles,
                 POKER_LITE_STOCK_PILE_ID,
-                getPokerLiteHandPileId(player.id)
+                toPileId
             );
             piles = nextState.piles;
+            if (nextState.card) {
+                effects.push(createMoveCardEffect({
+                    reason: "deal",
+                    card: nextState.card,
+                    fromPileId: POKER_LITE_STOCK_PILE_ID,
+                    toPileId,
+                    toOwnerId: player.id,
+                    toIndex: cardIndex,
+                    isFaceUp: true,
+                    keyPrefix: "deal-" + String(cardIndex) + "-" + player.id
+                }));
+            }
         });
     }
 
     return {
-        ...context,
-        piles,
-        turnIndex: 0,
-        round: 1,
-        playedCardHistory: [],
-        roundCards: [],
-        lastPlayedCard: null,
-        selectedCardId: null,
-        winningPlayerIds: [],
-        statusText:
-            "Dealing " +
-            context.cardsPerPlayer +
-            " cards to each player from the " +
-            context.deckDefinition.name +
-            "."
+        state: {
+            ...context,
+            piles,
+            turnIndex: 0,
+            round: 1,
+            playedCardHistory: [],
+            roundCards: [],
+            lastPlayedCard: null,
+            selectedCardId: null,
+            winningPlayerIds: [],
+            statusText:
+                "Dealing " +
+                context.cardsPerPlayer +
+                " cards to each player from the " +
+                context.deckDefinition.name +
+                "."
+        },
+        effects
     };
 }

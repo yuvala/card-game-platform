@@ -39,6 +39,7 @@ import {
     type PrimaryPileVisuals,
     type SupplementalPileVisual
 } from "./presenters/pilePresenter";
+import { runViewEffects } from "./presenters/effectPresenter";
 import { runPlayedCardAnimation, syncTableCardPresentation } from "./presenters/tableCardPresenter";
 
 interface CardDisplaySize {
@@ -58,6 +59,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private tableCardVisuals: TableCardVisual[] = [];
     private activeAnimationKey = "";
     private activeTableCardFlipKey = "";
+    private activeEffectBatchKey = "";
     private seatLayoutKey = "";
     private activeDeckId = "";
     private activeCardSkinId = "";
@@ -245,6 +247,20 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 applyCardBackTexture: (image) => this.applyCardBackTexture(image)
             }
         });
+        this.activeEffectBatchKey = runViewEffects({
+            scene: this,
+            viewModel,
+            primaryPileVisuals: this.primaryPileVisuals,
+            handSlots: this.handSlots,
+            activeEffectBatchKey: this.activeEffectBatchKey,
+            textureApi: {
+                getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
+                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant)
+            },
+            onEffectsDone: () => {
+                this.actor.send({ type: "ANIMATION_DONE" });
+            }
+        });
     }
 
     private ensureSeatVisuals(viewModel: CardGameViewModel): void {
@@ -306,6 +322,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         this.activeDeckId = deckDefinition.id;
         this.activeCardSkinId = skin.id;
         this.activeTableCardFlipKey = "";
+        this.activeEffectBatchKey = "";
     }
 
     private getActiveBackTextureKey(): string {

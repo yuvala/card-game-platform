@@ -1,6 +1,7 @@
 import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
 import type { DeckDefinition } from "../../engine/cards/types";
 import { createConfiguredPiles } from "../../engine/game/config";
+import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import {
     drawTopCardFromPile,
     getPileCards,
@@ -35,6 +36,7 @@ export function createInitialContext(
 
     return {
         deckDefinition,
+        lastEffects: [],
         playedCardHistory: [],
         piles: createConfiguredPiles(warLiteConfig, players),
         roundCards: [],
@@ -64,13 +66,15 @@ export function createShuffledContext(
     return {
         ...baseContext,
         piles: setPileCards(baseContext.piles, WAR_LITE_STOCK_PILE_ID, shuffledDeck),
+        lastEffects: [],
         statusText: "Shuffling the " + deckDefinition.name + " for War Lite..."
     };
 }
 
-export function dealOpeningHands(context: WarLiteContext): WarLiteContext {
+export function dealOpeningHands(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
     let piles = context.piles;
     let dealingIndex = 0;
+    const effects: CardGameEffect[] = [];
 
     while (getPileCards(piles, WAR_LITE_STOCK_PILE_ID).length > 0) {
         const player = context.players[dealingIndex % context.players.length];
@@ -83,26 +87,40 @@ export function dealOpeningHands(context: WarLiteContext): WarLiteContext {
             break;
         }
 
-        piles = setPileCards(drawResult.piles, getWarLiteHandPileId(player.id), [
+        const toPileId = getWarLiteHandPileId(player.id);
+        piles = setPileCards(drawResult.piles, toPileId, [
             drawResult.card,
-            ...getPileCards(drawResult.piles, getWarLiteHandPileId(player.id))
+            ...getPileCards(drawResult.piles, toPileId)
         ]);
+        effects.push(createMoveCardEffect({
+            reason: "deal",
+            card: drawResult.card,
+            fromPileId: WAR_LITE_STOCK_PILE_ID,
+            toPileId,
+            toOwnerId: player.id,
+            toIndex: 0,
+            isFaceUp: false,
+            keyPrefix: "deal-" + String(dealingIndex) + "-" + player.id
+        }));
         dealingIndex += 1;
     }
 
     return {
-        ...context,
-        piles,
-        turnIndex: 0,
-        round: 1,
-        playedCardHistory: [],
-        roundCards: [],
-        lastPlayedCard: null,
-        selectedCardId: null,
-        winningPlayerIds: [],
-        statusText:
-            "The " +
-            context.deckDefinition.name +
-            " is split. Press Play Card to reveal the first battle."
+        state: {
+            ...context,
+            piles,
+            turnIndex: 0,
+            round: 1,
+            playedCardHistory: [],
+            roundCards: [],
+            lastPlayedCard: null,
+            selectedCardId: null,
+            winningPlayerIds: [],
+            statusText:
+                "The " +
+                context.deckDefinition.name +
+                " is split. Press Play Card to reveal the first battle."
+        },
+        effects
     };
 }

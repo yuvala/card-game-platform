@@ -49,15 +49,32 @@ async function runPokerLiteMachineTest() {
 
     actor.start();
     actor.send({ type: "START" });
+
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    let snapshot = actor.getSnapshot();
+    assert(snapshot.context.lastEffects.length === 2, "Poker Lite should emit one deal effect per dealt card in the short test.");
+    assert(
+        snapshot.context.lastEffects.every((effect) => effect.type === "move-card" && effect.reason === "deal"),
+        "Poker Lite dealing effects should describe deal-card moves."
+    );
+    actor.send({ type: "ANIMATION_DONE" });
+
     await waitFor(() => actor.getSnapshot().value === "playerTurn");
 
-    let snapshot = actor.getSnapshot();
+    snapshot = actor.getSnapshot();
     const currentPlayer = snapshot.context.players[snapshot.context.turnIndex];
     const currentHand = getPileCards(snapshot.context.piles, getPokerLiteHandPileId(currentPlayer.id));
     assert(currentHand.length === 1, "Poker Lite should deal one card to the current player in the short test setup.");
 
     actor.send({ type: "SELECT_CARD", cardId: currentHand[0].id });
     actor.send({ type: "PLAY_CARD" });
+    snapshot = actor.getSnapshot();
+    assert(
+        snapshot.context.lastEffects.length === 1 &&
+        snapshot.context.lastEffects[0].type === "move-card" &&
+        snapshot.context.lastEffects[0].reason === "play",
+        "Poker Lite should emit a play effect before committing the selected card."
+    );
     actor.send({ type: "ANIMATION_DONE" });
 
     await waitFor(() => {
@@ -110,9 +127,21 @@ async function runWarLiteMachineTest() {
 
     actor.start();
     actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    let beforeBattle = actor.getSnapshot();
+    assert(
+        beforeBattle.context.lastEffects.length > 0,
+        "War Lite should emit deal effects while splitting the opening stacks."
+    );
+    assert(
+        beforeBattle.context.lastEffects.every((effect) => effect.type === "move-card" && effect.reason === "deal"),
+        "War Lite dealing effects should describe deal-card moves."
+    );
+    actor.send({ type: "ANIMATION_DONE" });
+
     await waitFor(() => actor.getSnapshot().value === "battleReady");
 
-    const beforeBattle = actor.getSnapshot();
+    beforeBattle = actor.getSnapshot();
     assert(
         beforeBattle.context.players.every((player) => {
             return getPileCards(beforeBattle.context.piles, getWarLiteHandPileId(player.id)).length > 0;
@@ -171,9 +200,20 @@ async function runBriscaLiteMachineTest() {
 
     actor.start();
     actor.send({ type: "START" });
-    await waitFor(() => actor.getSnapshot().value === "playerTurn");
-
+    await waitFor(() => actor.getSnapshot().value === "dealing");
     let snapshot = actor.getSnapshot();
+    assert(
+        snapshot.context.lastEffects.length === 3,
+        "Brisca-lite should emit two hand deal effects and one trump deal effect in the short test."
+    );
+    assert(
+        snapshot.context.lastEffects.every((effect) => effect.type === "move-card" && effect.reason === "deal"),
+        "Brisca-lite dealing effects should describe deal-card moves."
+    );
+    actor.send({ type: "ANIMATION_DONE" });
+
+    await waitFor(() => actor.getSnapshot().value === "playerTurn");
+    snapshot = actor.getSnapshot();
     const currentPlayer = snapshot.context.players[snapshot.context.turnIndex];
     const currentHand = getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(currentPlayer.id));
     assert(currentHand.length === 1, "Brisca-lite should deal one card to the active player in the short test setup.");
@@ -181,6 +221,13 @@ async function runBriscaLiteMachineTest() {
 
     actor.send({ type: "SELECT_CARD", cardId: currentHand[0].id });
     actor.send({ type: "PLAY_CARD" });
+    snapshot = actor.getSnapshot();
+    assert(
+        snapshot.context.lastEffects.length === 1 &&
+        snapshot.context.lastEffects[0].type === "move-card" &&
+        snapshot.context.lastEffects[0].reason === "play",
+        "Brisca-lite should emit a play effect before committing the selected card."
+    );
     actor.send({ type: "ANIMATION_DONE" });
 
     await waitFor(() => {
@@ -206,6 +253,14 @@ async function runBriscaLiteMachineTest() {
     await waitFor(() => actor.getSnapshot().context.round === 2);
     snapshot = actor.getSnapshot();
 
+    assert(
+        snapshot.context.lastEffects.length === 2,
+        "Brisca-lite should emit draw effects when refilling both players after a trick."
+    );
+    assert(
+        snapshot.context.lastEffects.every((effect) => effect.type === "move-card" && effect.reason === "draw"),
+        "Brisca-lite refill effects should describe draw-card moves."
+    );
     assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
     assert(snapshot.context.playedCardHistory.length === 2, "Brisca-lite should record both played cards in played-card history.");
     assert(

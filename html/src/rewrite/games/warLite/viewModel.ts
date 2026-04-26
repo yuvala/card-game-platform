@@ -123,6 +123,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             canPlay: snapshot.matches("battleReady"),
             canRestart: snapshot.matches("gameOver")
         },
-        animation: null
+        animation: null,
+        effects: snapshot.context.lastEffects
     };
 }

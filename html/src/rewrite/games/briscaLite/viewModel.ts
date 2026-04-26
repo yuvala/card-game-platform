@@ -41,19 +41,6 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
               isFaceUp: true
           }
         : null;
-    const animation =
-        snapshot.matches("animatingPlay") && snapshot.context.lastPlayedCard
-            ? {
-                  key:
-                      snapshot.context.lastPlayedCard.id +
-                      "-" +
-                      snapshot.context.roundCards.length +
-                      "-" +
-                      snapshot.context.turnIndex,
-                  playerId: currentPlayerId ?? "",
-                  cardId: snapshot.context.lastPlayedCard.card.id
-              }
-            : null;
 
     return {
         phaseLabel: currentPhase.toUpperCase(),
@@ -156,6 +143,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             canPlay: isPlayerTurn && Boolean(snapshot.context.selectedCardId),
             canRestart: snapshot.matches("gameOver")
         },
-        animation: animation && animation.playerId ? animation : null
+        animation: null,
+        effects: snapshot.context.lastEffects
     };
 }

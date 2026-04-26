@@ -37,19 +37,6 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
                   label: discardCards[discardCards.length - 1].displayLabel,
                   isFaceUp: true
               };
-    const animation =
-        snapshot.matches("animatingPlay") && snapshot.context.lastPlayedCard
-            ? {
-                  key:
-                      snapshot.context.lastPlayedCard.id +
-                      "-" +
-                      discardCards.length +
-                      "-" +
-                      currentHandCards.length,
-                  playerId: currentPlayerId ?? "",
-                  cardId: snapshot.context.lastPlayedCard.card.id
-              }
-            : null;
 
     return {
         phaseLabel: currentPhase.toUpperCase(),
@@ -119,6 +106,7 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
             canPlay: isPlayerTurn && hasSelection,
             canRestart: snapshot.matches("gameOver")
         },
-        animation: animation && animation.playerId ? animation : null
+        animation: null,
+        effects: snapshot.context.lastEffects
     };
 }

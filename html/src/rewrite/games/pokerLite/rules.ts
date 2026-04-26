@@ -1,3 +1,4 @@
+import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import { getPileCards, moveCardBetweenPiles } from "../../engine/game/piles";
 import {
     POKER_LITE_DISCARD_PILE_ID,
@@ -88,24 +89,50 @@ export function selectCard(context: PokerLiteContext, cardId: string): PokerLite
 }
 
 export function queuePlayedCard(context: PokerLiteContext): PokerLiteContext {
+    return queuePlayedCardWithEffects(context).state;
+}
+
+export function queuePlayedCardWithEffects(context: PokerLiteContext): { state: PokerLiteContext; effects: CardGameEffect[] } {
     const currentPlayer = getCurrentPlayer(context);
     const previewCard = getPreviewCard(context);
 
     if (!previewCard) {
-        return context;
+        return {
+            state: context,
+            effects: []
+        };
     }
 
+    const fromPileId = getPokerLiteHandPileId(currentPlayer.id);
+    const fromIndex = getPileCards(context.piles, fromPileId).findIndex((card) => {
+        return card.id === previewCard.id;
+    });
+
     return {
-        ...context,
-        statusText: currentPlayer.name + " is moving " + previewCard.displayLabel + " to the discard pile...",
-        lastPlayedCard: {
-            id: "round-" + context.round + "-turn-" + context.turnIndex,
-            card: previewCard,
-            playerId: currentPlayer.id,
-            playerName: currentPlayer.name,
-            round: context.round
+        state: {
+            ...context,
+            statusText: currentPlayer.name + " is moving " + previewCard.displayLabel + " to the discard pile...",
+            lastPlayedCard: {
+                id: "round-" + context.round + "-turn-" + context.turnIndex,
+                card: previewCard,
+                playerId: currentPlayer.id,
+                playerName: currentPlayer.name,
+                round: context.round
+            },
+            selectedCardId: previewCard.id
         },
-        selectedCardId: previewCard.id
+        effects: [
+            createMoveCardEffect({
+                reason: "play",
+                card: previewCard,
+                fromPileId,
+                fromOwnerId: currentPlayer.id,
+                fromIndex: Math.max(0, fromIndex),
+                toPileId: POKER_LITE_DISCARD_PILE_ID,
+                isFaceUp: true,
+                keyPrefix: "play-" + String(context.round) + "-" + String(context.turnIndex)
+            })
+        ]
     };
 }
 

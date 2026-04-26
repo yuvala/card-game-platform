@@ -1,5 +1,6 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
+import type { CardGameEffect } from "../../engine/game/effects";
 import { getPileCards } from "../../engine/game/piles";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
@@ -41,7 +42,7 @@ export const warLiteGameDefinition: GameDefinition<
     WarLiteContext,
     WarLiteMove,
     CardGameViewModel,
-    never,
+    CardGameEffect,
     WarLiteOptions,
     string,
     WarLiteViewSnapshot
@@ -65,9 +66,7 @@ export const warLiteGameDefinition: GameDefinition<
                     )
                 };
             case "deal-opening-hands":
-                return {
-                    state: dealOpeningHands(state)
-                };
+                return dealOpeningHands(state);
             case "prepare-battle":
                 return {
                     state: setBattleStatus(state)
