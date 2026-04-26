@@ -170,21 +170,46 @@ function drawCardsForPlayers(
 }
 
 function collectTrickToWinner(context: BriscaLiteContext): BriscaLiteContext {
+    return collectTrickToWinnerWithEffects(context).state;
+}
+
+function collectTrickToWinnerWithEffects(context: BriscaLiteContext): { state: BriscaLiteContext; effects: CardGameEffect[] } {
     if (!context.trickWinnerId) {
-        return context;
+        return {
+            state: context,
+            effects: []
+        };
     }
 
     const trickCards = getPileCards(context.piles, BRISCA_LITE_TRICK_PILE_ID);
     const capturePileId = getBriscaLiteCapturePileId(context.trickWinnerId);
+    const captureCardCount = getPileCards(context.piles, capturePileId).length;
+    const effects = trickCards.map((card, index) => {
+        return createMoveCardEffect({
+            reason: "collect",
+            card,
+            fromPileId: BRISCA_LITE_TRICK_PILE_ID,
+            fromIndex: index,
+            fromPileCardCount: trickCards.length,
+            toPileId: capturePileId,
+            toOwnerId: context.trickWinnerId ?? undefined,
+            toIndex: captureCardCount + index,
+            isFaceUp: true,
+            keyPrefix: "trick-collect-" + String(context.round)
+        });
+    });
     const nextPiles = clearPile(
         appendCardsToPile(context.piles, capturePileId, trickCards),
         BRISCA_LITE_TRICK_PILE_ID
     );
 
-    return syncBriscaLiteContextFromPiles({
-        ...context,
-        piles: nextPiles
-    });
+    return {
+        state: syncBriscaLiteContextFromPiles({
+            ...context,
+            piles: nextPiles
+        }),
+        effects
+    };
 }
 
 export function canCurrentPlayerPlay(context: BriscaLiteContext): boolean {
@@ -402,9 +427,10 @@ export function advanceToNextTrick(context: BriscaLiteContext): BriscaLiteContex
 }
 
 export function advanceToNextTrickWithEffects(context: BriscaLiteContext): { state: BriscaLiteContext; effects: CardGameEffect[] } {
-    const collectedContext = collectTrickToWinner(context);
+    const collectTransition = collectTrickToWinnerWithEffects(context);
+    const collectedContext = collectTransition.state;
     const nextRoundState = drawCardsForPlayers(collectedContext, collectedContext.trickWinnerId);
-    const { effects, ...nextContextState } = nextRoundState;
+    const { effects: drawEffects, ...nextContextState } = nextRoundState;
     const nextLeaderId =
         collectedContext.trickWinnerId ??
         collectedContext.leadPlayerId ??
@@ -436,7 +462,15 @@ export function advanceToNextTrickWithEffects(context: BriscaLiteContext): { sta
                 } as BriscaLiteContext) +
                 "."
         },
-        effects
+        effects: collectTransition.effects.concat(drawEffects)
+    };
+}
+
+export function finishGameWithEffects(context: BriscaLiteContext): { state: BriscaLiteContext; effects: CardGameEffect[] } {
+    const collectTransition = collectTrickToWinnerWithEffects(context);
+    return {
+        state: finishGame(collectTransition.state),
+        effects: collectTransition.effects
     };
 }
 

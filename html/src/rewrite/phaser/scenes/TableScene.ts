@@ -252,6 +252,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             viewModel,
             primaryPileVisuals: this.primaryPileVisuals,
             handSlots: this.handSlots,
+            ownedPileVisuals: this.ownedPileVisuals,
             activeEffectBatchKey: this.activeEffectBatchKey,
             textureApi: {
                 getActiveBackTextureKey: () => this.getActiveBackTextureKey(),

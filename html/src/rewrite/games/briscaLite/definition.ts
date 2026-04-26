@@ -10,7 +10,7 @@ import {
     canCurrentPlayerPlay,
     commitPlayedCard,
     finalizeTurn,
-    finishGame,
+    finishGameWithEffects,
     hasMoreTricksRemaining,
     queuePlayedCardWithEffects,
     selectCard,
@@ -126,9 +126,7 @@ export const briscaLiteGameDefinition: GameDefinition<
                     };
                 }
             case "finish-game":
-                return {
-                    state: finishGame(state)
-                };
+                return finishGameWithEffects(state);
         }
     },
     isGameOver: (state) => {

@@ -6,9 +6,9 @@ import { createInitialContext, createShuffledContext, dealOpeningHands } from ".
 import {
     advanceToNextRound,
     canRevealBattle,
-    finalizeBattle,
+    finalizeBattleWithEffects,
     finishGame,
-    revealBattle,
+    revealBattleWithEffects,
     setBattleStatus
 } from "./rules";
 import { getWarLiteViewModel } from "./viewModel";
@@ -72,13 +72,9 @@ export const warLiteGameDefinition: GameDefinition<
                     state: setBattleStatus(state)
                 };
             case "reveal-battle":
-                return {
-                    state: revealBattle(state)
-                };
+                return revealBattleWithEffects(state);
             case "finalize-battle":
-                return {
-                    state: finalizeBattle(state)
-                };
+                return finalizeBattleWithEffects(state);
             case "advance-next-round":
                 return {
                     state: setBattleStatus(advanceToNextRound(state))

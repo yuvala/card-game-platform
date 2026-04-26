@@ -4,6 +4,7 @@ import {
     getPileCards,
     moveTopCardBetweenPiles
 } from "../../engine/game/piles";
+import { createMoveCardEffect, type CardGameEffect } from "../../engine/game/effects";
 import type { WarLiteContext, WarLitePlayedCard, WarLitePlayer } from "./types";
 import {
     WAR_LITE_BATTLE_PILE_ID,
@@ -49,17 +50,26 @@ export function setBattleStatus(context: WarLiteContext): WarLiteContext {
 }
 
 export function revealBattle(context: WarLiteContext): WarLiteContext {
+    return revealBattleWithEffects(context).state;
+}
+
+export function revealBattleWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
     if (!canRevealBattle(context)) {
-        return context;
+        return {
+            state: context,
+            effects: []
+        };
     }
 
     const playedCards: WarLitePlayedCard[] = [];
+    const effects: CardGameEffect[] = [];
     let piles = context.piles;
 
-    context.players.forEach((player) => {
+    context.players.forEach((player, index) => {
+        const fromPileId = getWarLiteHandPileId(player.id);
         const revealResult = moveTopCardBetweenPiles(
             piles,
-            getWarLiteHandPileId(player.id),
+            fromPileId,
             WAR_LITE_BATTLE_PILE_ID
         );
         piles = revealResult.piles;
@@ -75,29 +85,50 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
             playerName: player.name,
             round: context.round
         });
+        effects.push(createMoveCardEffect({
+            reason: "play",
+            card: topCard,
+            fromPileId,
+            fromOwnerId: player.id,
+            fromIndex: 0,
+            toPileId: WAR_LITE_BATTLE_PILE_ID,
+            toIndex: index,
+            isFaceUp: true,
+            keyPrefix: "battle-play-" + String(context.round) + "-" + player.id
+        }));
     });
 
     const rankedCards = rankPlayedCards(playedCards);
     const leadingCard = rankedCards[0] ?? null;
 
     return {
-        ...context,
-        piles,
-        roundCards: playedCards,
-        lastPlayedCard: leadingCard,
-        winningPlayerIds: [],
-        selectedCardId: null,
-        statusText: playedCards
-            .map((playedCard) => {
-                return playedCard.playerName + " flips " + playedCard.card.displayLabel;
-            })
-            .join(". ") + "."
+        state: {
+            ...context,
+            piles,
+            roundCards: playedCards,
+            lastPlayedCard: leadingCard,
+            winningPlayerIds: [],
+            selectedCardId: null,
+            statusText: playedCards
+                .map((playedCard) => {
+                    return playedCard.playerName + " flips " + playedCard.card.displayLabel;
+                })
+                .join(". ") + "."
+        },
+        effects
     };
 }
 
 export function finalizeBattle(context: WarLiteContext): WarLiteContext {
+    return finalizeBattleWithEffects(context).state;
+}
+
+export function finalizeBattleWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
     if (context.roundCards.length === 0) {
-        return context;
+        return {
+            state: context,
+            effects: []
+        };
     }
 
     const rankedCards = rankPlayedCards(context.roundCards);
@@ -107,40 +138,56 @@ export function finalizeBattle(context: WarLiteContext): WarLiteContext {
     const winnerNames = winningCards.map((playedCard) => playedCard.playerName).join(", ");
     const leadCard = winningCards[0] ?? rankedCards[0] ?? context.roundCards[0];
     const battleCards = getPileCards(context.piles, WAR_LITE_BATTLE_PILE_ID);
+    const effects = battleCards.map((card, index) => {
+        return createMoveCardEffect({
+            reason: "collect",
+            card,
+            fromPileId: WAR_LITE_BATTLE_PILE_ID,
+            fromIndex: index,
+            fromPileCardCount: battleCards.length,
+            toPileId: WAR_LITE_DISCARD_PILE_ID,
+            toIndex: getPileCards(context.piles, WAR_LITE_DISCARD_PILE_ID).length + index,
+            isFaceUp: true,
+            keyPrefix: "battle-collect-" + String(context.round)
+        });
+    });
     const piles = clearPile(
         appendCardsToPile(context.piles, WAR_LITE_DISCARD_PILE_ID, battleCards),
         WAR_LITE_BATTLE_PILE_ID
     );
     return {
-        ...context,
-        piles,
-        players: context.players.map((player) => {
-            if (!winningPlayerIds.includes(player.id)) {
-                return player;
-            }
+        state: {
+            ...context,
+            piles,
+            players: context.players.map((player) => {
+                if (!winningPlayerIds.includes(player.id)) {
+                    return player;
+                }
 
-            return {
-                ...player,
-                score: player.score + 1
-            };
-        }),
-        playedCardHistory: context.playedCardHistory.concat(context.roundCards),
-        lastPlayedCard: leadCard,
-        winningPlayerIds,
-        statusText:
-            winningCards.length === 1
-                ? "Battle " +
-                  context.round +
-                  " goes to " +
-                  winnerNames +
-                  " with " +
-                  winningCards[0].card.displayLabel +
-                  "."
-                : "Battle " +
-                  context.round +
-                  " is a tie at " +
-                  winningCards[0].card.displayLabel +
-                  ". No point awarded."
+                return {
+                    ...player,
+                    score: player.score + 1
+                };
+            }),
+            playedCardHistory: context.playedCardHistory.concat(context.roundCards),
+            lastPlayedCard: leadCard,
+            winningPlayerIds,
+            statusText:
+                winningCards.length === 1
+                    ? "Battle " +
+                      context.round +
+                      " goes to " +
+                      winnerNames +
+                      " with " +
+                      winningCards[0].card.displayLabel +
+                      "."
+                    : "Battle " +
+                      context.round +
+                      " is a tie at " +
+                      winningCards[0].card.displayLabel +
+                      ". No point awarded."
+        },
+        effects
     };
 }
 

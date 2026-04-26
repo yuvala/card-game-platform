@@ -3,7 +3,9 @@ import * as Phaser from "phaser";
 import type { CardGameEffect } from "../../../engine/game/effects";
 import type { CardGameViewCard, CardGameViewModel } from "../../../engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
+import { getTableCardPosition } from "../layout/tableCardLayouts";
 import type { PrimaryPileVisuals } from "./pilePresenter";
+import type { OwnedPileVisual } from "./pilePresenter";
 import type { HandSlotVisual } from "./handPresenter";
 
 interface EffectTextureApi {
@@ -20,6 +22,7 @@ interface EffectPresentationInput {
     viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
+    ownedPileVisuals: Map<string, OwnedPileVisual>;
     activeEffectBatchKey: string;
     textureApi: EffectTextureApi;
     onEffectsDone?: () => void;
@@ -53,6 +56,14 @@ function getSourcePoint(input: {
         };
     }
 
+    if (effect.type === "move-card" && (effect.fromPileId === "trick" || effect.fromPileId === "battle")) {
+        const position = getTableCardPosition(effect.fromIndex ?? 0, effect.fromPileCardCount ?? 2);
+        return {
+            x: position.x,
+            y: position.y
+        };
+    }
+
     if (effect.type === "move-card") {
         return {
             x: primaryPileVisuals.discardPileFrame.x,
@@ -80,14 +91,33 @@ function getDestinationPoint(input: {
     effect: CardGameEffect;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
+    ownedPileVisuals: Map<string, OwnedPileVisual>;
 }): { x: number; y: number; angle: number } | null {
-    const { effect, primaryPileVisuals, handSlots } = input;
+    const { effect, primaryPileVisuals, handSlots, ownedPileVisuals } = input;
+    const ownedPileVisual = ownedPileVisuals.get(effect.toPileId);
+    if (ownedPileVisual) {
+        return {
+            x: ownedPileVisual.container.x,
+            y: ownedPileVisual.container.y,
+            angle: ownedPileVisual.container.angle
+        };
+    }
+
     const destinationSlot = getDestinationSlot({ effect, handSlots });
     if (destinationSlot) {
         return {
             x: destinationSlot.container.x,
             y: destinationSlot.container.y,
             angle: destinationSlot.container.angle
+        };
+    }
+
+    if (effect.type === "move-card" && (effect.toPileId === "trick" || effect.toPileId === "battle")) {
+        const position = getTableCardPosition(effect.toIndex ?? 0, 2);
+        return {
+            x: position.x,
+            y: position.y,
+            angle: 0
         };
     }
 
@@ -108,7 +138,8 @@ export function runViewEffects(input: EffectPresentationInput): string {
         viewModel,
         primaryPileVisuals,
         handSlots,
-    activeEffectBatchKey,
+        ownedPileVisuals,
+        activeEffectBatchKey,
         textureApi,
         onEffectsDone
     } = input;
@@ -137,7 +168,8 @@ export function runViewEffects(input: EffectPresentationInput): string {
         const destinationPoint = getDestinationPoint({
             effect,
             primaryPileVisuals,
-            handSlots
+            handSlots,
+            ownedPileVisuals
         });
         if (!sourcePoint || !destinationPoint) {
             return;

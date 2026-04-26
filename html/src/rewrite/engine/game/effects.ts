@@ -14,6 +14,7 @@ export interface MoveCardEffect {
     fromPileId: string;
     fromOwnerId?: string;
     fromIndex?: number;
+    fromPileCardCount?: number;
     toPileId: string;
     toOwnerId?: string;
     toIndex?: number;
@@ -21,18 +22,23 @@ export interface MoveCardEffect {
 
 export type CardGameEffect = MoveCardEffect;
 
-export function createMoveCardEffect(input: {
+type MoveCardEffectInput = {
     reason: CardGameEffectReason;
     card: CardInstance;
     fromPileId: string;
     fromOwnerId?: string;
     fromIndex?: number;
+    fromPileCardCount?: number;
     toPileId: string;
     toOwnerId?: string;
     toIndex?: number;
     isFaceUp?: boolean;
     keyPrefix?: string;
-}): MoveCardEffect {
+};
+
+type SpecificMoveCardEffectInput = Omit<MoveCardEffectInput, "reason">;
+
+export function createMoveCardEffect(input: MoveCardEffectInput): MoveCardEffect {
     return {
         type: "move-card",
         key: [
@@ -51,8 +57,37 @@ export function createMoveCardEffect(input: {
         fromPileId: input.fromPileId,
         fromOwnerId: input.fromOwnerId,
         fromIndex: input.fromIndex,
+        fromPileCardCount: input.fromPileCardCount,
         toPileId: input.toPileId,
         toOwnerId: input.toOwnerId,
         toIndex: input.toIndex
     };
+}
+
+export function createDealCardEffect(input: SpecificMoveCardEffectInput): MoveCardEffect {
+    return createMoveCardEffect({
+        ...input,
+        reason: "deal"
+    });
+}
+
+export function createDrawCardEffect(input: SpecificMoveCardEffectInput): MoveCardEffect {
+    return createMoveCardEffect({
+        ...input,
+        reason: "draw"
+    });
+}
+
+export function createPlayCardEffect(input: SpecificMoveCardEffectInput): MoveCardEffect {
+    return createMoveCardEffect({
+        ...input,
+        reason: "play"
+    });
+}
+
+export function createCollectCardEffect(input: SpecificMoveCardEffectInput): MoveCardEffect {
+    return createMoveCardEffect({
+        ...input,
+        reason: "collect"
+    });
 }

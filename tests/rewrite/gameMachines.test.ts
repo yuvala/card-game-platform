@@ -150,6 +150,18 @@ async function runWarLiteMachineTest() {
     );
 
     actor.send({ type: "PLAY_CARD" });
+    let battleSnapshot = actor.getSnapshot();
+    assert(
+        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "play").length === 2,
+        "War Lite should emit play effects when revealing both battle cards."
+    );
+
+    await waitFor(() => actor.getSnapshot().value === "resolvingBattle");
+    battleSnapshot = actor.getSnapshot();
+    assert(
+        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
+        "War Lite should emit collect effects when moving battle cards to the battle log."
+    );
 
     await waitFor(() => {
         const snapshot = actor.getSnapshot();
@@ -254,12 +266,12 @@ async function runBriscaLiteMachineTest() {
     snapshot = actor.getSnapshot();
 
     assert(
-        snapshot.context.lastEffects.length === 2,
-        "Brisca-lite should emit draw effects when refilling both players after a trick."
+        snapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
+        "Brisca-lite should emit collect effects when moving trick cards to the winner capture pile."
     );
     assert(
-        snapshot.context.lastEffects.every((effect) => effect.type === "move-card" && effect.reason === "draw"),
-        "Brisca-lite refill effects should describe draw-card moves."
+        snapshot.context.lastEffects.filter((effect) => effect.reason === "draw").length === 2,
+        "Brisca-lite should emit draw effects when refilling both players after a trick."
     );
     assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
     assert(snapshot.context.playedCardHistory.length === 2, "Brisca-lite should record both played cards in played-card history.");
