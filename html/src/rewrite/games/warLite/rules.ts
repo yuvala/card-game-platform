@@ -94,6 +94,7 @@ export function revealBattleWithEffects(context: WarLiteContext): { state: WarLi
             fromPileId,
             fromOwnerId: player.id,
             fromIndex: 0,
+            fromFaceUp: false,
             toPileId: WAR_LITE_BATTLE_PILE_ID,
             toIndex: index,
             isFaceUp: true,

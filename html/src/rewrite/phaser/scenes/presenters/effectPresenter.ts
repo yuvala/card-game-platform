@@ -1,6 +1,7 @@
 import * as Phaser from "phaser";
 
 import type { CardGameEffect } from "../../../engine/game/effects";
+import type { CardGameEffectReason } from "../../../engine/game/effects";
 import type { CardGameViewCard, CardGameViewModel } from "../../../engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
 import { getTableCardPosition } from "../layout/tableCardLayouts";
@@ -30,6 +31,67 @@ interface EffectPresentationInput {
 
 function getEffectBatchKey(effects: readonly CardGameEffect[]): string {
     return effects.map((effect) => effect.key).join("|");
+}
+
+function getEffectProfile(reason: CardGameEffectReason): {
+    duration: number;
+    delayStep: number;
+    ease: string;
+    peakScale: number;
+} {
+    switch (reason) {
+        case "deal":
+            return {
+                duration: 190,
+                delayStep: 18,
+                ease: "Cubic.easeInOut",
+                peakScale: 1
+            };
+        case "draw":
+            return {
+                duration: 220,
+                delayStep: 42,
+                ease: "Cubic.easeOut",
+                peakScale: 1.02
+            };
+        case "play":
+            return {
+                duration: 260,
+                delayStep: 60,
+                ease: "Back.easeOut",
+                peakScale: 1.08
+            };
+        case "collect":
+            return {
+                duration: 300,
+                delayStep: 48,
+                ease: "Cubic.easeIn",
+                peakScale: 0.96
+            };
+    }
+}
+
+function getEffectDelays(effects: readonly CardGameEffect[]): number[] {
+    const delays: number[] = [];
+    let groupStartDelay = 0;
+    let groupReason: CardGameEffectReason | null = null;
+    let groupIndex = 0;
+    let previousProfile = getEffectProfile("deal");
+
+    effects.forEach((effect) => {
+        const profile = getEffectProfile(effect.reason);
+        if (groupReason !== null && groupReason !== effect.reason) {
+            groupStartDelay += previousProfile.duration + (groupIndex - 1) * previousProfile.delayStep + 120;
+            groupIndex = 0;
+        }
+
+        delays.push(groupStartDelay + groupIndex * profile.delayStep);
+        groupReason = effect.reason;
+        groupIndex += 1;
+        previousProfile = profile;
+    });
+
+    return delays;
 }
 
 function getSourcePoint(input: {
@@ -132,6 +194,65 @@ function getDestinationPoint(input: {
     return null;
 }
 
+function flashDestination(input: {
+    scene: Phaser.Scene;
+    point: { x: number; y: number; angle: number };
+    reason: CardGameEffectReason;
+}): void {
+    const { scene, point, reason } = input;
+    const color = reason === "collect" ? 0x93c47d : 0xffd166;
+    const ring = scene.add.rectangle(
+        point.x,
+        point.y,
+        CARD_WIDTH + 18,
+        CARD_HEIGHT + 18,
+        0x000000,
+        0
+    )
+        .setAngle(point.angle)
+        .setStrokeStyle(2, color, 0.85)
+        .setDepth(139)
+        .setScale(0.92);
+
+    scene.tweens.add({
+        targets: ring,
+        alpha: 0,
+        scaleX: 1.24,
+        scaleY: 1.24,
+        duration: 260,
+        ease: "Sine.easeOut",
+        onComplete: () => {
+            ring.destroy();
+        }
+    });
+}
+
+function shouldRevealMidFlight(effect: CardGameEffect): boolean {
+    return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp;
+}
+
+function scheduleMidFlightReveal(input: {
+    scene: Phaser.Scene;
+    ghost: Phaser.GameObjects.Image;
+    effect: CardGameEffect;
+    delay: number;
+    duration: number;
+    textureApi: EffectTextureApi;
+}): void {
+    const { scene, ghost, effect, delay, duration, textureApi } = input;
+    if (!shouldRevealMidFlight(effect)) {
+        return;
+    }
+
+    scene.time.delayedCall(delay + Math.round(duration * 0.46), () => {
+        if (!ghost.active) {
+            return;
+        }
+
+        textureApi.applyCardTexture(ghost, effect.card, "compact");
+    });
+}
+
 export function runViewEffects(input: EffectPresentationInput): string {
     const {
         scene,
@@ -155,6 +276,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
 
     let scheduledEffectCount = 0;
     let completedEffectCount = 0;
+    const effectDelays = getEffectDelays(effects);
 
     const completeEffect = () => {
         completedEffectCount += 1;
@@ -164,6 +286,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
     };
 
     effects.forEach((effect, index) => {
+        const profile = getEffectProfile(effect.reason);
         const sourcePoint = getSourcePoint({ effect, primaryPileVisuals, handSlots });
         const destinationPoint = getDestinationPoint({
             effect,
@@ -180,18 +303,35 @@ export function runViewEffects(input: EffectPresentationInput): string {
             .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
             .setDepth(140)
             .setAngle(0);
-        textureApi.applyCardTexture(ghost, effect.card, "compact");
+        if (!shouldRevealMidFlight(effect)) {
+            textureApi.applyCardTexture(ghost, effect.card, "compact");
+        }
+        scheduleMidFlightReveal({
+            scene,
+            ghost,
+            effect,
+            delay: effectDelays[index],
+            duration: profile.duration,
+            textureApi
+        });
 
         scene.tweens.add({
             targets: ghost,
             x: destinationPoint.x,
             y: destinationPoint.y,
             angle: destinationPoint.angle,
-            duration: 190,
-            delay: index * 18,
-            ease: "Cubic.easeInOut",
+            scaleX: profile.peakScale,
+            scaleY: profile.peakScale,
+            duration: profile.duration,
+            delay: effectDelays[index],
+            ease: profile.ease,
             onComplete: () => {
                 ghost.destroy();
+                flashDestination({
+                    scene,
+                    point: destinationPoint,
+                    reason: effect.reason
+                });
                 completeEffect();
             }
         });

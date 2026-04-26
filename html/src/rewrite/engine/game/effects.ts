@@ -15,6 +15,7 @@ export interface MoveCardEffect {
     fromOwnerId?: string;
     fromIndex?: number;
     fromPileCardCount?: number;
+    fromFaceUp?: boolean;
     toPileId: string;
     toOwnerId?: string;
     toIndex?: number;
@@ -29,6 +30,7 @@ type MoveCardEffectInput = {
     fromOwnerId?: string;
     fromIndex?: number;
     fromPileCardCount?: number;
+    fromFaceUp?: boolean;
     toPileId: string;
     toOwnerId?: string;
     toIndex?: number;
@@ -58,6 +60,7 @@ export function createMoveCardEffect(input: MoveCardEffectInput): MoveCardEffect
         fromOwnerId: input.fromOwnerId,
         fromIndex: input.fromIndex,
         fromPileCardCount: input.fromPileCardCount,
+        fromFaceUp: input.fromFaceUp,
         toPileId: input.toPileId,
         toOwnerId: input.toOwnerId,
         toIndex: input.toIndex
