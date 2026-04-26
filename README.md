@@ -37,7 +37,7 @@ The rewrite currently includes a Create Game flow and these games:
 
 - `npm run dev` - start the Vite dev server
 - `npm run build` - run TypeScript checks and create a production build in `dist/`
-- `npm run test-rewrite` - run the lightweight rewrite engine tests (`piles`, game config, shared machine flow, and concrete game machine flow)
+- `npm run test-rewrite` - run the lightweight rewrite tests (`piles`, game config, shared machine flow, concrete game machines, and view-model contracts)
 - `npm run preview` - preview the production build
 - `npm run serve:legacy` - run the old static Node.js server for comparison
 

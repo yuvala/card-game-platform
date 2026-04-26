@@ -343,6 +343,28 @@ interface CardPile<TCard> {
 }
 ```
 
+## View Model Contract
+
+Each game owns a `viewModel.ts` adapter. This adapter is the boundary between game rules and Phaser rendering.
+
+The view model decides:
+
+- which cards are visible or hidden
+- which player can interact right now
+- which piles are rendered as table piles or player-owned piles
+- which controls are enabled
+- what status, score, and round text the UI shows
+
+This keeps Phaser generic. For example, `War Lite` can show player stacks and capture piles without teaching `TableScene` what a war battle is. `Brisca-lite` can show stock, trump, and capture piles without teaching the engine trump rules.
+
+The test suite now includes view-model regression checks for the current games. These checks protect UI-facing contracts such as:
+
+- `War Lite` exposes player stacks and per-player capture piles, not central draw/discard piles.
+- `Poker Lite` exposes draw/discard piles and one interactive player during `playerTurn`.
+- `Brisca-lite` exposes stock, trump, capture piles, and hides non-current hands.
+
+These tests do not replace manual visual QA, but they catch accidental architecture regressions before Phaser rendering is involved.
+
 ## Shared Machine Shell
 
 The rewrite also now uses:

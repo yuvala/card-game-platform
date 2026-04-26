@@ -1,6 +1,10 @@
 import { createActor } from "xstate";
 
-import { frenchDeckDefinition } from "../../html/src/rewrite/engine/cards/deckDefinitions";
+import { frenchDeckDefinition, spanishDeckDefinition } from "../../html/src/rewrite/engine/cards/deckDefinitions";
+import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
+import { getBriscaLiteViewModel } from "../../html/src/rewrite/games/briscaLite/viewModel";
+import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
+import { getPokerLiteViewModel } from "../../html/src/rewrite/games/pokerLite/viewModel";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
 import { getWarLiteViewModel } from "../../html/src/rewrite/games/warLite/viewModel";
 
@@ -79,7 +83,91 @@ async function runWarLiteViewModelTest() {
     );
 }
 
+async function runPokerLiteViewModelTest() {
+    const machine = createPokerLiteMachine(["Avi", "Dany"], {
+        deckDefinition: frenchDeckDefinition,
+        cardsPerPlayer: 2,
+        random: () => 0.5
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
+    await waitFor(() => actor.getSnapshot().value === "playerTurn");
+
+    const viewModel = getPokerLiteViewModel(actor.getSnapshot());
+    assert(
+        viewModel.piles.length === 2 &&
+            viewModel.piles[0].role === "draw" &&
+            viewModel.piles[1].role === "discard",
+        "Poker Lite should expose one draw pile and one discard pile."
+    );
+    assert(
+        viewModel.players.filter((player) => player.canInteract).length === 1,
+        "Poker Lite should expose exactly one interactive player during playerTurn."
+    );
+    assert(
+        viewModel.players.every((player) => {
+            return player.hand.length === 2 && player.hand.every((card) => card.isFaceUp);
+        }),
+        "Poker Lite should expose all player hand cards face-up in the view model."
+    );
+    assert(
+        viewModel.controls.canPlay === false,
+        "Poker Lite should not allow Play Card before a card is selected."
+    );
+}
+
+async function runBriscaLiteViewModelTest() {
+    const machine = createBriscaLiteMachine(["Avi", "Dany"], {
+        deckDefinition: spanishDeckDefinition,
+        cardsPerPlayer: 2,
+        random: () => 0.5
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
+    await waitFor(() => actor.getSnapshot().value === "playerTurn");
+
+    const viewModel = getBriscaLiteViewModel(actor.getSnapshot());
+    const currentPlayer = viewModel.players.find((player) => player.isCurrentTurn);
+    const waitingPlayers = viewModel.players.filter((player) => !player.isCurrentTurn);
+
+    assert(
+        viewModel.piles.some((pile) => pile.role === "draw") &&
+            viewModel.piles.some((pile) => pile.role === "trump") &&
+            viewModel.piles.filter((pile) => pile.role === "capture" && Boolean(pile.ownerId)).length === viewModel.players.length,
+        "Brisca-lite should expose stock, trump, and one capture pile per player."
+    );
+    assert(Boolean(currentPlayer), "Brisca-lite should mark one current player during playerTurn.");
+    assert(
+        viewModel.players.filter((player) => player.canInteract).length === 1,
+        "Brisca-lite should expose exactly one interactive player during playerTurn."
+    );
+    assert(
+        currentPlayer?.hand.every((card) => card.isFaceUp),
+        "Brisca-lite should reveal the current player's hand."
+    );
+    assert(
+        waitingPlayers.every((player) => {
+            return player.hand.every((card) => !card.isFaceUp);
+        }),
+        "Brisca-lite should keep non-current player hands hidden."
+    );
+    assert(
+        viewModel.piles.find((pile) => pile.role === "trump")?.topCard?.isFaceUp === true,
+        "Brisca-lite should expose the trump card face-up while trump exists."
+    );
+}
+
 async function main() {
+    await runPokerLiteViewModelTest();
+    await runBriscaLiteViewModelTest();
     await runWarLiteViewModelTest();
     console.log("viewModels.test.ts passed");
 }
