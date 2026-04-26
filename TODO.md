@@ -3,6 +3,7 @@
 ## Priority 1: Fix
 
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
+- Add more view-model regression assertions beyond the current War Lite stack/capture coverage.
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
 - Review the new `GameConfig` layer after the next feature pass and decide whether more setup defaults belong there.
 - Review UI states manually for crowded tables:
