@@ -1,19 +1,19 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import type { GameDefinition } from "../../engine/game/definition";
 import type { CardGameEffect } from "../../engine/game/effects";
-import { getPileCards } from "../../engine/game/piles";
 import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
 import {
     advanceToNextRound,
     canRevealBattle,
     finalizeBattleWithEffects,
     finishGame,
+    getPlayerAvailableCardCount,
+    recycleEmptyPlayerStacks,
     revealBattleWithEffects,
     setBattleStatus
 } from "./rules";
 import { getWarLiteViewModel } from "./viewModel";
 import {
-    getWarLiteHandPileId,
     type WarLiteContext,
     type WarLiteOptions,
     type WarLiteViewSnapshot
@@ -32,10 +32,10 @@ function getPlayerNames(context: WarLiteContext): string[] {
     return context.players.map((player) => player.name);
 }
 
-function areAllStacksEmpty(state: WarLiteContext): boolean {
-    return state.players.every((player) => {
-        return getPileCards(state.piles, getWarLiteHandPileId(player.id)).length === 0;
-    });
+function getPlayersWithAvailableCards(state: WarLiteContext): number {
+    return state.players.filter((player) => {
+        return getPlayerAvailableCardCount(state, player.id) > 0;
+    }).length;
 }
 
 function hasMorePlayersToReveal(state: WarLiteContext): boolean {
@@ -73,7 +73,7 @@ export const warLiteGameDefinition: GameDefinition<
                 return dealOpeningHands(state);
             case "prepare-battle":
                 return {
-                    state: setBattleStatus(state)
+                    state: setBattleStatus(recycleEmptyPlayerStacks(state))
                 };
             case "reveal-battle":
                 return revealBattleWithEffects(state);
@@ -81,7 +81,7 @@ export const warLiteGameDefinition: GameDefinition<
                 return finalizeBattleWithEffects(state);
             case "advance-next-round":
                 return {
-                    state: setBattleStatus(advanceToNextRound(state))
+                    state: setBattleStatus(recycleEmptyPlayerStacks(advanceToNextRound(state)))
                 };
             case "finish-game":
                 return {
@@ -90,10 +90,10 @@ export const warLiteGameDefinition: GameDefinition<
         }
     },
     isGameOver: (state) => {
-        return areAllStacksEmpty(state) && state.roundCards.length === 0;
+        return getPlayersWithAvailableCards(state) < 2 && state.roundCards.length === 0;
     },
     getAutomaticMove: (state) => {
-        if (areAllStacksEmpty(state)) {
+        if (getPlayersWithAvailableCards(state) < 2) {
             return { type: "finish-game" };
         }
 

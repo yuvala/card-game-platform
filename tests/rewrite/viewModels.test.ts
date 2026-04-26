@@ -79,8 +79,8 @@ async function runWarLiteViewModelTest() {
         "War Lite should move the clickable stack to the next player after the first reveal."
     );
     assert(
-        viewModel.tableCards.length === 0,
-        "War Lite should keep table-card visuals hidden while waiting for the next reveal."
+        viewModel.tableCards.length === 1 && viewModel.tableCards[0].playerId === firstPlayerId,
+        "War Lite should keep the first revealed card visible while waiting for the next player."
     );
 
     actor.send({ type: "PLAY_CARD" });

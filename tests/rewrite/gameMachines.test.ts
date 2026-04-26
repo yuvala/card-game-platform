@@ -4,13 +4,14 @@ import {
     frenchDeckDefinition,
     spanishDeckDefinition
 } from "../../html/src/rewrite/engine/cards/deckDefinitions";
-import { getPileCards } from "../../html/src/rewrite/engine/game/piles";
+import { getPileCards, setPileCards } from "../../html/src/rewrite/engine/game/piles";
 import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
 import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
 import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "../../html/src/rewrite/games/briscaLite/types";
 import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
 import { getPokerLiteHandPileId } from "../../html/src/rewrite/games/pokerLite/types";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
+import { recycleEmptyPlayerStacks } from "../../html/src/rewrite/games/warLite/rules";
 import { getWarLiteCapturePileId, getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
 
 declare const process: { exitCode?: number };
@@ -222,6 +223,26 @@ async function runWarLiteMachineTest() {
     assert(
         afterBattle.context.statusText.includes("Battle 2"),
         "War Lite should announce the next battle after resolving the first one."
+    );
+
+    const winnerWithCapturedCards = afterBattle.context.players.find((player) => {
+        return getPileCards(afterBattle.context.piles, getWarLiteCapturePileId(player.id)).length > 0;
+    });
+    assert(winnerWithCapturedCards, "War Lite should have a player with won cards after one resolved battle.");
+    const winnerStackPileId = getWarLiteHandPileId(winnerWithCapturedCards.id);
+    const winnerCapturePileId = getWarLiteCapturePileId(winnerWithCapturedCards.id);
+    const capturedCardCount = getPileCards(afterBattle.context.piles, winnerCapturePileId).length;
+    const recycledContext = recycleEmptyPlayerStacks({
+        ...afterBattle.context,
+        piles: setPileCards(afterBattle.context.piles, winnerStackPileId, [])
+    });
+    assert(
+        getPileCards(recycledContext.piles, winnerStackPileId).length === capturedCardCount,
+        "War Lite should recycle a player's won pile into their stack when their stack is empty."
+    );
+    assert(
+        getPileCards(recycledContext.piles, winnerCapturePileId).length === 0,
+        "War Lite should clear the won pile after recycling it into the player stack."
     );
 }
 

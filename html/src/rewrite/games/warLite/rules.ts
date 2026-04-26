@@ -1,8 +1,12 @@
 import {
+    shuffleDeck
+} from "../../engine/cards/createDeck";
+import {
     appendCardsToPile,
     clearPile,
     getPileCards,
-    moveTopCardBetweenPiles
+    moveTopCardBetweenPiles,
+    setPileCards
 } from "../../engine/game/piles";
 import {
     createCollectCardEffect,
@@ -19,6 +23,14 @@ import {
 
 function getPlayerStackCards(context: WarLiteContext, playerId: string) {
     return getPileCards(context.piles, getWarLiteHandPileId(playerId));
+}
+
+function getPlayerWonCards(context: WarLiteContext, playerId: string) {
+    return getPileCards(context.piles, getWarLiteCapturePileId(playerId));
+}
+
+export function getPlayerAvailableCardCount(context: WarLiteContext, playerId: string): number {
+    return getPlayerStackCards(context, playerId).length + getPlayerWonCards(context, playerId).length;
 }
 
 function getNextRevealPlayer(context: WarLiteContext): WarLitePlayer | null {
@@ -41,11 +53,41 @@ export function canRevealBattle(context: WarLiteContext): boolean {
     );
 }
 
+export function recycleEmptyPlayerStacks(context: WarLiteContext): WarLiteContext {
+    let piles = context.piles;
+    const recycledPlayerNames: string[] = [];
+
+    context.players.forEach((player) => {
+        const stackPileId = getWarLiteHandPileId(player.id);
+        const wonPileId = getWarLiteCapturePileId(player.id);
+        const stackCards = getPileCards(piles, stackPileId);
+        const wonCards = getPileCards(piles, wonPileId);
+
+        if (stackCards.length > 0 || wonCards.length === 0) {
+            return;
+        }
+
+        piles = setPileCards(piles, stackPileId, shuffleDeck(wonCards));
+        piles = clearPile(piles, wonPileId);
+        recycledPlayerNames.push(player.name);
+    });
+
+    if (recycledPlayerNames.length === 0) {
+        return context;
+    }
+
+    return {
+        ...context,
+        piles,
+        statusText: recycledPlayerNames.join(", ") + " shuffled won cards back into their stack."
+    };
+}
+
 export function setBattleStatus(context: WarLiteContext): WarLiteContext {
     if (!canRevealBattle(context)) {
         return {
             ...context,
-            statusText: "One of the stacks is empty. Finish the table to see who won the most battles."
+            statusText: "A player has no cards left to reveal. Finish the table to see the result."
         };
     }
 
@@ -238,22 +280,30 @@ export function advanceToNextRound(context: WarLiteContext): WarLiteContext {
 }
 
 export function finishGame(context: WarLiteContext): WarLiteContext {
-    const highestScore = context.players.reduce((bestScore, player) => {
-        return Math.max(bestScore, player.score);
+    const playerTotals = context.players.map((player) => {
+        return {
+            player,
+            totalCards: getPlayerAvailableCardCount(context, player.id)
+        };
+    });
+    const highestTotalCards = playerTotals.reduce((bestTotal, entry) => {
+        return Math.max(bestTotal, entry.totalCards);
     }, 0);
-    const winningPlayers = context.players.filter((player) => player.score === highestScore);
+    const winningPlayers = playerTotals
+        .filter((entry) => entry.totalCards === highestTotalCards)
+        .map((entry) => entry.player);
     const winningPlayerIds = winningPlayers.map((player) => player.id);
 
     let winnerLabel = "No winner.";
     if (winningPlayers.length === 1) {
-        winnerLabel = winningPlayers[0].name + " wins War Lite with " + highestScore + " battle wins.";
+        winnerLabel = winningPlayers[0].name + " wins War Lite with " + highestTotalCards + " cards.";
     } else if (winningPlayers.length > 1) {
         winnerLabel =
             "Tie between " +
             winningPlayers.map((player) => player.name).join(", ") +
-            " at " +
-            highestScore +
-            " battle wins.";
+            " with " +
+            highestTotalCards +
+            " cards each.";
     }
 
     return {
@@ -262,9 +312,7 @@ export function finishGame(context: WarLiteContext): WarLiteContext {
         winningPlayerIds,
         statusText:
             context.deckDefinition.name +
-            " finished after " +
-            context.maxRounds +
-            " battles. " +
+            " finished. " +
             winnerLabel
     };
 }

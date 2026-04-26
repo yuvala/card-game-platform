@@ -413,6 +413,12 @@ Those should live in:
 The engine should not know what a trump suit is.  
 It should only know how to host a game that does.
 
+### How This Applies To War Lite
+
+`War Lite` also keeps its special rules inside its game module. Each player has a hidden stack plus a `Won` capture pile. When a player's stack is empty but their `Won` pile still has cards, `games/warLite/rules.ts` shuffles those won cards back into that player's hidden stack. The UI presents the game as an open-ended card battle rather than a fixed round-count game.
+
+The engine only provides generic pile operations. It does not know that a `Won` pile can become a playable stack; that behavior belongs to the War Lite rulebook.
+
 ### Adding A New Game
 
 ```mermaid

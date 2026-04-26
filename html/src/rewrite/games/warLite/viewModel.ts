@@ -26,21 +26,30 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
     const remainingStackCards = snapshot.context.players.reduce((count, player) => {
         return count + getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
     }, 0);
+    const totalAvailableCards = snapshot.context.players.reduce((count, player) => {
+        return (
+            count +
+            getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length +
+            getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id)).length
+        );
+    }, 0);
     return {
         phaseLabel: currentPhase.toUpperCase(),
-        roundLabel: "Battle " + snapshot.context.round + " / " + snapshot.context.maxRounds,
+        roundLabel: "Battle " + snapshot.context.round,
         deckId: snapshot.context.deckDefinition.id,
         cardSkinId: DEFAULT_CARD_SKIN_ID,
         deckLabel:
             snapshot.context.deckDefinition.name +
             " | " +
-            remainingStackCards +
-            " hidden cards still in player stacks",
+            totalAvailableCards +
+            " cards still in play",
         drawPileLabel: "",
         discardPileLabel: "",
         discardCardLabel: null,
         scoreLines: snapshot.context.players.map((player) => {
-            return player.name + ": " + player.score + " battle wins";
+            const stackCount = getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
+            const wonCount = getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id)).length;
+            return player.name + ": " + stackCount + " stack | " + wonCount + " won";
         }),
         statusText: snapshot.context.statusText,
         selectedCardId: null,
@@ -60,7 +69,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                 nameLabel: player.name,
                 metaLabel:
                     String(stackCards.length) +
-                    " cards | " +
+                    " stack | " +
                     String(player.score) +
                     " wins",
                 hand: stackPreviewCards,
@@ -70,16 +79,13 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                 cardClickAction: "play"
             };
         }),
-        tableCards:
-            snapshot.matches("revealingBattle") || snapshot.matches("resolvingBattle")
-                ? snapshot.context.roundCards.map((playedCard) => ({
-                      id: playedCard.card.id,
-                      label: playedCard.card.displayLabel,
-                      isFaceUp: true,
-                      playerId: playedCard.playerId,
-                      caption: playedCard.playerName
-                  }))
-                : [],
+        tableCards: snapshot.context.roundCards.map((playedCard) => ({
+            id: playedCard.card.id,
+            label: playedCard.card.displayLabel,
+            isFaceUp: true,
+            playerId: playedCard.playerId,
+            caption: playedCard.playerName
+        })),
         piles: [
             ...snapshot.context.players.map((player) => {
                 const capturedCards = getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id));
