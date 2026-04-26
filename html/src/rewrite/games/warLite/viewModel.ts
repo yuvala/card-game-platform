@@ -3,6 +3,7 @@ import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import { getPileCards } from "../../engine/game/piles";
 import type { WarLiteViewSnapshot } from "./types";
 import {
+    WAR_LITE_BATTLE_PILE_ID,
     getWarLiteCapturePileId,
     getWarLiteHandPileId
 } from "./types";
@@ -23,6 +24,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
     const isBattleReady = snapshot.matches("battleReady");
     const isGameOver = snapshot.matches("gameOver");
     const nextRevealPlayerId = snapshot.context.players[snapshot.context.roundCards.length]?.id ?? null;
+    const nextRevealPlayer = snapshot.context.players.find((player) => player.id === nextRevealPlayerId) ?? null;
     const remainingStackCards = snapshot.context.players.reduce((count, player) => {
         return count + getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
     }, 0);
@@ -73,6 +75,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                     String(player.score) +
                     " wins",
                 hand: stackPreviewCards,
+                handPresentation: "hidden-stack",
                 isCurrentTurn: isBattleReady && player.id === nextRevealPlayerId,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
                 canInteract: isBattleReady && player.id === nextRevealPlayerId && stackCards.length > 0,
@@ -86,6 +89,8 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             playerId: playedCard.playerId,
             caption: playedCard.playerName
         })),
+        tablePresentation: "table-row",
+        tablePileIds: [WAR_LITE_BATTLE_PILE_ID],
         piles: [
             ...snapshot.context.players.map((player) => {
                 const capturedCards = getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id));
@@ -98,6 +103,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                     label: "Won",
                     cardCount: capturedCards.length,
                     countLabel: String(capturedCards.length) + " won",
+                    presentation: "capture-pile" as const,
                     topCard: topCapturedCard
                         ? {
                               id: topCapturedCard.id,
@@ -118,6 +124,17 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                   title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
                   detail: snapshot.context.statusText,
                   winnerPlayerIds: snapshot.context.winningPlayerIds
+              }
+            : null,
+        primaryAction: isBattleReady && nextRevealPlayer
+            ? {
+                  label: "Reveal Card",
+                  hint: "Click " + nextRevealPlayer.name + "'s stack to reveal the next card.",
+                  eventType: "PLAY_CARD",
+                  target: {
+                      type: "player-hand",
+                      playerId: nextRevealPlayer.id
+                  }
               }
             : null,
         animation: null,

@@ -127,6 +127,26 @@ function getSecondaryPile(viewModel: CardGameViewModel): CardGameViewPile | null
     }) ?? null;
 }
 
+function getPilePresentation(pile: CardGameViewPile): NonNullable<CardGameViewPile["presentation"]> {
+    if (pile.presentation) {
+        return pile.presentation;
+    }
+
+    if (pile.ownerId || pile.role === "capture") {
+        return "capture-pile";
+    }
+
+    if (pile.role === "draw" || pile.role === "stock") {
+        return "hidden-stack";
+    }
+
+    if (pile.role === "trump") {
+        return "single-card";
+    }
+
+    return "face-up-stack";
+}
+
 function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisuals): void {
     const primaryPile = getPrimaryPile(viewModel);
     const secondaryPile = getSecondaryPile(viewModel);
@@ -408,13 +428,14 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         visual.labelText.setText(pile.label);
         visual.countText.setText(pile.countLabel);
         visual.container.setVisible(true);
+        const presentation = getPilePresentation(pile);
         textureApi.applyCardBackTexture(visual.stackBack);
-        visual.stackBack.setVisible(pile.cardCount > 1);
+        visual.stackBack.setVisible(presentation !== "single-card" && pile.cardCount > 1);
 
         if (pile.topCard) {
             textureApi.applyCardTexture(visual.image, pile.topCard, "compact");
             visual.image.setAlpha(1);
-            visual.stackBack.setAlpha(0.92);
+            visual.stackBack.setAlpha(presentation === "capture-pile" ? 0.92 : 0.72);
             visual.outline.setStrokeStyle(
                 2,
                 owner?.isRoundWinner ? 0xffd166 : (pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE),
@@ -422,7 +443,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
             );
         } else {
             textureApi.applyCardBackTexture(visual.image);
-            visual.image.setAlpha(pile.cardCount > 0 ? 0.96 : 0.35);
+            visual.image.setAlpha(pile.cardCount > 0 || presentation === "hidden-stack" ? 0.96 : 0.35);
             visual.stackBack.setAlpha(pile.cardCount > 0 ? 0.78 : 0);
             visual.outline.setStrokeStyle(
                 2,
@@ -465,6 +486,7 @@ export function syncSupplementalPilePresentation(input: SupplementalPilePresenta
         visual.labelText.setText(pile.label);
         visual.countText.setText(pile.countLabel);
         visual.container.setVisible(true);
+        const presentation = getPilePresentation(pile);
 
         if (pile.topCard) {
             textureApi.applyCardTexture(visual.image, pile.topCard, "compact");
@@ -473,7 +495,7 @@ export function syncSupplementalPilePresentation(input: SupplementalPilePresenta
         } else {
             textureApi.applyCardBackTexture(visual.image);
             visual.outline.setStrokeStyle(2, pile.cardCount > 0 ? CARD_BACK_STROKE : 0x355449, 0.9);
-            visual.image.setAlpha(pile.cardCount > 0 ? 0.96 : 0.32);
+            visual.image.setAlpha(pile.cardCount > 0 || presentation === "hidden-stack" ? 0.96 : 0.32);
         }
     });
 }

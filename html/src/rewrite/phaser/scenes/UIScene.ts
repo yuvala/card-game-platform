@@ -25,6 +25,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
     private scoreText!: Phaser.GameObjects.Text;
     private outcomeTitleText!: Phaser.GameObjects.Text;
     private outcomeDetailText!: Phaser.GameObjects.Text;
+    private actionHintText!: Phaser.GameObjects.Text;
     private statusText!: Phaser.GameObjects.Text;
     private buttons!: ButtonRefs;
 
@@ -107,6 +108,14 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             })
         };
 
+        this.actionHintText = this.add.text(HUD_X + 34, 548, "", {
+            fontFamily: "Arial",
+            fontSize: "14px",
+            color: "rgba(255,209,102,0.86)",
+            wordWrap: { width: HUD_WIDTH - 70 },
+            lineSpacing: 3
+        }).setResolution(UI_TEXT_RESOLUTION).setVisible(false);
+
         this.add.rectangle(HUD_X + HUD_WIDTH / 2, 620, HUD_WIDTH - 68, 118, 0x10221b, 0.84)
             .setStrokeStyle(2, 0xffd166, 0.18);
         this.add.text(HUD_X + 34, 550, "STATUS", {
@@ -175,6 +184,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         this.scoreText.setText(viewModel.scoreLines.join("\n"));
         this.statusText.setText(viewModel.statusText);
         this.syncOutcome(viewModel);
+        this.syncPrimaryAction(viewModel);
 
         this.setButtonState(this.buttons.start, viewModel.controls.canStart);
         this.setButtonState(this.buttons.play, viewModel.controls.canPlay);
@@ -197,6 +207,20 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             .setText(outcome.detail)
             .setVisible(true);
         this.statusText.setY(642);
+    }
+
+    private syncPrimaryAction(viewModel: CardGameViewModel): void {
+        const action = viewModel.primaryAction;
+        if (!action) {
+            this.actionHintText.setVisible(false);
+            this.buttons.play.setText("Play Card");
+            return;
+        }
+
+        this.buttons.play.setText(action.label);
+        this.actionHintText
+            .setText(action.hint)
+            .setVisible(Boolean(action.hint));
     }
 
     private setButtonState(button: Phaser.GameObjects.Text, isEnabled: boolean): void {

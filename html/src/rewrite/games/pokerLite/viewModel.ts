@@ -78,12 +78,15 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
                     label: card.displayLabel,
                     isFaceUp: true
                 })),
+                handPresentation: "hand-fan",
                 isCurrentTurn,
                 isRoundWinner,
                 canInteract: isCurrentTurn && isPlayerTurn
             };
         }),
         tableCards: [],
+        tablePresentation: "table-row",
+        tablePileIds: [],
         piles: [
             {
                 id: "draw-pile",
@@ -91,7 +94,8 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
                 label: "Draw Pile",
                 cardCount: drawCards.length,
                 countLabel: String(drawCards.length) + " cards",
-                topCard: null
+                topCard: null,
+                presentation: "hidden-stack"
             },
             {
                 id: "discard-pile",
@@ -99,7 +103,8 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
                 label: "Discard",
                 cardCount: discardCards.length,
                 countLabel: String(discardCards.length) + " cards",
-                topCard: discardTopCard
+                topCard: discardTopCard,
+                presentation: "face-up-stack"
             }
         ],
         controls: {
@@ -112,6 +117,21 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
                   title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
                   detail: snapshot.context.statusText,
                   winnerPlayerIds: snapshot.context.winningPlayerIds
+              }
+            : null,
+        primaryAction: isPlayerTurn
+            ? {
+                  label: hasSelection ? "Play Card" : "Select Card",
+                  hint: hasSelection
+                      ? "Play the selected card."
+                      : "Select a card from the current player's hand.",
+                  eventType: hasSelection ? "PLAY_CARD" : "SELECT_CARD",
+                  target: currentPlayerId
+                      ? {
+                            type: "player-hand",
+                            playerId: currentPlayerId
+                        }
+                      : undefined
               }
             : null,
         animation: null,

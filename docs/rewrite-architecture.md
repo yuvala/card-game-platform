@@ -351,9 +351,11 @@ The view model decides:
 
 - which cards are visible or hidden
 - which player can interact right now
+- what primary action the player should take next
 - which piles are rendered as table piles or player-owned piles
 - which controls are enabled
 - whether the game has a final outcome to show
+- how hands, table cards, and piles should be presented visually
 - what status, score, and round text the UI shows
 
 This keeps Phaser generic. For example, `War Lite` can show player stacks and capture piles without teaching `TableScene` what a war battle is. `Brisca-lite` can show stock, trump, and capture piles without teaching the engine trump rules.
@@ -367,6 +369,35 @@ The test suite now includes view-model regression checks for the current games. 
 These tests do not replace manual visual QA, but they catch accidental architecture regressions before Phaser rendering is involved.
 
 Game-over presentation is also modeled here through the generic `outcome` field. Each game decides who won and what summary text to expose; `UIScene` only renders the generic result. This keeps end-game UI reusable across games.
+
+Presentation is modeled through generic hints on the view model. It is not a rule. It tells Phaser how to draw the current state without teaching Phaser about a specific game.
+
+`CardGameViewPlayer.handPresentation` currently supports:
+
+- `hand-fan` for ordinary player hands
+- `hidden-stack` for a face-down player stack, such as War Lite
+
+`CardGameViewModel.tablePresentation` currently supports:
+
+- `table-row` for played or revealed table cards
+
+`CardGameViewModel.tablePileIds` maps game-specific table-zone pile ids, such as a trick or battle pile, to the generic table-card presentation. Phaser uses this mapping for movement effects instead of checking game-specific pile names.
+
+`CardGameViewModel.primaryAction` describes the next player-facing action:
+
+- button label
+- hint text
+- event type
+- optional target such as a player hand or pile
+
+This lets the UI guide the player without knowing game-specific rules. For example, War Lite can say "click Dany's stack" while Poker Lite can say "select a card", and Phaser only renders that generic instruction.
+
+`CardGameViewPile.presentation` currently supports:
+
+- `hidden-stack` for face-down stock or player stacks
+- `face-up-stack` for visible discard-like piles
+- `single-card` for a trump or marker card
+- `capture-pile` for won/taken card piles owned by a player
 
 ## Shared Machine Shell
 

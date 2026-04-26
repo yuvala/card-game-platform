@@ -14,12 +14,17 @@ export interface CardGameViewCard {
     stackCount?: number;
 }
 
+export type CardGameViewHandPresentation =
+    | "hand-fan"
+    | "hidden-stack";
+
 export interface CardGameViewPlayer {
     id: string;
     iconLabel: string;
     nameLabel: string;
     metaLabel: string;
     hand: CardGameViewCard[];
+    handPresentation?: CardGameViewHandPresentation;
     isCurrentTurn: boolean;
     isRoundWinner: boolean;
     canInteract: boolean;
@@ -38,6 +43,18 @@ export interface CardGameViewOutcome {
     winnerPlayerIds: string[];
 }
 
+export type CardGameViewActionTarget =
+    | { type: "table" }
+    | { type: "player-hand"; playerId: string }
+    | { type: "pile"; pileId: string };
+
+export interface CardGameViewPrimaryAction {
+    label: string;
+    hint: string;
+    eventType: CardGameEvent["type"];
+    target?: CardGameViewActionTarget;
+}
+
 export interface CardGameViewAnimation {
     key: string;
     playerId: string;
@@ -49,6 +66,15 @@ export interface CardGameViewTableCard extends CardGameViewCard {
     caption?: string;
 }
 
+export type CardGameViewTablePresentation =
+    | "table-row";
+
+export type CardGameViewPilePresentation =
+    | "hidden-stack"
+    | "face-up-stack"
+    | "capture-pile"
+    | "single-card";
+
 export interface CardGameViewPile {
     id: string;
     role: string;
@@ -57,6 +83,7 @@ export interface CardGameViewPile {
     cardCount: number;
     countLabel: string;
     topCard: CardGameViewCard | null;
+    presentation?: CardGameViewPilePresentation;
 }
 
 export interface CardGameViewModel {
@@ -73,9 +100,12 @@ export interface CardGameViewModel {
     selectedCardId: string | null;
     players: CardGameViewPlayer[];
     tableCards: CardGameViewTableCard[];
+    tablePresentation?: CardGameViewTablePresentation;
+    tablePileIds?: string[];
     piles: CardGameViewPile[];
     controls: CardGameViewControls;
     outcome: CardGameViewOutcome | null;
+    primaryAction: CardGameViewPrimaryAction | null;
     animation: CardGameViewAnimation | null;
     effects: CardGameEffect[];
 }

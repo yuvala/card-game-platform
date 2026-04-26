@@ -4,6 +4,7 @@ import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import type { BriscaLiteViewSnapshot } from "./types";
 import {
     BRISCA_LITE_STOCK_PILE_ID,
+    BRISCA_LITE_TRICK_PILE_ID,
     BRISCA_LITE_TRUMP_PILE_ID,
     getBriscaLiteCapturePileId,
     getBriscaLiteHandPileId
@@ -84,6 +85,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                 hand: revealHand
                     ? faceUpCards
                     : createHiddenPreviewCards(faceUpCards, Math.min(handCount, 3)),
+                handPresentation: "hand-fan",
                 isCurrentTurn,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
                 canInteract: isCurrentTurn && isPlayerTurn
@@ -96,6 +98,8 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             playerId: playedCard.playerId,
             caption: playedCard.playerName
         })),
+        tablePresentation: "table-row",
+        tablePileIds: [BRISCA_LITE_TRICK_PILE_ID],
         piles: [
             {
                 id: "stock-pile",
@@ -105,7 +109,8 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                 countLabel: trumpCard
                     ? String(stockCards.length) + " + trump"
                     : String(stockCards.length) + " cards",
-                topCard: null
+                topCard: null,
+                presentation: "hidden-stack"
             },
             {
                 id: BRISCA_LITE_TRUMP_PILE_ID,
@@ -113,7 +118,8 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                 label: "Trump",
                 cardCount: trumpCards.length,
                 countLabel: trumpCard?.displayLabel ?? "spent",
-                topCard: trumpTopCard
+                topCard: trumpTopCard,
+                presentation: "single-card"
             },
             ...snapshot.context.players.map((player) => {
                 const capturedCards = getPileCards(
@@ -129,6 +135,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                     label: "Won",
                     cardCount: capturedCards.length,
                     countLabel: String(capturedCards.length) + " won",
+                    presentation: "capture-pile" as const,
                     topCard: topCapturedCard
                         ? {
                               id: topCapturedCard.id,
@@ -149,6 +156,21 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
                   title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
                   detail: snapshot.context.statusText,
                   winnerPlayerIds: snapshot.context.winningPlayerIds
+              }
+            : null,
+        primaryAction: isPlayerTurn
+            ? {
+                  label: snapshot.context.selectedCardId ? "Play Card" : "Select Card",
+                  hint: snapshot.context.selectedCardId
+                      ? "Play the selected card to the trick."
+                      : "Select a card from the current player's hand.",
+                  eventType: snapshot.context.selectedCardId ? "PLAY_CARD" : "SELECT_CARD",
+                  target: currentPlayerId
+                      ? {
+                            type: "player-hand",
+                            playerId: currentPlayerId
+                        }
+                      : undefined
               }
             : null,
         animation: null,

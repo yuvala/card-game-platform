@@ -1,6 +1,10 @@
 import * as Phaser from "phaser";
 
-import type { CardGameViewCard, CardGameViewModel } from "../../../engine/game/viewModel";
+import type {
+    CardGameViewCard,
+    CardGameViewHandPresentation,
+    CardGameViewModel
+} from "../../../engine/game/viewModel";
 import { CARD_BACK_STROKE } from "../layout/constants";
 import { getHandSlotDisplayStates } from "../layout/handLayouts";
 import type { HandSlotOrigin } from "../layout/types";
@@ -86,12 +90,14 @@ function getOutlineStyle(input: {
 
 function syncStackBacks(input: {
     card: CardGameViewCard | null;
+    handPresentation: CardGameViewHandPresentation;
     stackBacks: Phaser.GameObjects.Image[];
     textureApi: HandTextureApi;
 }): void {
-    const { card, stackBacks, textureApi } = input;
+    const { card, handPresentation, stackBacks, textureApi } = input;
     const stackCount = card?.stackCount ?? 0;
-    const visibleBackCount = !card?.isFaceUp && stackCount > 1
+    const showsStackDepth = handPresentation === "hidden-stack" || stackCount > 1;
+    const visibleBackCount = showsStackDepth && !card?.isFaceUp && stackCount > 1
         ? Math.min(stackBacks.length, Math.max(1, Math.floor(stackCount / 8)))
         : 0;
 
@@ -108,6 +114,7 @@ export function syncHandPresentation(input: HandPresentationInput): void {
 
     viewModel.players.forEach((player) => {
         const slots = handSlots.get(player.id) || [];
+        const handPresentation = player.handPresentation ?? "hand-fan";
         const slotStates = getHandSlotDisplayStates({
             slots,
             cards: player.hand,
@@ -159,6 +166,7 @@ export function syncHandPresentation(input: HandPresentationInput): void {
 
             syncStackBacks({
                 card,
+                handPresentation,
                 stackBacks: slot.stackBacks,
                 textureApi
             });

@@ -53,7 +53,9 @@ async function runWarLiteViewModelTest() {
     assert(viewModel.discardPileLabel === "", "War Lite should not expose a central discard-pile label.");
     assert(
         viewModel.piles.length === viewModel.players.length &&
-            viewModel.piles.every((pile) => pile.role === "capture" && Boolean(pile.ownerId)),
+            viewModel.piles.every((pile) => {
+                return pile.role === "capture" && Boolean(pile.ownerId) && pile.presentation === "capture-pile";
+            }),
         "War Lite should expose only per-player capture piles in the view model."
     );
     assert(
@@ -61,8 +63,18 @@ async function runWarLiteViewModelTest() {
         "War Lite should expose exactly one clickable player stack before each reveal."
     );
     assert(
+        viewModel.primaryAction?.eventType === "PLAY_CARD" &&
+            viewModel.primaryAction.target?.type === "player-hand" &&
+            viewModel.primaryAction.target.playerId === viewModel.players.find((player) => player.canInteract)?.id,
+        "War Lite should expose the next player stack as the primary action target."
+    );
+    assert(
         viewModel.players.every((player) => {
-            return player.hand.length <= 1 && player.hand.every((card) => !card.isFaceUp && (card.stackCount ?? 0) > 0);
+            return (
+                player.handPresentation === "hidden-stack" &&
+                player.hand.length <= 1 &&
+                player.hand.every((card) => !card.isFaceUp && (card.stackCount ?? 0) > 0)
+            );
         }),
         "War Lite should render each player stack as one hidden stack preview card."
     );
@@ -79,6 +91,8 @@ async function runWarLiteViewModelTest() {
         "War Lite should move the clickable stack to the next player after the first reveal."
     );
     assert(
+        viewModel.tablePileIds?.length === 1 &&
+        viewModel.tablePresentation === "table-row" &&
         viewModel.tableCards.length === 1 && viewModel.tableCards[0].playerId === firstPlayerId,
         "War Lite should keep the first revealed card visible while waiting for the next player."
     );
@@ -86,6 +100,8 @@ async function runWarLiteViewModelTest() {
     actor.send({ type: "PLAY_CARD" });
     viewModel = getWarLiteViewModel(actor.getSnapshot());
     assert(
+        viewModel.tablePileIds?.length === 1 &&
+        viewModel.tablePresentation === "table-row" &&
         viewModel.tableCards.length === 2 && viewModel.tableCards.every((card) => card.isFaceUp),
         "War Lite should expose both revealed battle cards while resolving a complete battle."
     );
@@ -110,7 +126,9 @@ async function runPokerLiteViewModelTest() {
     assert(
         viewModel.piles.length === 2 &&
             viewModel.piles[0].role === "draw" &&
-            viewModel.piles[1].role === "discard",
+            viewModel.piles[0].presentation === "hidden-stack" &&
+            viewModel.piles[1].role === "discard" &&
+            viewModel.piles[1].presentation === "face-up-stack",
         "Poker Lite should expose one draw pile and one discard pile."
     );
     assert(
@@ -127,6 +145,11 @@ async function runPokerLiteViewModelTest() {
         viewModel.controls.canPlay === false,
         "Poker Lite should not allow Play Card before a card is selected."
     );
+    assert(
+        viewModel.primaryAction?.label === "Select Card" &&
+            viewModel.primaryAction.target?.type === "player-hand",
+        "Poker Lite should ask the current player to select a card before play is enabled."
+    );
 
     const activePlayer = viewModel.players.find((player) => player.canInteract);
     const selectedCardId = activePlayer?.hand[0]?.id;
@@ -136,6 +159,7 @@ async function runPokerLiteViewModelTest() {
     viewModel = getPokerLiteViewModel(actor.getSnapshot());
     assert(viewModel.selectedCardId === selectedCardId, "Poker Lite should expose the selected card id.");
     assert(viewModel.controls.canPlay === true, "Poker Lite should allow Play Card after a card is selected.");
+    assert(viewModel.primaryAction?.label === "Play Card", "Poker Lite should switch the primary action after selection.");
 
     actor.send({ type: "PLAY_CARD" });
     viewModel = getPokerLiteViewModel(actor.getSnapshot());
@@ -190,14 +214,22 @@ async function runBriscaLiteViewModelTest() {
 
     assert(
         viewModel.piles.some((pile) => pile.role === "draw") &&
-            viewModel.piles.some((pile) => pile.role === "trump") &&
-            viewModel.piles.filter((pile) => pile.role === "capture" && Boolean(pile.ownerId)).length === viewModel.players.length,
+            viewModel.piles.some((pile) => pile.role === "draw" && pile.presentation === "hidden-stack") &&
+            viewModel.piles.some((pile) => pile.role === "trump" && pile.presentation === "single-card") &&
+            viewModel.piles.filter((pile) => {
+                return pile.role === "capture" && Boolean(pile.ownerId) && pile.presentation === "capture-pile";
+            }).length === viewModel.players.length,
         "Brisca-lite should expose stock, trump, and one capture pile per player."
     );
     assert(Boolean(currentPlayer), "Brisca-lite should mark one current player during playerTurn.");
     assert(
         viewModel.players.filter((player) => player.canInteract).length === 1,
         "Brisca-lite should expose exactly one interactive player during playerTurn."
+    );
+    assert(
+        viewModel.primaryAction?.label === "Select Card" &&
+            viewModel.primaryAction.target?.type === "player-hand",
+        "Brisca-lite should ask the current player to select a card before play is enabled."
     );
     assert(
         currentPlayer?.hand.every((card) => card.isFaceUp),
@@ -228,6 +260,7 @@ async function runBriscaLiteViewModelTest() {
 
     viewModel = getBriscaLiteViewModel(actor.getSnapshot());
     assert(
+        viewModel.tablePileIds?.length === 1 &&
         viewModel.tableCards.length === 1 && viewModel.tableCards[0].isFaceUp,
         "Brisca-lite should expose the first trick card on the table after the first play."
     );

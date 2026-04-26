@@ -96,10 +96,11 @@ function getEffectDelays(effects: readonly CardGameEffect[]): number[] {
 
 function getSourcePoint(input: {
     effect: CardGameEffect;
+    viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
 }): { x: number; y: number } | null {
-    const { effect, primaryPileVisuals, handSlots } = input;
+    const { effect, viewModel, primaryPileVisuals, handSlots } = input;
     if (effect.type === "move-card" && effect.fromOwnerId) {
         const slots = handSlots.get(effect.fromOwnerId);
         const sourceSlot = slots?.[effect.fromIndex ?? 0];
@@ -118,7 +119,7 @@ function getSourcePoint(input: {
         };
     }
 
-    if (effect.type === "move-card" && (effect.fromPileId === "trick" || effect.fromPileId === "battle")) {
+    if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
         const position = getTableCardPosition(effect.fromIndex ?? 0, effect.fromPileCardCount ?? 2);
         return {
             x: position.x,
@@ -151,11 +152,12 @@ function getDestinationSlot(input: {
 
 function getDestinationPoint(input: {
     effect: CardGameEffect;
+    viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
 }): { x: number; y: number; angle: number } | null {
-    const { effect, primaryPileVisuals, handSlots, ownedPileVisuals } = input;
+    const { effect, viewModel, primaryPileVisuals, handSlots, ownedPileVisuals } = input;
     const ownedPileVisual = ownedPileVisuals.get(effect.toPileId);
     if (ownedPileVisual) {
         return {
@@ -174,7 +176,7 @@ function getDestinationPoint(input: {
         };
     }
 
-    if (effect.type === "move-card" && (effect.toPileId === "trick" || effect.toPileId === "battle")) {
+    if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
         const position = getTableCardPosition(effect.toIndex ?? 0, 2);
         return {
             x: position.x,
@@ -287,9 +289,10 @@ export function runViewEffects(input: EffectPresentationInput): string {
 
     effects.forEach((effect, index) => {
         const profile = getEffectProfile(effect.reason);
-        const sourcePoint = getSourcePoint({ effect, primaryPileVisuals, handSlots });
+        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots });
         const destinationPoint = getDestinationPoint({
             effect,
+            viewModel,
             primaryPileVisuals,
             handSlots,
             ownedPileVisuals
