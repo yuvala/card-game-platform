@@ -33,6 +33,7 @@ const setupPanel = createGamePanel({
     container: setupMountElement,
     entries: gameCatalogEntries,
     initialSelection,
+    initialOpen: requestedParams.get("autostart") !== "1",
     getDeckLabel: (deckId) => supportedDeckDefinitions[deckId].name,
     getPlayerNames: (playerCount) => buildPlayerNames(playerCount),
     onStart: (selection) => {

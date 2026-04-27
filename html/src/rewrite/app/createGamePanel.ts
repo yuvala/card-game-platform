@@ -17,6 +17,7 @@ interface CreateGamePanelOptions {
     container: HTMLElement;
     entries: readonly AnyGameCatalogEntry[];
     initialSelection: RewriteGameSelection;
+    initialOpen?: boolean;
     getDeckLabel: (deckId: SupportedDeckId) => string;
     getPlayerNames: (playerCount: number) => string[];
     onStart: (selection: RewriteGameSelection) => void;
@@ -43,7 +44,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
     }
 
     let activeTableSummary: RewriteActiveTableSummary | null = null;
-    let isOpen = true;
+    let isOpen = options.initialOpen ?? true;
     let selection = normalizeSelection(entries, options.initialSelection);
 
     function render(): void {

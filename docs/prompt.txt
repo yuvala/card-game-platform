@@ -1,0 +1,92 @@
+You are reviewing an existing TypeScript card-game project.
+
+Goal:
+Check whether the code matches the intended architecture for a reusable card-game engine, not just a single hardcoded card game.
+
+Expected architecture:
+
+1. Engine / Core
+Responsibility:
+- Manage generic card-game infrastructure.
+- Deck handling: shuffle, draw, reset.
+- Zones: deck, hand, discard, board/table.
+- Moving cards between zones.
+- Basic events: cardSelected, cardMoved, cardPlayed.
+- Generic interaction layer such as click, drag, drop.
+- Should NOT know the specific rules of one game.
+
+Check:
+- Is the engine reusable for more than one card game?
+- Are game-specific rules hardcoded inside the engine?
+- Is Phaser logic mixed too deeply with rules logic?
+
+2. Rules / Config
+Responsibility:
+- Define what is allowed in a specific game.
+- Card structure.
+- canPlayCard logic.
+- scoring.
+- win/lose conditions.
+- initial setup.
+- turn rules.
+
+Check:
+- Are rules separated from the engine?
+- Can a new game be added by creating a new config/rules file?
+- Are there too many if/switch statements for specific games inside shared code?
+
+3. Flow / State Management
+Responsibility:
+- Define when things happen.
+- Example flow:
+  menu → deal → playerTurn → opponentTurn → resolve → gameOver
+
+Check:
+- Is the game flow explicit and understandable?
+- Are states scattered across many booleans?
+- Would XState or a simple state-machine improve this?
+- Are invalid transitions possible?
+
+4. UI / Phaser Layer
+Responsibility:
+- Render cards.
+- Handle visual layout.
+- Animations and effects.
+- Responsive scaling for different screen sizes.
+- Visual feedback: hover, selected, disabled, playable.
+
+Check:
+- Is Phaser mostly responsible for visuals and interaction?
+- Is business logic hidden inside Phaser scene methods?
+- Are card effects separated enough from game rules?
+- Is layout responsive or mostly hardcoded positions?
+
+5. Custom Logic / Escape Hatch
+Responsibility:
+- Allow special behavior for games that do not fit generic config.
+- Special cards.
+- AI.
+- unique effects.
+- game-specific edge cases.
+
+Check:
+- Is there a clean place for custom behavior?
+- Or are special cases spread everywhere?
+
+Main question:
+Compare the current code to this intended architecture.
+
+Please return:
+1. What already matches the architecture.
+2. What does not match.
+3. What is missing.
+4. What is over-engineered.
+5. What should be refactored first.
+6. Whether we are on the right track.
+7. A short prioritized TODO list.
+8. Specific file-by-file comments if possible.
+
+Important:
+Do not rewrite everything immediately.
+First analyze and explain the current state.
+Then suggest small, safe refactoring steps.
