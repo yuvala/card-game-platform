@@ -43,6 +43,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
     }
 
     let activeTableSummary: RewriteActiveTableSummary | null = null;
+    let isOpen = true;
     let selection = normalizeSelection(entries, options.initialSelection);
 
     function render(): void {
@@ -66,9 +67,26 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
         const helperText = activeTableSummary
             ? "Changing the setup will replace the current table when you press Start New Table."
             : "Choose a ruleset, a seat count, and a deck. Start Game deals the opening hand immediately.";
+        const toggleLabel = activeTableSummary ? "Change Game" : "Create Game";
 
         container.innerHTML = `
-            <section class="rewriteSetup" aria-label="Create Game">
+            <div class="rewriteSetupDock${isOpen ? " is-open" : ""}">
+                <button
+                    type="button"
+                    class="rewriteSetupToggle"
+                    data-action="toggle-setup"
+                    aria-expanded="${String(isOpen)}"
+                >
+                    ${escapeHtml(toggleLabel)}
+                </button>
+                <button
+                    type="button"
+                    class="rewriteSetupBackdrop"
+                    data-action="close-setup"
+                    aria-label="Close Create Game panel"
+                    tabindex="${isOpen ? "0" : "-1"}"
+                ></button>
+            <section class="rewriteSetup" aria-label="Create Game" aria-hidden="${String(!isOpen)}" ${isOpen ? "" : "inert"}>
                 <div class="rewriteSetupHeader">
                     <div>
                         <p class="rewriteSetupEyebrow">Create Game</p>
@@ -79,6 +97,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                         <p class="rewriteSetupSummaryLabel">${escapeHtml(summaryLabel)}</p>
                         <p class="rewriteSetupSummaryValue">${escapeHtml(summaryText)}</p>
                     </div>
+                    <button type="button" class="rewriteSetupClose" data-action="close-setup" aria-label="Close Create Game panel">Close</button>
                 </div>
                 <div class="rewriteSetupSection">
                     <p class="rewriteSetupSectionLabel">Game</p>
@@ -159,7 +178,22 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                     )}</p>
                 </div>
             </section>
+            </div>
         `;
+
+        container.querySelectorAll<HTMLElement>("[data-action='toggle-setup']").forEach((element) => {
+            element.addEventListener("click", () => {
+                isOpen = !isOpen;
+                render();
+            });
+        });
+
+        container.querySelectorAll<HTMLElement>("[data-action='close-setup']").forEach((element) => {
+            element.addEventListener("click", () => {
+                isOpen = false;
+                render();
+            });
+        });
 
         container.querySelectorAll<HTMLElement>("[data-game-id]").forEach((element) => {
             element.addEventListener("click", () => {
@@ -205,6 +239,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
         });
 
         container.querySelector<HTMLElement>("[data-action='start-game']")?.addEventListener("click", () => {
+            isOpen = false;
             onStart(selection);
         });
     }

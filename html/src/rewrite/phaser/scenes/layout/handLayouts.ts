@@ -14,7 +14,7 @@ interface HandCardLike {
 
 interface GetHandSlotDisplayStatesInput {
     slots: readonly HandSlotOrigin[];
-    cards: readonly HandCardLike[];
+    cards: readonly (HandCardLike | null)[];
     isCurrentTurn: boolean;
     canInteract: boolean;
     selectedCardId: string | null;
@@ -34,7 +34,7 @@ export function getHandSlotDisplayStates(
         hoveredSlotIndexes,
         hasAnimation
     } = input;
-    const visibleCardCount = cards.length;
+    const visibleCardCount = cards.filter(Boolean).length;
     const baseStartX = slots[0]?.originX ?? 0;
     const baseStartY = slots[0]?.originY ?? 0;
     const baseGapX = slots.length > 1 ? slots[1].originX - slots[0].originX : 0;

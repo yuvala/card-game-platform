@@ -22,17 +22,27 @@ function createPlayers(names: string[]): WarLitePlayer[] {
     }));
 }
 
-function resolveCardsPerPlayer(deckDefinition: DeckDefinition, playerCount: number): number {
+function resolveCardsPerPlayer(
+    deckDefinition: DeckDefinition,
+    playerCount: number,
+    requestedCardsPerPlayer?: number
+): number {
     const totalCards = deckDefinition.suits.length * deckDefinition.ranks.length;
-    return Math.max(1, Math.floor(totalCards / Math.max(playerCount, 1)));
+    const maximumCardsPerPlayer = Math.max(1, Math.floor(totalCards / Math.max(playerCount, 1)));
+    if (typeof requestedCardsPerPlayer === "number" && Number.isFinite(requestedCardsPerPlayer)) {
+        return Math.min(Math.max(1, Math.floor(requestedCardsPerPlayer)), maximumCardsPerPlayer);
+    }
+
+    return maximumCardsPerPlayer;
 }
 
 export function createInitialContext(
     playerNames: string[],
-    deckDefinition: DeckDefinition
+    deckDefinition: DeckDefinition,
+    requestedCardsPerPlayer?: number
 ): WarLiteContext {
     const players = createPlayers(playerNames);
-    const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, players.length || 2);
+    const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, players.length || 2, requestedCardsPerPlayer);
 
     return {
         deckDefinition,
@@ -58,9 +68,10 @@ export function createInitialContext(
 export function createShuffledContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
+    requestedCardsPerPlayer?: number,
     random: () => number = Math.random
 ): WarLiteContext {
-    const baseContext = createInitialContext(playerNames, deckDefinition);
+    const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);
     const shuffledDeck = shuffleDeck(createDeck(deckDefinition), random).reverse();
 
     return {
@@ -77,6 +88,10 @@ export function dealOpeningHands(context: WarLiteContext): { state: WarLiteConte
     const effects: CardGameEffect[] = [];
 
     while (getPileCards(piles, WAR_LITE_STOCK_PILE_ID).length > 0) {
+        if (dealingIndex >= context.cardsPerPlayer * context.players.length) {
+            break;
+        }
+
         const player = context.players[dealingIndex % context.players.length];
         if (!player) {
             break;

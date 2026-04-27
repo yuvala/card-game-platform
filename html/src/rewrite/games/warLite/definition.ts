@@ -54,7 +54,7 @@ export const warLiteGameDefinition: GameDefinition<
     id: "rewriteWarLite",
     name: "War Lite",
     setup: ({ playerNames, options }) => {
-        return createInitialContext(playerNames, options.deckDefinition);
+        return createInitialContext(playerNames, options.deckDefinition, options.cardsPerPlayer);
     },
     getLegalMoves: (state) => {
         return canRevealBattle(state) ? [{ type: "reveal-battle" }] : [];
@@ -65,10 +65,11 @@ export const warLiteGameDefinition: GameDefinition<
                 return {
                     state: createShuffledContext(
                         getPlayerNames(state),
-                        state.deckDefinition,
-                        move.random
-                    )
-                };
+                    state.deckDefinition,
+                    state.cardsPerPlayer,
+                    move.random
+                )
+            };
             case "deal-opening-hands":
                 return dealOpeningHands(state);
             case "prepare-battle":
@@ -93,12 +94,12 @@ export const warLiteGameDefinition: GameDefinition<
         return getPlayersWithAvailableCards(state) < 2 && state.roundCards.length === 0;
     },
     getAutomaticMove: (state) => {
-        if (getPlayersWithAvailableCards(state) < 2) {
-            return { type: "finish-game" };
-        }
-
         if (hasMorePlayersToReveal(state)) {
             return { type: "prepare-battle" };
+        }
+
+        if (getPlayersWithAvailableCards(state) < 2) {
+            return { type: "finish-game" };
         }
 
         return { type: "advance-next-round" };

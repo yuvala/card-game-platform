@@ -4,6 +4,8 @@ import {
     frenchDeckDefinition,
     spanishDeckDefinition
 } from "../../html/src/rewrite/engine/cards/deckDefinitions";
+import { createDeck } from "../../html/src/rewrite/engine/cards/createDeck";
+import type { DeckDefinition } from "../../html/src/rewrite/engine/cards/types";
 import { getPileCards, setPileCards } from "../../html/src/rewrite/engine/game/piles";
 import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
 import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
@@ -11,6 +13,8 @@ import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "../../html/
 import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
 import { getPokerLiteHandPileId } from "../../html/src/rewrite/games/pokerLite/types";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
+import { warLiteGameDefinition } from "../../html/src/rewrite/games/warLite/definition";
+import { createInitialContext as createInitialWarLiteContext } from "../../html/src/rewrite/games/warLite/setup";
 import { recycleEmptyPlayerStacks } from "../../html/src/rewrite/games/warLite/rules";
 import { getWarLiteCapturePileId, getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
 
@@ -27,6 +31,18 @@ function wait(ms: number) {
         setTimeout(resolve, ms);
     });
 }
+
+const tinyWarDeckDefinition: DeckDefinition = {
+    id: "tiny-war",
+    name: "Tiny War Deck",
+    suits: [
+        { id: "test", label: "Test", shortLabel: "T" }
+    ],
+    ranks: [
+        { id: "low", label: "Low", shortLabel: "L", sortOrder: 2 },
+        { id: "high", label: "High", shortLabel: "H", sortOrder: 14 }
+    ]
+};
 
 async function waitFor(condition: () => boolean, timeoutMs = 4000) {
     const startedAt = Date.now();
@@ -75,6 +91,11 @@ async function runPokerLiteMachineTest() {
         snapshot.context.lastEffects[0].type === "move-card" &&
         snapshot.context.lastEffects[0].reason === "play",
         "Poker Lite should emit a play effect before committing the selected card."
+    );
+    assert(
+        snapshot.context.lastEffects[0].type === "move-card" &&
+            snapshot.context.lastEffects[0].fromFaceUp === true,
+        "Poker Lite play effects should start from a face-up hand card."
     );
     actor.send({ type: "ANIMATION_DONE" });
 
@@ -246,6 +267,134 @@ async function runWarLiteMachineTest() {
     );
 }
 
+function runWarLiteGameOverRuleTest() {
+    const deck = createDeck(frenchDeckDefinition);
+    const context = createInitialWarLiteContext(["Avi", "Dany"], frenchDeckDefinition);
+    const firstPlayer = context.players[0];
+    const secondPlayer = context.players[1];
+    assert(firstPlayer && secondPlayer, "War Lite game-over test requires two players.");
+
+    const exhaustedContext = {
+        ...context,
+        piles: setPileCards(
+            setPileCards(
+                setPileCards(
+                    setPileCards(context.piles, getWarLiteHandPileId(firstPlayer.id), []),
+                    getWarLiteCapturePileId(firstPlayer.id),
+                    []
+                ),
+                getWarLiteHandPileId(secondPlayer.id),
+                [deck[0]]
+            ),
+            getWarLiteCapturePileId(secondPlayer.id),
+            []
+        ),
+        roundCards: []
+    };
+
+    assert(
+        warLiteGameDefinition.isGameOver(exhaustedContext),
+        "War Lite should be over when one player has no stack cards and no won cards."
+    );
+    assert(
+        warLiteGameDefinition.getAutomaticMove?.(exhaustedContext)?.type === "finish-game",
+        "War Lite should request finish-game when fewer than two players still have cards."
+    );
+
+    const finishedContext = warLiteGameDefinition.applyMove(exhaustedContext, { type: "finish-game" }).state;
+    assert(
+        finishedContext.winningPlayerIds.length === 1 &&
+            finishedContext.winningPlayerIds[0] === secondPlayer.id,
+        "War Lite should mark the remaining player as the winner when the opponent has no cards."
+    );
+    assert(
+        finishedContext.statusText.includes(secondPlayer.name) &&
+            finishedContext.statusText.includes("wins War Lite"),
+        "War Lite should expose a clear winner status at game over."
+    );
+}
+
+async function runWarLiteMachineGameOverTest() {
+    const machine = createWarLiteMachine(["Avi", "Dany"], {
+        deckDefinition: tinyWarDeckDefinition,
+        random: () => 0
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    let snapshot = actor.getSnapshot();
+    assert(
+        snapshot.context.lastEffects.length === 2,
+        "War Lite tiny deck should emit one deal effect per card."
+    );
+    actor.send({ type: "ANIMATION_DONE" });
+
+    await waitFor(() => actor.getSnapshot().value === "battleReady");
+    actor.send({ type: "PLAY_CARD" });
+
+    await waitFor(() => {
+        const nextSnapshot = actor.getSnapshot();
+        return nextSnapshot.value === "battleReady" && nextSnapshot.context.roundCards.length === 1;
+    });
+    snapshot = actor.getSnapshot();
+    assert(
+        snapshot.context.roundCards.length === 1 &&
+            getPileCards(snapshot.context.piles, WAR_LITE_BATTLE_PILE_ID).length === 1,
+        "War Lite should keep the first revealed card on the battle pile while waiting for the second player."
+    );
+
+    actor.send({ type: "PLAY_CARD" });
+    await waitFor(() => actor.getSnapshot().value === "resolvingBattle");
+    snapshot = actor.getSnapshot();
+    assert(
+        snapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
+        "War Lite tiny deck should collect both revealed cards after the battle resolves."
+    );
+
+    await waitFor(() => actor.getSnapshot().value === "gameOver", 5000);
+    snapshot = actor.getSnapshot();
+    assert(snapshot.value === "gameOver", "War Lite tiny deck should reach game over after the only battle.");
+    assert(
+        snapshot.context.winningPlayerIds.length === 1,
+        "War Lite tiny deck should produce one winner at game over."
+    );
+    assert(
+        snapshot.context.statusText.includes("wins War Lite"),
+        "War Lite machine should expose a clear winner status when it reaches game over."
+    );
+    actor.stop();
+}
+
+async function runWarLiteShortDeckOptionTest() {
+    const machine = createWarLiteMachine(["Avi", "Dany"], {
+        deckDefinition: frenchDeckDefinition,
+        cardsPerPlayer: 3,
+        random: () => 0.5
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    const snapshot = actor.getSnapshot();
+
+    assert(
+        snapshot.context.lastEffects.length === 6,
+        "War Lite should deal only the requested short-test card count when cardsPerPlayer is provided."
+    );
+    assert(
+        snapshot.context.players.every((player) => {
+            return getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length === 3;
+        }),
+        "War Lite should put the requested short-test card count into each player stack."
+    );
+
+    actor.stop();
+}
+
 async function runBriscaLiteMachineTest() {
     const machine = createBriscaLiteMachine(["Avi", "Dany"], {
         deckDefinition: spanishDeckDefinition,
@@ -283,6 +432,11 @@ async function runBriscaLiteMachineTest() {
         snapshot.context.lastEffects[0].type === "move-card" &&
         snapshot.context.lastEffects[0].reason === "play",
         "Brisca-lite should emit a play effect before committing the selected card."
+    );
+    assert(
+        snapshot.context.lastEffects[0].type === "move-card" &&
+            snapshot.context.lastEffects[0].fromFaceUp === true,
+        "Brisca-lite play effects should start from a face-up hand card."
     );
     actor.send({ type: "ANIMATION_DONE" });
 
@@ -358,6 +512,9 @@ async function runBriscaLiteMachineTest() {
 async function main() {
     await runPokerLiteMachineTest();
     await runWarLiteMachineTest();
+    runWarLiteGameOverRuleTest();
+    await runWarLiteMachineGameOverTest();
+    await runWarLiteShortDeckOptionTest();
     await runBriscaLiteMachineTest();
     console.log("gameMachines.test.ts passed");
 }

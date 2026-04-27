@@ -21,7 +21,12 @@ import {
     CARD_WIDTH,
     DEFAULT_HAND_SLOT_COUNT,
     HOVER_CARD_SCALE,
-    SELECTED_CARD_SCALE
+    SELECTED_CARD_SCALE,
+    TABLE_FELT,
+    TABLE_FELT_DARK,
+    TABLE_GOLD,
+    TABLE_CREAM,
+    TABLE_CREAM_DIM
 } from "./layout/constants";
 import { createSeatBadge, type SeatBadge } from "./factories/createSeatBadge";
 import { createTableCardVisual, type TableCardVisual } from "./factories/createTableCardVisual";
@@ -79,9 +84,12 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 .setAlpha(0.24);
         }
 
-        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH, height, 0x08150f, 0.72);
-        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 42, height - 40, 0x0d231b, 0.32)
-            .setStrokeStyle(2, 0xffd166, 0.12);
+        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH, height, TABLE_FELT_DARK, 0.78);
+        this.add.ellipse(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH * 0.76, height * 0.7, TABLE_FELT, 0.26);
+        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 42, height - 40, TABLE_FELT, 0.28)
+            .setStrokeStyle(2, TABLE_GOLD, 0.12);
+        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 84, height - 82, 0x000000, 0)
+            .setStrokeStyle(1, TABLE_GOLD, 0.08);
 
         this.createPiles();
 
@@ -363,14 +371,16 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 player.isCurrentTurn ? 0xffd166 : (player.isRoundWinner ? 0x93c47d : 0x15382c),
                 0.98
             );
+            badge.panel.setFillStyle(player.isCurrentTurn ? 0x1f2f20 : 0x071a13, player.isCurrentTurn ? 0.46 : 0.28);
+            badge.panel.setStrokeStyle(1, player.isCurrentTurn ? TABLE_GOLD : 0x5d7b70, player.isCurrentTurn ? 0.28 : 0.08);
             badge.iconCircle.setStrokeStyle(
                 2,
                 player.isCurrentTurn ? 0xfff1bf : (player.isRoundWinner ? 0xc7e6b6 : 0x5d7b70),
                 0.95
             );
-            badge.iconText.setColor(player.isCurrentTurn ? "#10251c" : "#f6ecd2");
-            badge.nameText.setColor(isHighlighted ? "#ffd166" : "#f6ecd2");
-            badge.metaText.setColor(isHighlighted ? "rgba(255,209,102,0.82)" : "rgba(246,236,210,0.72)");
+            badge.iconText.setColor(player.isCurrentTurn ? "#10251c" : TABLE_CREAM);
+            badge.nameText.setColor(isHighlighted ? "#ffd166" : TABLE_CREAM);
+            badge.metaText.setColor(isHighlighted ? "rgba(255,209,102,0.82)" : TABLE_CREAM_DIM);
         });
     }
 

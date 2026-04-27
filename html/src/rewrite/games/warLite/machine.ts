@@ -10,6 +10,7 @@ export function createWarLiteMachine(playerNames: string[], options?: WarLiteOpt
     const random = options?.random ?? Math.random;
     const definitionOptions: WarLiteOptions = {
         deckDefinition,
+        cardsPerPlayer: options?.cardsPerPlayer,
         random
     };
 

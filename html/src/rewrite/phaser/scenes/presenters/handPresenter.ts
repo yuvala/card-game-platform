@@ -5,9 +5,10 @@ import type {
     CardGameViewHandPresentation,
     CardGameViewModel
 } from "../../../engine/game/viewModel";
-import { CARD_BACK_STROKE } from "../layout/constants";
+import { CARD_BACK_STROKE, PLAYER_ZONE_LEFT_X, PLAYER_ZONE_RIGHT_X } from "../layout/constants";
 import { getHandSlotDisplayStates } from "../layout/handLayouts";
 import type { HandSlotOrigin } from "../layout/types";
+import { TABLE_CENTER_Y } from "../../layout";
 
 export interface HandSlotVisual extends HandSlotOrigin {
     container: Phaser.GameObjects.Container;
@@ -109,15 +110,55 @@ function syncStackBacks(input: {
     });
 }
 
+function getCardForSlot(input: {
+    handPresentation: CardGameViewHandPresentation;
+    cards: readonly CardGameViewCard[];
+    slots: readonly HandSlotVisual[];
+    slotIndex: number;
+}): CardGameViewCard | null {
+    const { handPresentation, cards, slots, slotIndex } = input;
+    if (handPresentation !== "hidden-stack" || cards.length === 0 || slots.length === 0) {
+        return cards[slotIndex] ?? null;
+    }
+
+    const isUpperSeat = slots[0].originAngle === 0 && slots[0].originY < TABLE_CENTER_Y;
+    const stackSlotIndex = isUpperSeat ? slots.length - 1 : 0;
+    return slotIndex === stackSlotIndex ? cards[0] : null;
+}
+
+function getHiddenStackPosition(input: {
+    handPresentation: CardGameViewHandPresentation;
+    card: CardGameViewCard | null;
+    slot: HandSlotVisual;
+}): { x: number; y: number } | null {
+    const { handPresentation, card, slot } = input;
+    if (handPresentation !== "hidden-stack" || !card || slot.originAngle !== 0) {
+        return null;
+    }
+
+    return {
+        x: slot.originY < TABLE_CENTER_Y ? PLAYER_ZONE_RIGHT_X : PLAYER_ZONE_LEFT_X,
+        y: slot.originY
+    };
+}
+
 export function syncHandPresentation(input: HandPresentationInput): void {
     const { viewModel, handSlots, textureApi } = input;
 
     viewModel.players.forEach((player) => {
         const slots = handSlots.get(player.id) || [];
         const handPresentation = player.handPresentation ?? "hand-fan";
+        const displayCards: Array<CardGameViewCard | null> = handPresentation === "hidden-stack" && player.hand[0]
+            ? slots.map((_, slotIndex) => getCardForSlot({
+                  handPresentation,
+                  cards: player.hand,
+                  slots,
+                  slotIndex
+              }))
+            : player.hand;
         const slotStates = getHandSlotDisplayStates({
             slots,
-            cards: player.hand,
+            cards: displayCards,
             isCurrentTurn: player.isCurrentTurn,
             canInteract: player.canInteract,
             selectedCardId: viewModel.selectedCardId,
@@ -127,12 +168,23 @@ export function syncHandPresentation(input: HandPresentationInput): void {
 
         for (let slotIndex = 0; slotIndex < slots.length; slotIndex += 1) {
             const slot = slots[slotIndex];
-            const card = player.hand[slotIndex] ?? null;
+            const card = getCardForSlot({
+                handPresentation,
+                cards: player.hand,
+                slots,
+                slotIndex
+            });
             const slotState = slotStates[slotIndex];
 
             if (slotState.position) {
-                slot.container.setPosition(slotState.position.x, slotState.position.y);
-                slot.hitTarget.setPosition(slotState.position.x, slotState.position.y);
+                const hiddenStackPosition = getHiddenStackPosition({
+                    handPresentation,
+                    card,
+                    slot
+                });
+                const nextPosition = hiddenStackPosition ?? slotState.position;
+                slot.container.setPosition(nextPosition.x, nextPosition.y);
+                slot.hitTarget.setPosition(nextPosition.x, nextPosition.y);
                 slot.container.setAngle(slotState.angle ?? slot.originAngle);
                 slot.hitTarget.setAngle(slotState.angle ?? slot.originAngle);
                 slot.container.setAlpha(1);

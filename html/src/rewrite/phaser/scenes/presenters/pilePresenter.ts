@@ -17,6 +17,10 @@ import {
     PRIMARY_PILE_FRAME_WIDTH,
     SUPPLEMENTAL_PILE_CARD_HEIGHT,
     SUPPLEMENTAL_PILE_CARD_WIDTH,
+    TABLE_CREAM,
+    TABLE_CREAM_DIM,
+    TABLE_FONT_FAMILY,
+    TABLE_GOLD,
     TABLE_TEXT_RESOLUTION
 } from "../layout/constants";
 import {
@@ -204,9 +208,9 @@ function syncDiscardPileCard(
 
 export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisuals {
     const pileStyle = {
-        fontFamily: "Arial",
+        fontFamily: TABLE_FONT_FAMILY,
         fontSize: "18px",
-        color: "#f6ecd2"
+        color: TABLE_CREAM
     };
 
     const drawPileFrame = scene.add.rectangle(
@@ -217,7 +221,7 @@ export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisual
         0x13372b,
         0.75
     )
-        .setStrokeStyle(3, 0xffd166, 0.25);
+        .setStrokeStyle(3, TABLE_GOLD, 0.25);
     const drawPileTitle = scene.add.text(TABLE_CENTER_X, 120, "Draw Pile", pileStyle)
         .setOrigin(0.5, 0.5)
         .setResolution(TABLE_TEXT_RESOLUTION);
@@ -234,7 +238,7 @@ export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisual
         0x35261a,
         0.75
     )
-        .setStrokeStyle(3, 0xffd166, 0.25);
+        .setStrokeStyle(3, TABLE_GOLD, 0.25);
     const discardPileTitle = scene.add.text(TABLE_CENTER_X, 318, "Discard", pileStyle)
         .setOrigin(0.5, 0.5)
         .setResolution(TABLE_TEXT_RESOLUTION);
@@ -245,7 +249,7 @@ export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisual
     const discardCardImage = scene.add.image(0, 0, "__MISSING");
     setCardImageDisplaySize(discardCardImage, DISCARD_CARD_WIDTH, DISCARD_CARD_HEIGHT);
     const discardCardOutline = scene.add.rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
-        .setStrokeStyle(2, 0xffd166, 0.9);
+        .setStrokeStyle(2, TABLE_GOLD, 0.9);
     const discardCard = scene.add.container(TABLE_CENTER_X, 392, [discardCardImage, discardCardOutline]).setVisible(false);
 
     return {
@@ -282,12 +286,13 @@ export function createOwnedPileVisual(
     const outline = scene.add.rectangle(0, 0, OWNED_PILE_CARD_WIDTH + 4, OWNED_PILE_CARD_HEIGHT + 4, 0x000000, 0)
         .setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
     const labelText = scene.add.text(0, -42, "", {
-        fontFamily: "Arial",
+        fontFamily: TABLE_FONT_FAMILY,
         fontSize: "11px",
-        color: "rgba(246,236,210,0.84)"
+        color: TABLE_CREAM_DIM,
+        fontStyle: "bold"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
     const countText = scene.add.text(0, 44, "", {
-        fontFamily: "Arial",
+        fontFamily: TABLE_FONT_FAMILY,
         fontSize: "11px",
         color: "rgba(255,209,102,0.86)"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
@@ -325,12 +330,13 @@ export function createSupplementalPileVisual(
         0
     ).setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
     const labelText = scene.add.text(0, -48, "", {
-        fontFamily: "Arial",
+        fontFamily: TABLE_FONT_FAMILY,
         fontSize: "12px",
-        color: "rgba(246,236,210,0.86)"
+        color: TABLE_CREAM_DIM,
+        fontStyle: "bold"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
     const countText = scene.add.text(0, 52, "", {
-        fontFamily: "Arial",
+        fontFamily: TABLE_FONT_FAMILY,
         fontSize: "12px",
         color: "rgba(255,209,102,0.86)"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);

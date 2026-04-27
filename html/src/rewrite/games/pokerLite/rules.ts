@@ -127,6 +127,7 @@ export function queuePlayedCardWithEffects(context: PokerLiteContext): { state: 
                 fromPileId,
                 fromOwnerId: currentPlayer.id,
                 fromIndex: Math.max(0, fromIndex),
+                fromFaceUp: true,
                 toPileId: POKER_LITE_DISCARD_PILE_ID,
                 isFaceUp: true,
                 keyPrefix: "play-" + String(context.round) + "-" + String(context.turnIndex)

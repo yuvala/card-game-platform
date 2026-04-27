@@ -6,14 +6,24 @@ import type {
     CardGameViewModelFactory
 } from "../../engine/game/viewModel";
 import { HUD_WIDTH, HUD_X, REWRITE_HEIGHT } from "../layout";
+import {
+    TABLE_CREAM,
+    TABLE_CREAM_DIM,
+    TABLE_FONT_FAMILY,
+    TABLE_GOLD,
+    TABLE_GOLD_DARK,
+    TABLE_PANEL,
+    TABLE_TEXT_RESOLUTION
+} from "./layout/constants";
 
 interface ButtonRefs {
     start: Phaser.GameObjects.Text;
     play: Phaser.GameObjects.Text;
+    autoRun: Phaser.GameObjects.Text;
     restart: Phaser.GameObjects.Text;
 }
 
-const UI_TEXT_RESOLUTION = 2;
+const UI_TEXT_RESOLUTION = TABLE_TEXT_RESOLUTION;
 
 export class UIScene<TSnapshot> extends Phaser.Scene {
     private readonly actor: CardGameActor<TSnapshot>;
@@ -28,6 +38,8 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
     private actionHintText!: Phaser.GameObjects.Text;
     private statusText!: Phaser.GameObjects.Text;
     private buttons!: ButtonRefs;
+    private isAutoRunEnabled = false;
+    private pendingAutoRunStep?: Phaser.Time.TimerEvent;
 
     constructor(actor: CardGameActor<TSnapshot>, getViewModel: CardGameViewModelFactory<TSnapshot>) {
         super("rewrite-ui");
@@ -36,18 +48,19 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
     }
 
     create(): void {
-        this.add.rectangle(HUD_X + HUD_WIDTH / 2, REWRITE_HEIGHT / 2, HUD_WIDTH - 28, REWRITE_HEIGHT - 40, 0x08150f, 0.9)
-            .setStrokeStyle(2, 0xffd166, 0.14);
+        this.add.rectangle(HUD_X + HUD_WIDTH / 2 + 8, REWRITE_HEIGHT / 2 + 8, HUD_WIDTH - 28, REWRITE_HEIGHT - 40, 0x000000, 0.2);
+        this.add.rectangle(HUD_X + HUD_WIDTH / 2, REWRITE_HEIGHT / 2, HUD_WIDTH - 28, REWRITE_HEIGHT - 40, TABLE_PANEL, 0.92)
+            .setStrokeStyle(2, TABLE_GOLD, 0.18);
 
         this.add.text(HUD_X + 34, 40, "TABLE CONTROLS", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "13px",
             color: "#ffd166",
             letterSpacing: 2
         }).setResolution(UI_TEXT_RESOLUTION);
 
         this.phaseBadge = this.add.text(HUD_X + 34, 96, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "24px",
             color: "#10251c",
             backgroundColor: "#ffd166",
@@ -55,41 +68,42 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         }).setResolution(UI_TEXT_RESOLUTION);
 
         this.roundText = this.add.text(HUD_X + 34, 164, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "20px",
-            color: "#f6ecd2"
+            color: TABLE_CREAM,
+            fontStyle: "bold"
         }).setResolution(UI_TEXT_RESOLUTION);
 
         this.deckText = this.add.text(HUD_X + 34, 206, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "16px",
-            color: "#f6ecd2",
+            color: TABLE_CREAM,
             wordWrap: { width: HUD_WIDTH - 70 }
         }).setResolution(UI_TEXT_RESOLUTION);
 
-        this.add.text(HUD_X + 34, 252, "Use Create Game above the table to change the ruleset, seats, or deck.", {
-            fontFamily: "Arial",
+        this.add.text(HUD_X + 34, 252, "Use the Create Game drawer to change the ruleset, seats, or deck.", {
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "15px",
-            color: "rgba(246,236,210,0.7)",
+            color: TABLE_CREAM_DIM,
             wordWrap: { width: HUD_WIDTH - 70 }
         }).setResolution(UI_TEXT_RESOLUTION);
 
         this.scoreText = this.add.text(HUD_X + 34, 306, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "16px",
-            color: "#f6ecd2",
+            color: TABLE_CREAM,
             wordWrap: { width: HUD_WIDTH - 70 },
             lineSpacing: 4
         }).setResolution(UI_TEXT_RESOLUTION);
 
         this.outcomeTitleText = this.add.text(HUD_X + 34, 348, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "18px",
             color: "#ffd166",
             wordWrap: { width: HUD_WIDTH - 70 }
         }).setResolution(UI_TEXT_RESOLUTION).setVisible(false);
         this.outcomeDetailText = this.add.text(HUD_X + 34, 376, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "14px",
             color: "rgba(246,236,210,0.86)",
             wordWrap: { width: HUD_WIDTH - 70 },
@@ -100,16 +114,20 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Deal Cards", () => {
                 this.actor.send({ type: "START" });
             }),
-            play: this.createButton(HUD_X + HUD_WIDTH / 2, 458, "Play Card", () => {
+            play: this.createButton(HUD_X + HUD_WIDTH / 2 - 58, 458, "Play Card", () => {
                 this.actor.send({ type: "PLAY_CARD" });
             }),
+            autoRun: this.createButton(HUD_X + HUD_WIDTH / 2 + 76, 458, "▶", () => {
+                this.toggleAutoRun();
+            }),
             restart: this.createButton(HUD_X + HUD_WIDTH / 2, 518, "Restart", () => {
+                this.stopAutoRun();
                 this.actor.send({ type: "RESTART" });
             })
         };
 
         this.actionHintText = this.add.text(HUD_X + 34, 548, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "14px",
             color: "rgba(255,209,102,0.86)",
             wordWrap: { width: HUD_WIDTH - 70 },
@@ -117,17 +135,17 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         }).setResolution(UI_TEXT_RESOLUTION).setVisible(false);
 
         this.add.rectangle(HUD_X + HUD_WIDTH / 2, 620, HUD_WIDTH - 68, 118, 0x10221b, 0.84)
-            .setStrokeStyle(2, 0xffd166, 0.18);
+            .setStrokeStyle(2, TABLE_GOLD, 0.18);
         this.add.text(HUD_X + 34, 550, "STATUS", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "13px",
             color: "#ffd166",
             letterSpacing: 2
         }).setResolution(UI_TEXT_RESOLUTION);
         this.statusText = this.add.text(HUD_X + 42, 580, "", {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "16px",
-            color: "#f6ecd2",
+            color: TABLE_CREAM,
             wordWrap: { width: HUD_WIDTH - 84 },
             lineSpacing: 5
         }).setResolution(UI_TEXT_RESOLUTION);
@@ -137,6 +155,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         });
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
+            this.stopAutoRun();
             this.subscription?.unsubscribe();
             this.subscription = undefined;
         });
@@ -151,10 +170,10 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         onClick: () => void
     ): Phaser.GameObjects.Text {
         const button = this.add.text(x, y, label, {
-            fontFamily: "Arial",
+            fontFamily: TABLE_FONT_FAMILY,
             fontSize: "20px",
             color: "#10251c",
-            backgroundColor: "#f6ecd2",
+            backgroundColor: "#f7d46c",
             padding: { left: 18, right: 18, top: 12, bottom: 12 }
         }).setOrigin(0.5).setResolution(UI_TEXT_RESOLUTION).setInteractive({ useHandCursor: true });
 
@@ -189,6 +208,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
         this.setButtonState(this.buttons.start, viewModel.controls.canStart);
         this.setButtonState(this.buttons.play, viewModel.controls.canPlay);
         this.setButtonState(this.buttons.restart, viewModel.controls.canRestart);
+        this.syncAutoRun(viewModel);
     }
 
     private syncOutcome(viewModel: CardGameViewModel): void {
@@ -223,8 +243,58 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             .setVisible(Boolean(action.hint));
     }
 
+    private toggleAutoRun(): void {
+        if (this.isAutoRunEnabled) {
+            this.stopAutoRun();
+            this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
+            return;
+        }
+
+        this.isAutoRunEnabled = true;
+        this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
+    }
+
+    private stopAutoRun(): void {
+        this.isAutoRunEnabled = false;
+        this.pendingAutoRunStep?.remove(false);
+        this.pendingAutoRunStep = undefined;
+    }
+
+    private syncAutoRun(viewModel: CardGameViewModel): void {
+        const canStep = viewModel.controls.canStart || viewModel.controls.canPlay;
+        if (viewModel.outcome || viewModel.controls.canRestart) {
+            this.stopAutoRun();
+        }
+
+        this.buttons.autoRun.setText(this.isAutoRunEnabled ? "■" : "▶");
+        this.setButtonState(this.buttons.autoRun, this.isAutoRunEnabled || canStep);
+
+        if (!this.isAutoRunEnabled || !canStep || this.pendingAutoRunStep) {
+            return;
+        }
+
+        this.pendingAutoRunStep = this.time.delayedCall(420, () => {
+            this.pendingAutoRunStep = undefined;
+            const latestViewModel = this.getViewModel(this.actor.getSnapshot());
+            if (!this.isAutoRunEnabled) {
+                return;
+            }
+
+            if (latestViewModel.controls.canStart) {
+                this.actor.send({ type: "START" });
+                return;
+            }
+
+            if (latestViewModel.controls.canPlay) {
+                this.actor.send({ type: "PLAY_CARD" });
+            }
+        });
+    }
+
     private setButtonState(button: Phaser.GameObjects.Text, isEnabled: boolean): void {
         button.setAlpha(isEnabled ? 1 : 0.35);
+        button.setColor(isEnabled ? "#10251c" : "#26352d");
+        button.setBackgroundColor(isEnabled ? "#f7d46c" : "#" + TABLE_GOLD_DARK.toString(16).padStart(6, "0"));
         if (isEnabled) {
             button.setInteractive({ useHandCursor: true });
         } else {

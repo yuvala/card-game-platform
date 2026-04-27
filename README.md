@@ -38,12 +38,14 @@ The rewrite currently includes a Create Game flow and these games:
 - `npm run dev` - start the Vite dev server
 - `npm run build` - run TypeScript checks and create a production build in `dist/`
 - `npm run test-rewrite` - run the lightweight rewrite tests (`piles`, game config, shared machine flow, concrete game machines, and view-model contracts)
+- `npm run smoke:rewrite` - run rewrite tests and production build as one local smoke check
 - `npm run preview` - preview the production build
 - `npm run serve:legacy` - run the old static Node.js server for comparison
 
 ## Docs
 
 - `docs/rewrite-architecture.md` - architecture notes for the Phaser + XState rewrite and future multi-game support
+- `docs/testing.md` - short rewrite QA commands and deterministic War Lite smoke URLs
 - `TODO.md` - prioritized fix/build/optimize backlog for the rewrite
 
 ## Main Files

@@ -9,6 +9,7 @@
     "build": "tsc --noEmit && vite build --config vite.config.js",
     "test:rewrite": "\"%npm_node_execpath%\" .\\scripts\\run-rewrite-tests.cjs",
     "test-rewrite": "\"%npm_node_execpath%\" .\\scripts\\run-rewrite-tests.cjs",
+    "smoke:rewrite": "node .\\scripts\\smoke-rewrite.cjs",
     "preview": "vite preview --config vite.config.js",
     "serve:legacy": "node node.js/server.js"
   },

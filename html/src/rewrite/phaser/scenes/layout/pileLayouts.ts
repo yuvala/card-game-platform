@@ -3,6 +3,8 @@ import { TABLE_CENTER_X, TABLE_CENTER_Y, TABLE_WIDTH } from "../../layout";
 import {
     DISCARD_CARD_HEIGHT,
     DISCARD_CARD_WIDTH,
+    PLAYER_ZONE_LEFT_X,
+    PLAYER_ZONE_RIGHT_X,
     PRIMARY_PILE_FRAME_HEIGHT,
     PRIMARY_PILE_FRAME_WIDTH,
     PRIMARY_PILE_TARGET_CENTER_Y,
@@ -119,24 +121,33 @@ export function getOwnedPilePosition(
         const minY = Math.min(...slots.map((slot) => slot.originY));
         const maxY = Math.max(...slots.map((slot) => slot.originY));
         const anchorAngle = slots[0].originAngle;
+        const centerY = (minY + maxY) / 2;
 
         if (anchorAngle === 0) {
+            const isUpperSeat = centerY < TABLE_CENTER_Y;
+            if (isUpperSeat) {
+                return {
+                    x: PLAYER_ZONE_LEFT_X + horizontalOffset,
+                    y: centerY + 6
+                };
+            }
+
             return {
-                x: maxX + 92 + horizontalOffset,
-                y: (minY + maxY) / 2 - (minY > TABLE_CENTER_Y ? 6 : -6)
+                x: PLAYER_ZONE_RIGHT_X + horizontalOffset,
+                y: centerY - 6
             };
         }
 
         if (anchorAngle > 0) {
             return {
                 x: minX - 84 - horizontalOffset,
-                y: (minY + maxY) / 2
+                y: centerY
             };
         }
 
         return {
             x: maxX + 84 + horizontalOffset,
-            y: (minY + maxY) / 2
+            y: centerY
         };
     }
 

@@ -55,6 +55,8 @@ function startGame(selection: RewriteGameSelection): void {
     };
     const playerNames = buildPlayerNames(normalizedSelection.playerCount);
     const deckDefinition = supportedDeckDefinitions[normalizedSelection.deckId];
+    const requestedCardsPerPlayer = getRequestedCardsPerPlayer(requestedParams);
+    const requestedSeed = getRequestedSeed(requestedParams);
 
     teardownActiveRuntime();
 
@@ -62,7 +64,9 @@ function startGame(selection: RewriteGameSelection): void {
     rootElement.classList.remove("is-empty");
 
     const actor = selectedGame.createActor(playerNames, {
-        deckDefinition
+        deckDefinition,
+        cardsPerPlayer: requestedCardsPerPlayer,
+        random: requestedSeed ? createSeededRandom(requestedSeed) : undefined
     });
     actor.start();
 
@@ -80,7 +84,7 @@ function startGame(selection: RewriteGameSelection): void {
         playerNames
     });
 
-    syncUrl(normalizedSelection);
+    syncUrl(normalizedSelection, requestedCardsPerPlayer, requestedSeed);
 }
 
 function teardownActiveRuntime(): void {
@@ -103,9 +107,9 @@ function createEmptyState(): HTMLElement {
     emptyState.className = "rewriteEmptyState";
     emptyState.innerHTML = `
         <p class="rewriteEmptyEyebrow">Table Closed</p>
-        <h2 class="rewriteEmptyTitle">Build your table above</h2>
+        <h2 class="rewriteEmptyTitle">Open the Create Game drawer</h2>
         <p class="rewriteEmptyCopy">
-            Choose a game, seat count, and deck in the Create Game panel.
+            Choose a game, seat count, and deck from the Create Game button.
             Start Game will open the table and deal the first hand immediately.
         </p>
     `;
@@ -140,12 +144,48 @@ function buildPlayerNames(playerCount: number): string[] {
     });
 }
 
-function syncUrl(selection: RewriteGameSelection): void {
+function getRequestedCardsPerPlayer(params: URLSearchParams): number | undefined {
+    const requestedCards = Number(params.get("cards"));
+    if (!Number.isFinite(requestedCards) || requestedCards <= 0) {
+        return undefined;
+    }
+
+    return Math.floor(requestedCards);
+}
+
+function getRequestedSeed(params: URLSearchParams): string | undefined {
+    const seed = params.get("seed")?.trim();
+    return seed || undefined;
+}
+
+function createSeededRandom(seed: string): () => number {
+    let state = 2166136261;
+    for (let index = 0; index < seed.length; index += 1) {
+        state ^= seed.charCodeAt(index);
+        state = Math.imul(state, 16777619);
+    }
+
+    return () => {
+        state += 0x6d2b79f5;
+        let value = state;
+        value = Math.imul(value ^ (value >>> 15), value | 1);
+        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+}
+
+function syncUrl(selection: RewriteGameSelection, cardsPerPlayer?: number, seed?: string): void {
     const nextParams = new URLSearchParams();
     nextParams.set("game", selection.gameId);
     nextParams.set("players", String(selection.playerCount));
     nextParams.set("deck", selection.deckId);
     nextParams.set("autostart", "1");
+    if (cardsPerPlayer) {
+        nextParams.set("cards", String(cardsPerPlayer));
+    }
+    if (seed) {
+        nextParams.set("seed", seed);
+    }
 
     const nextUrl = window.location.pathname + "?" + nextParams.toString();
     window.history.replaceState({}, "", nextUrl);

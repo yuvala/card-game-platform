@@ -29,6 +29,11 @@ interface EffectPresentationInput {
     onEffectsDone?: () => void;
 }
 
+interface CardDisplaySize {
+    width: number;
+    height: number;
+}
+
 function getEffectBatchKey(effects: readonly CardGameEffect[]): string {
     return effects.map((effect) => effect.key).join("|");
 }
@@ -233,6 +238,10 @@ function shouldRevealMidFlight(effect: CardGameEffect): boolean {
     return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp;
 }
 
+function shouldStartFaceUp(effect: CardGameEffect): boolean {
+    return effect.type === "move-card" && effect.card.isFaceUp && effect.fromFaceUp !== false;
+}
+
 function scheduleMidFlightReveal(input: {
     scene: Phaser.Scene;
     ghost: Phaser.GameObjects.Image;
@@ -306,7 +315,11 @@ export function runViewEffects(input: EffectPresentationInput): string {
             .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
             .setDepth(140)
             .setAngle(0);
-        if (!shouldRevealMidFlight(effect)) {
+        ghost.setData("cardDisplaySize", {
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT
+        } satisfies CardDisplaySize);
+        if (shouldStartFaceUp(effect) || !shouldRevealMidFlight(effect)) {
             textureApi.applyCardTexture(ghost, effect.card, "compact");
         }
         scheduleMidFlightReveal({

@@ -2,6 +2,15 @@
 
 ## Priority 1: Fix
 
+- Finish `War Lite` as the first end-to-end vertical slice:
+  - Start from the Create Game drawer and deal opening stacks.
+  - Each player reveals exactly one card from their own hidden stack in turn.
+  - The first revealed card stays on the table while waiting for the next player.
+  - After all players reveal, the battle resolves and cards move into the winner's `Won` pile.
+  - If a player stack is empty, their `Won` pile shuffles back into their stack.
+  - If a player has no stack and no `Won` cards, the game reaches `gameOver`.
+  - HUD text and enabled actions match the current step.
+  - No central stock/discard UI appears for War Lite.
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
 - Review the new `GameConfig` layer after the next feature pass and decide whether more setup defaults belong there.
