@@ -298,7 +298,7 @@ export function createOwnedPileVisual(
     const labelText = scene.add.text(0, -42, "", {
         fontFamily: TABLE_FONT_FAMILY,
         fontSize: "11px",
-        color: TABLE_CREAM_DIM,
+        color: TABLE_CREAM,
         fontStyle: "bold"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
     const countText = scene.add.text(0, 44, "", {
@@ -442,7 +442,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
             y: badge.container.y
         });
         visual.container.setPosition(position.x, position.y);
-        visual.labelText.setText(pile.label);
+        visual.labelText.setText("");
         visual.countText.setText(pile.countLabel);
         visual.container.setVisible(true);
         const presentation = getPilePresentation(pile);
@@ -458,14 +458,19 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         if (pile.topCard) {
             textureApi.applyCardTexture(visual.image, pile.topCard, "compact");
             visual.image.setAlpha(1);
+            visual.image.setVisible(true);
+            visual.outline.setVisible(true);
             visual.outline.setStrokeStyle(
                 2,
                 owner?.isRoundWinner ? 0xffd166 : (pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE),
                 0.9
             );
         } else {
+            const shouldShowEmptyStack = pile.cardCount > 0 || presentation === "hidden-stack";
             textureApi.applyCardBackTexture(visual.image);
-            visual.image.setAlpha(pile.cardCount > 0 || presentation === "hidden-stack" ? 0.96 : 0.35);
+            visual.image.setVisible(shouldShowEmptyStack);
+            visual.outline.setVisible(shouldShowEmptyStack);
+            visual.image.setAlpha(shouldShowEmptyStack ? 0.96 : 0);
             visual.outline.setStrokeStyle(
                 2,
                 owner?.isRoundWinner ? 0xffd166 : (pile.cardCount > 0 ? CARD_BACK_STROKE : 0x355449),

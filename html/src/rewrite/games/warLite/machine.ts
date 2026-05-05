@@ -29,7 +29,7 @@ export function createWarLiteMachine(playerNames: string[], options?: WarLiteOpt
         flow: {
             readyState: "battleReady",
             resolvingState: "resolvingBattle",
-            shuffleDelayMs: 650,
+            shuffleDelayMs: 2000,
             dealDelayMs: 900,
             resolveDelayMs: 1200,
             prepareReadyMove: {

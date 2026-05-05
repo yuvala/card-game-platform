@@ -18,9 +18,9 @@ export function createRewriteGame<TSnapshot>(
         height: REWRITE_HEIGHT,
         backgroundColor: "#0a1b14",
         render: {
-            antialias: false,
-            antialiasGL: false,
-            roundPixels: true
+            antialias: true,
+            antialiasGL: true,
+            roundPixels: false
         },
         scale: {
             mode: Phaser.Scale.FIT,

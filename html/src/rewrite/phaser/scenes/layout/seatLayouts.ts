@@ -5,10 +5,10 @@ import type { SeatLayout } from "./types";
 function createBottomSeat(centerX: number): SeatLayout {
     return {
         labelX: centerX,
-        labelY: 548,
+        labelY: 520,
         labelAlign: "center",
         handCenterX: centerX,
-        handCenterY: 638,
+        handCenterY: 598,
         gapX: 74,
         gapY: 0,
         angle: 0
@@ -57,7 +57,7 @@ function getTemplateSeatLayouts(playerCount: number): SeatLayout[] {
         case 2:
             return [
                 createBottomSeat(TABLE_CENTER_X),
-                createHorizontalSeat(TABLE_CENTER_X, 140, 82, 60)
+                createHorizontalSeat(TABLE_CENTER_X, 168, 122, 60)
             ];
         case 3:
             return [
@@ -69,15 +69,15 @@ function getTemplateSeatLayouts(playerCount: number): SeatLayout[] {
             return [
                 createBottomSeat(TABLE_CENTER_X),
                 createVerticalSeat("right", 366, 56),
-                createHorizontalSeat(TABLE_CENTER_X, 140, 82, 60),
+                createHorizontalSeat(TABLE_CENTER_X, 168, 122, 60),
                 createVerticalSeat("left", 366, 56)
             ];
         case 5:
             return [
                 createBottomSeat(TABLE_CENTER_X),
                 createVerticalSeat("right", 366, 56),
-                createHorizontalSeat(TABLE_WIDTH - 256, 178, 110, 52),
-                createHorizontalSeat(256, 178, 110, 52),
+                createHorizontalSeat(TABLE_WIDTH - 256, 190, 136, 52),
+                createHorizontalSeat(256, 190, 136, 52),
                 createVerticalSeat("left", 366, 56)
             ];
         case 6:
@@ -85,7 +85,7 @@ function getTemplateSeatLayouts(playerCount: number): SeatLayout[] {
                 createBottomSeat(TABLE_CENTER_X),
                 createVerticalSeat("right", 468, 32),
                 createVerticalSeat("right", 214, 32),
-                createHorizontalSeat(TABLE_CENTER_X, 140, 82, 60),
+                createHorizontalSeat(TABLE_CENTER_X, 168, 122, 60),
                 createVerticalSeat("left", 214, 32),
                 createVerticalSeat("left", 468, 32)
             ];

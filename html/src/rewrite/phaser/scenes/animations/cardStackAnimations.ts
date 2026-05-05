@@ -55,6 +55,76 @@ export function getStackedCardMoveDelay(index: number): number {
     return index * 115;
 }
 
+export function animateShuffleDeck(input: {
+    scene: Phaser.Scene;
+    x: number;
+    y: number;
+    textureApi: CardAnimationTextureApi;
+    onComplete?: () => void;
+}): void {
+    const { scene, x, y, textureApi, onComplete } = input;
+    const cards = Array.from({ length: 8 }, (_, index) => {
+        const card = scene.add.image(x, y, textureApi.getActiveBackTextureKey())
+            .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
+            .setDepth(132 + index)
+            .setAngle(index % 2 === 0 ? -2 : 2);
+        card.setData("cardDisplaySize", {
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT
+        } satisfies CardDisplaySize);
+        return card;
+    });
+    let completedCount = 0;
+
+    cards.forEach((card, index) => {
+        const side = index % 2 === 0 ? -1 : 1;
+        const cutX = x + side * (34 + (index % 4) * 5);
+        const cutY = y + (index - cards.length / 2) * 2;
+        const bridgeX = x - side * (10 + (index % 3) * 4);
+        const bridgeY = y - 8 + (index % 4) * 4;
+        const delay = index * 42;
+
+        scene.tweens.add({
+            targets: card,
+            x: cutX,
+            y: cutY,
+            angle: side * (10 + (index % 3) * 2),
+            duration: 170,
+            delay,
+            ease: "Cubic.easeOut",
+            onComplete: () => {
+                scene.tweens.add({
+                    targets: card,
+                    x: bridgeX,
+                    y: bridgeY,
+                    angle: -side * (5 + (index % 2) * 3),
+                    duration: 210,
+                    ease: "Sine.easeInOut",
+                    onComplete: () => {
+                        scene.tweens.add({
+                            targets: card,
+                            x,
+                            y,
+                            angle: 0,
+                            scaleX: 0.94,
+                            scaleY: 1.04,
+                            duration: 140,
+                            ease: "Back.easeOut",
+                            onComplete: () => {
+                                completedCount += 1;
+                                card.destroy();
+                                if (completedCount === cards.length) {
+                                    onComplete?.();
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+}
+
 export function getCollectedCardMoveDelay(index: number): number {
     return index * 58;
 }

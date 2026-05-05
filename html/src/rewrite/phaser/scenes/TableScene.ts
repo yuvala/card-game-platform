@@ -30,6 +30,7 @@ import {
 } from "./layout/constants";
 import { createSeatBadge, type SeatBadge } from "./factories/createSeatBadge";
 import { createTableCardVisual, type TableCardVisual } from "./factories/createTableCardVisual";
+import { animateShuffleDeck } from "./animations/cardStackAnimations";
 import { getSeatLayouts } from "./layout/seatLayouts";
 import type { SeatLayout } from "./layout/types";
 import { syncHandPresentation, type HandSlotVisual } from "./presenters/handPresenter";
@@ -65,6 +66,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private activeAnimationKey = "";
     private activeTableCardFlipKey = "";
     private activeEffectBatchKey = "";
+    private activeShuffleAnimationKey = "";
     private seatLayoutKey = "";
     private activeDeckId = "";
     private activeCardSkinId = "";
@@ -286,6 +288,34 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             },
             onEffectsDone: () => {
                 this.actor.send({ type: "ANIMATION_DONE" });
+            }
+        });
+        this.runShuffleAnimation(viewModel);
+    }
+
+    private runShuffleAnimation(viewModel: CardGameViewModel): void {
+        if (viewModel.phaseLabel !== "SHUFFLING") {
+            this.activeShuffleAnimationKey = "";
+            return;
+        }
+
+        const shuffleAnimationKey = [
+            viewModel.deckId,
+            viewModel.cardSkinId,
+            viewModel.roundLabel
+        ].join(":");
+        if (this.activeShuffleAnimationKey === shuffleAnimationKey) {
+            return;
+        }
+
+        this.activeShuffleAnimationKey = shuffleAnimationKey;
+        animateShuffleDeck({
+            scene: this,
+            x: this.primaryPileVisuals.drawPileFrame.x,
+            y: this.primaryPileVisuals.drawPileFrame.y,
+            textureApi: {
+                getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
+                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant)
             }
         });
     }
