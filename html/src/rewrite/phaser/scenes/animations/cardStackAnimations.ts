@@ -42,6 +42,15 @@ interface CardDisplaySize {
     height: number;
 }
 
+function restoreCardDisplaySize(image: Phaser.GameObjects.Image): void {
+    const displaySize = image.getData("cardDisplaySize") as CardDisplaySize | undefined;
+    if (!displaySize) {
+        return;
+    }
+
+    image.setDisplaySize(displaySize.width, displaySize.height);
+}
+
 export function getStackedCardMoveDelay(index: number): number {
     return index * 115;
 }
@@ -128,7 +137,11 @@ export function animateFinalCardReveal(input: {
         duration: 95,
         ease: "Sine.easeIn",
         onComplete: () => {
+            ghost.setScale(1);
+            restoreCardDisplaySize(ghost);
             textureApi.applyCardTexture(ghost, effect.card, "compact");
+            restoreCardDisplaySize(ghost);
+            ghost.setScale(0.08, 1);
             scene.tweens.add({
                 targets: ghost,
                 scaleX: 1,
