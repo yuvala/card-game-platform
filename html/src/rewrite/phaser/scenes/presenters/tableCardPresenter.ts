@@ -3,7 +3,7 @@ import * as Phaser from "phaser";
 import type { CardGameViewCard, CardGameViewModel, CardGameViewTableCard } from "../../../engine/game/viewModel";
 import { TABLE_CENTER_X } from "../../layout";
 import { CARD_BACK_STROKE } from "../layout/constants";
-import { getTableCardPosition } from "../layout/tableCardLayouts";
+import { getTableCardDisplayState } from "../layout/tableCardLayouts";
 import type { HandSlotVisual } from "./handPresenter";
 import type { TableCardVisual } from "../factories/createTableCardVisual";
 
@@ -45,6 +45,30 @@ function ensureTableCardVisuals(input: {
     }
 }
 
+function syncTableCardStackDepth(input: {
+    card: CardGameViewTableCard;
+    visual: TableCardVisual;
+    textureApi: TableCardTextureApi;
+}): void {
+    const { card, visual, textureApi } = input;
+    const stackCount = card.stackCount ?? 0;
+    const shouldShowStackDepth = !card.isFaceUp && stackCount > 1;
+    const visibleBackCount = shouldShowStackDepth
+        ? Math.min(visual.stackBacks.length, stackCount - 1)
+        : 0;
+
+    visual.stackBacks.forEach((stackBack, index) => {
+        const isVisible = index < visibleBackCount;
+        stackBack.setVisible(isVisible);
+        stackBack.setAlpha(isVisible ? 0.72 + index * 0.1 : 0);
+        textureApi.applyCardBackTexture(stackBack);
+    });
+
+    visual.stackCountBadge.setVisible(shouldShowStackDepth);
+    visual.stackCountText.setVisible(shouldShowStackDepth);
+    visual.stackCountText.setText(shouldShowStackDepth ? "x" + String(stackCount) : "");
+}
+
 export function syncTableCardPresentation(input: TableCardPresentationInput): string {
     const {
         scene,
@@ -68,16 +92,29 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
         return "";
     }
 
-    const flipKey = tableCards.map((card) => card.id).join("|");
+    const flipKey = tableCards.map((card) => {
+        return [
+            card.id,
+            card.isFaceUp ? "up" : "down",
+            String(card.stackCount ?? 1)
+        ].join(":");
+    }).join("|");
     const shouldAnimateFlip = flipKey !== activeTableCardFlipKey;
 
     tableCards.forEach((card, index) => {
         const visual = tableCardVisuals[index];
-        const position = getTableCardPosition(index, tableCards.length);
+        const position = getTableCardDisplayState(tableCards, index);
         visual.container.setPosition(position.x, position.y);
-        visual.caption.setText(card.caption ?? "");
+        visual.container.setAngle(position.angle);
+        visual.container.setDepth(80 + position.stackIndex);
+        visual.caption.setText(position.stackIndex === 0 ? card.caption ?? "" : "");
         visual.container.setVisible(true);
         visual.outline.setStrokeStyle(3, card.isFaceUp ? 0xffd166 : CARD_BACK_STROKE, 0.9);
+        syncTableCardStackDepth({
+            card,
+            visual,
+            textureApi
+        });
 
         if (!shouldAnimateFlip) {
             visual.container.setScale(1);

@@ -7,6 +7,7 @@ import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/m
 import { getPokerLiteViewModel } from "../../html/src/rewrite/games/pokerLite/viewModel";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
 import { getWarLiteViewModel } from "../../html/src/rewrite/games/warLite/viewModel";
+import { getTableCardDisplayState } from "../../html/src/rewrite/phaser/scenes/layout/tableCardLayouts";
 
 declare const process: { exitCode?: number };
 
@@ -32,6 +33,22 @@ async function waitFor(condition: () => boolean, timeoutMs = 4000) {
 
         await wait(25);
     }
+}
+
+function createSeededRandom(seed: string): () => number {
+    let state = 2166136261;
+    for (let index = 0; index < seed.length; index += 1) {
+        state ^= seed.charCodeAt(index);
+        state = Math.imul(state, 16777619);
+    }
+
+    return () => {
+        state += 0x6d2b79f5;
+        let value = state;
+        value = Math.imul(value ^ (value >>> 15), value | 1);
+        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
 }
 
 async function runWarLiteViewModelTest() {
@@ -105,6 +122,83 @@ async function runWarLiteViewModelTest() {
         viewModel.tableCards.length === 2 && viewModel.tableCards.every((card) => card.isFaceUp),
         "War Lite should expose both revealed battle cards while resolving a complete battle."
     );
+}
+
+async function runWarLiteWarPotViewModelTest() {
+    const machine = createWarLiteMachine(["Avi", "Dany"], {
+        deckDefinition: frenchDeckDefinition,
+        cardsPerPlayer: 5,
+        random: createSeededRandom("war-manual-0")
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
+    await waitFor(() => actor.getSnapshot().value === "battleReady");
+
+    actor.send({ type: "PLAY_CARD" });
+    await waitFor(() => {
+        const snapshot = actor.getSnapshot();
+        return snapshot.value === "battleReady" && snapshot.context.comparisonCards.length === 1;
+    });
+    actor.send({ type: "PLAY_CARD" });
+    await waitFor(() => {
+        const snapshot = actor.getSnapshot();
+        return snapshot.value === "battleReady" && snapshot.context.warState?.stage === "face-down";
+    });
+    actor.send({ type: "PLAY_CARD" });
+    await waitFor(() => {
+        const snapshot = actor.getSnapshot();
+        return snapshot.value === "battleReady" && snapshot.context.warState?.stage === "reveal";
+    });
+
+    const snapshot = actor.getSnapshot();
+    const viewModel = getWarLiteViewModel(snapshot);
+    const firstPlayerId = snapshot.context.players[0].id;
+    const secondPlayerId = snapshot.context.players[1].id;
+    const firstPlayerTableCards = viewModel.tableCards.filter((card) => card.playerId === firstPlayerId);
+    const secondPlayerTableCards = viewModel.tableCards.filter((card) => card.playerId === secondPlayerId);
+    const firstPlayerOpenCardIndex = viewModel.tableCards.findIndex((card) => {
+        return card.playerId === firstPlayerId && card.isFaceUp;
+    });
+    const firstPlayerHiddenCardIndex = viewModel.tableCards.findIndex((card) => {
+        return card.playerId === firstPlayerId && !card.isFaceUp;
+    });
+    assert(firstPlayerOpenCardIndex >= 0, "War Lite view model should expose the first player's open tied card.");
+    assert(firstPlayerHiddenCardIndex >= 0, "War Lite view model should expose the first player's face-down war card.");
+    const firstPlayerOpenCardLayout = getTableCardDisplayState(viewModel.tableCards, firstPlayerOpenCardIndex);
+    const firstPlayerHiddenCardLayout = getTableCardDisplayState(viewModel.tableCards, firstPlayerHiddenCardIndex);
+
+    assert(snapshot.context.roundCards.length === 8, "War Lite should keep all tied and face-down cards in the raw war pot.");
+    assert(viewModel.tableCards.length === 8, "War Lite view model should expose each war-pot card for stacked table rendering.");
+    assert(
+        firstPlayerTableCards.length === 4 && secondPlayerTableCards.length === 4,
+        "War Lite view model should expose one visible card and three face-down war cards per tied player."
+    );
+    assert(
+        viewModel.tableCards.filter((card) => card.isFaceUp).length === 2,
+        "War Lite view model should keep the tied comparison cards visible under each player's war stack."
+    );
+    assert(
+        firstPlayerTableCards.filter((card) => !card.isFaceUp).length === 3 &&
+            secondPlayerTableCards.filter((card) => !card.isFaceUp).length === 3,
+        "War Lite view model should expose three face-down war cards for each tied player."
+    );
+    assert(
+        firstPlayerHiddenCardLayout.stackIndex === 1 &&
+            (firstPlayerHiddenCardLayout.x !== firstPlayerOpenCardLayout.x ||
+                firstPlayerHiddenCardLayout.y !== firstPlayerOpenCardLayout.y) &&
+            firstPlayerHiddenCardLayout.angle !== firstPlayerOpenCardLayout.angle,
+        "War Lite table layout should place face-down war cards on the player's open card with a slight offset and tilt."
+    );
+    assert(
+        viewModel.primaryAction?.label === "Reveal War Card",
+        "War Lite should ask for the face-up war reveal after placing the face-down stack."
+    );
+
+    actor.stop();
 }
 
 async function runPokerLiteViewModelTest() {
@@ -285,6 +379,7 @@ async function main() {
     await runPokerLiteViewModelTest();
     await runBriscaLiteViewModelTest();
     await runWarLiteViewModelTest();
+    await runWarLiteWarPotViewModelTest();
     console.log("viewModels.test.ts passed");
 }
 

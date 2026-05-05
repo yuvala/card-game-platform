@@ -47,6 +47,7 @@ interface OwnedPileOwner {
 export interface OwnedPileVisual {
     container: Phaser.GameObjects.Container;
     stackBack: Phaser.GameObjects.Image;
+    stackBacks: Phaser.GameObjects.Image[];
     image: Phaser.GameObjects.Image;
     outline: Phaser.GameObjects.Rectangle;
     labelText: Phaser.GameObjects.Text;
@@ -270,13 +271,22 @@ export function createOwnedPileVisual(
     pileId: string,
     getActiveBackTextureKey: () => string
 ): OwnedPileVisual {
-    const stackBack = scene.add.image(-4, -4, getActiveBackTextureKey())
-        .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT)
-        .setAlpha(0.8);
-    stackBack.setData("cardDisplaySize", {
-        width: OWNED_PILE_CARD_WIDTH,
-        height: OWNED_PILE_CARD_HEIGHT
-    } satisfies CardDisplaySize);
+    const stackBacks = [
+        { x: -7, y: -5, angle: -7 },
+        { x: 5, y: -4, angle: 5 },
+        { x: -3, y: 5, angle: -3 }
+    ].map((offset) => {
+        const back = scene.add.image(offset.x, offset.y, getActiveBackTextureKey())
+            .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT)
+            .setAlpha(0.8)
+            .setAngle(offset.angle);
+        back.setData("cardDisplaySize", {
+            width: OWNED_PILE_CARD_WIDTH,
+            height: OWNED_PILE_CARD_HEIGHT
+        } satisfies CardDisplaySize);
+        return back;
+    });
+    const stackBack = stackBacks[0];
     const image = scene.add.image(0, 0, getActiveBackTextureKey())
         .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT);
     image.setData("cardDisplaySize", {
@@ -296,13 +306,14 @@ export function createOwnedPileVisual(
         fontSize: "11px",
         color: "rgba(255,209,102,0.86)"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
-    const container = scene.add.container(0, 0, [labelText, stackBack, image, outline, countText]).setDepth(65);
+    const container = scene.add.container(0, 0, [labelText, ...stackBacks, image, outline, countText]).setDepth(65);
 
     container.setData("pileId", pileId);
 
     return {
         container,
         stackBack,
+        stackBacks,
         image,
         outline,
         labelText,
@@ -435,13 +446,18 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         visual.countText.setText(pile.countLabel);
         visual.container.setVisible(true);
         const presentation = getPilePresentation(pile);
-        textureApi.applyCardBackTexture(visual.stackBack);
-        visual.stackBack.setVisible(presentation !== "single-card" && pile.cardCount > 1);
+        const visibleStackBackCount = presentation !== "single-card" && pile.cardCount > 1
+            ? Math.min(visual.stackBacks.length, pile.cardCount - 1)
+            : 0;
+        visual.stackBacks.forEach((stackBack, index) => {
+            textureApi.applyCardBackTexture(stackBack);
+            stackBack.setVisible(index < visibleStackBackCount);
+            stackBack.setAlpha(index < visibleStackBackCount ? 0.86 - index * 0.12 : 0);
+        });
 
         if (pile.topCard) {
             textureApi.applyCardTexture(visual.image, pile.topCard, "compact");
             visual.image.setAlpha(1);
-            visual.stackBack.setAlpha(presentation === "capture-pile" ? 0.92 : 0.72);
             visual.outline.setStrokeStyle(
                 2,
                 owner?.isRoundWinner ? 0xffd166 : (pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE),
@@ -450,7 +466,6 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         } else {
             textureApi.applyCardBackTexture(visual.image);
             visual.image.setAlpha(pile.cardCount > 0 || presentation === "hidden-stack" ? 0.96 : 0.35);
-            visual.stackBack.setAlpha(pile.cardCount > 0 ? 0.78 : 0);
             visual.outline.setStrokeStyle(
                 2,
                 owner?.isRoundWinner ? 0xffd166 : (pile.cardCount > 0 ? CARD_BACK_STROKE : 0x355449),

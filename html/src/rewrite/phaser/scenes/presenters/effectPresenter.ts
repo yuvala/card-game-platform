@@ -1,13 +1,24 @@
 import * as Phaser from "phaser";
 
-import type { CardGameEffect } from "../../../engine/game/effects";
+import type { CardGameEffect, MoveCardEffect } from "../../../engine/game/effects";
 import type { CardGameEffectReason } from "../../../engine/game/effects";
 import type { CardGameViewCard, CardGameViewModel } from "../../../engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
-import { getTableCardPosition } from "../layout/tableCardLayouts";
+import { getTableCardDisplayState, getTableCardPosition } from "../layout/tableCardLayouts";
+import {
+    animateCollectCards,
+    animateCardToStack,
+    createCardMoveGhost,
+    getCollectedCardMoveDelay,
+    getCollectedPileCardPoint,
+    getStackedCardMoveDelay,
+    prepareCollectedCardGhostTexture,
+    prepareCardMoveGhostTexture
+} from "../animations/cardStackAnimations";
 import type { PrimaryPileVisuals } from "./pilePresenter";
 import type { OwnedPileVisual } from "./pilePresenter";
 import type { HandSlotVisual } from "./handPresenter";
+import type { TableCardVisual } from "../factories/createTableCardVisual";
 
 interface EffectTextureApi {
     getActiveBackTextureKey(): string;
@@ -22,16 +33,12 @@ interface EffectPresentationInput {
     scene: Phaser.Scene;
     viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
+    tableCardVisuals: TableCardVisual[];
     handSlots: Map<string, HandSlotVisual[]>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
     activeEffectBatchKey: string;
     textureApi: EffectTextureApi;
     onEffectsDone?: () => void;
-}
-
-interface CardDisplaySize {
-    width: number;
-    height: number;
 }
 
 function getEffectBatchKey(effects: readonly CardGameEffect[]): string {
@@ -62,7 +69,7 @@ function getEffectProfile(reason: CardGameEffectReason): {
         case "play":
             return {
                 duration: 260,
-                delayStep: 60,
+                delayStep: getStackedCardMoveDelay(1),
                 ease: "Back.easeOut",
                 peakScale: 1.08
             };
@@ -90,13 +97,91 @@ function getEffectDelays(effects: readonly CardGameEffect[]): number[] {
             groupIndex = 0;
         }
 
-        delays.push(groupStartDelay + groupIndex * profile.delayStep);
+        delays.push(
+            groupStartDelay +
+                (effect.reason === "play"
+                    ? getStackedCardMoveDelay(groupIndex)
+                    : groupIndex * profile.delayStep)
+        );
         groupReason = effect.reason;
         groupIndex += 1;
         previousProfile = profile;
     });
 
     return delays;
+}
+
+function getTableMoveVisual(input: {
+    effect: CardGameEffect;
+    viewModel: CardGameViewModel;
+    tableCardVisuals: readonly TableCardVisual[];
+}): TableCardVisual | null {
+    const { effect, viewModel, tableCardVisuals } = input;
+    if (effect.type !== "move-card" || !(viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
+        return null;
+    }
+
+    const tableCardIndex = getEffectTableCardIndex({ effect, viewModel });
+    return tableCardIndex === null ? null : tableCardVisuals[tableCardIndex] ?? null;
+}
+
+function getSourceTableMoveVisual(input: {
+    effect: CardGameEffect;
+    viewModel: CardGameViewModel;
+    tableCardVisuals: readonly TableCardVisual[];
+}): TableCardVisual | null {
+    const { effect, viewModel, tableCardVisuals } = input;
+    if (effect.type !== "move-card" || !(viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
+        return null;
+    }
+
+    const tableCardIndex = getEffectTableCardIndex({ effect, viewModel });
+    return tableCardIndex === null ? null : tableCardVisuals[tableCardIndex] ?? null;
+}
+
+function getEffectTableCardIndex(input: {
+    effect: CardGameEffect;
+    viewModel: CardGameViewModel;
+}): number | null {
+    const { effect, viewModel } = input;
+    if (effect.type !== "move-card" || viewModel.tableCards.length === 0) {
+        return null;
+    }
+
+    const directIndex = viewModel.tableCards.findIndex((card) => {
+        return card.id === effect.card.id || (card.sourceCardIds ?? []).includes(effect.card.id);
+    });
+    if (directIndex >= 0) {
+        return directIndex;
+    }
+
+    if (!effect.card.isFaceUp) {
+        const hiddenStackIndex = viewModel.tableCards.findIndex((card) => {
+            return !card.isFaceUp && (card.stackCount ?? 0) > 1;
+        });
+        if (hiddenStackIndex >= 0) {
+            return hiddenStackIndex;
+        }
+    }
+
+    return null;
+}
+
+function getEffectTableCardPoint(input: {
+    effect: CardGameEffect;
+    viewModel: CardGameViewModel;
+}): { x: number; y: number; angle: number } | null {
+    const tableCardIndex = getEffectTableCardIndex(input);
+    if (tableCardIndex === null) {
+        return null;
+    }
+
+    const displayState = getTableCardDisplayState(input.viewModel.tableCards, tableCardIndex);
+    return {
+        x: displayState.x,
+        y: displayState.y,
+        angle: displayState.angle
+    };
 }
 
 function getSourcePoint(input: {
@@ -125,6 +210,14 @@ function getSourcePoint(input: {
     }
 
     if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
+        const visibleTablePoint = getEffectTableCardPoint({ effect, viewModel });
+        if (visibleTablePoint) {
+            return {
+                x: visibleTablePoint.x,
+                y: visibleTablePoint.y
+            };
+        }
+
         const position = getTableCardPosition(effect.fromIndex ?? 0, effect.fromPileCardCount ?? 2);
         return {
             x: position.x,
@@ -182,6 +275,15 @@ function getDestinationPoint(input: {
     }
 
     if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
+        const visibleTablePoint = getEffectTableCardPoint({ effect, viewModel });
+        if (visibleTablePoint) {
+            return {
+                x: visibleTablePoint.x,
+                y: visibleTablePoint.y,
+                angle: visibleTablePoint.angle
+            };
+        }
+
         const tableCardCount = Math.max(viewModel.tableCards.length, (effect.toIndex ?? 0) + 1, 2);
         const position = getTableCardPosition(effect.toIndex ?? 0, tableCardCount);
         return {
@@ -235,34 +337,101 @@ function flashDestination(input: {
     });
 }
 
-function shouldRevealMidFlight(effect: CardGameEffect): boolean {
-    return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp;
+function setOwnedPileCardLayersAlpha(visual: OwnedPileVisual, alpha: number): void {
+    visual.stackBacks.forEach((stackBack) => {
+        stackBack.setAlpha(alpha);
+    });
+    visual.image.setAlpha(alpha);
+    visual.outline.setAlpha(alpha);
 }
 
-function shouldStartFaceUp(effect: CardGameEffect): boolean {
-    return effect.type === "move-card" && effect.card.isFaceUp && effect.fromFaceUp !== false;
+function restoreOwnedPileCardLayersAlpha(visual: OwnedPileVisual): void {
+    visual.stackBacks.forEach((stackBack, index) => {
+        stackBack.setAlpha(stackBack.visible ? 0.86 - index * 0.12 : 0);
+    });
+    visual.image.setAlpha(1);
+    visual.outline.setAlpha(1);
 }
 
-function scheduleMidFlightReveal(input: {
-    scene: Phaser.Scene;
-    ghost: Phaser.GameObjects.Image;
-    effect: CardGameEffect;
-    delay: number;
-    duration: number;
-    textureApi: EffectTextureApi;
-}): void {
-    const { scene, ghost, effect, delay, duration, textureApi } = input;
-    if (!shouldRevealMidFlight(effect)) {
-        return;
-    }
-
-    scene.time.delayedCall(delay + Math.round(duration * 0.46), () => {
-        if (!ghost.active) {
-            return;
+function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveCardEffect[]): string {
+    const {
+        scene,
+        viewModel,
+        primaryPileVisuals,
+        tableCardVisuals,
+        handSlots,
+        ownedPileVisuals,
+        textureApi,
+        onEffectsDone
+    } = input;
+    const effectBatchKey = getEffectBatchKey(collectEffects);
+    const destinationPileVisuals = new Set<OwnedPileVisual>();
+    const collectItems = collectEffects.flatMap((effect, index) => {
+        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots });
+        const destinationPoint = getDestinationPoint({
+            effect,
+            viewModel,
+            primaryPileVisuals,
+            handSlots,
+            ownedPileVisuals
+        });
+        const ownedPileVisual = ownedPileVisuals.get(effect.toPileId);
+        if (!sourcePoint || !destinationPoint) {
+            return [];
         }
 
-        textureApi.applyCardTexture(ghost, effect.card, "compact");
+        getSourceTableMoveVisual({
+            effect,
+            viewModel,
+            tableCardVisuals
+        })?.container.setAlpha(0);
+        if (ownedPileVisual) {
+            destinationPileVisuals.add(ownedPileVisual);
+            setOwnedPileCardLayersAlpha(ownedPileVisual, 0);
+        }
+
+        const ghost = createCardMoveGhost({
+            scene,
+            source: sourcePoint,
+            textureApi
+        });
+        prepareCollectedCardGhostTexture({
+            ghost,
+            textureApi
+        });
+
+        return [{
+            ghost,
+            effect,
+            destination: getCollectedPileCardPoint(destinationPoint, index),
+            delay: getCollectedCardMoveDelay(index),
+            duration: 330,
+            ease: "Cubic.easeInOut",
+            peakScale: 0.9,
+            landingScale: 0.78
+        }];
     });
+
+    if (collectItems.length === 0) {
+        scene.time.delayedCall(0, () => {
+            onEffectsDone?.();
+        });
+        return effectBatchKey;
+    }
+
+    animateCollectCards({
+        scene,
+        items: collectItems,
+        textureApi,
+        onComplete: () => {
+            destinationPileVisuals.forEach((visual) => {
+                restoreOwnedPileCardLayersAlpha(visual);
+            });
+            onEffectsDone?.();
+        }
+    });
+
+    return effectBatchKey;
 }
 
 export function runViewEffects(input: EffectPresentationInput): string {
@@ -270,6 +439,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
         scene,
         viewModel,
         primaryPileVisuals,
+        tableCardVisuals,
         handSlots,
         ownedPileVisuals,
         activeEffectBatchKey,
@@ -284,6 +454,10 @@ export function runViewEffects(input: EffectPresentationInput): string {
     const effectBatchKey = getEffectBatchKey(effects);
     if (effectBatchKey === activeEffectBatchKey) {
         return activeEffectBatchKey;
+    }
+
+    if (effects.every((effect) => effect.type === "move-card" && effect.reason === "collect")) {
+        return runCollectEffects(input, effects);
     }
 
     let scheduledEffectCount = 0;
@@ -312,37 +486,40 @@ export function runViewEffects(input: EffectPresentationInput): string {
         }
         scheduledEffectCount += 1;
 
-        const ghost = scene.add.image(sourcePoint.x, sourcePoint.y, textureApi.getActiveBackTextureKey())
-            .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
-            .setDepth(140)
-            .setAngle(0);
-        ghost.setData("cardDisplaySize", {
-            width: CARD_WIDTH,
-            height: CARD_HEIGHT
-        } satisfies CardDisplaySize);
-        if (shouldStartFaceUp(effect) || !shouldRevealMidFlight(effect)) {
-            textureApi.applyCardTexture(ghost, effect.card, "compact");
+        const destinationVisual = getTableMoveVisual({
+            effect,
+            viewModel,
+            tableCardVisuals
+        });
+        if (destinationVisual && effect.reason === "play") {
+            destinationVisual.container.setAlpha(0);
         }
-        scheduleMidFlightReveal({
+
+        const ghost = createCardMoveGhost({
             scene,
+            source: sourcePoint,
+            textureApi
+        });
+        prepareCardMoveGhostTexture({
             ghost,
             effect,
-            delay: effectDelays[index],
-            duration: profile.duration,
             textureApi
         });
 
-        scene.tweens.add({
-            targets: ghost,
-            x: destinationPoint.x,
-            y: destinationPoint.y,
-            angle: destinationPoint.angle,
-            scaleX: profile.peakScale,
-            scaleY: profile.peakScale,
-            duration: profile.duration,
-            delay: effectDelays[index],
-            ease: profile.ease,
+        animateCardToStack({
+            scene,
+            ghost,
+            effect,
+            destination: destinationPoint,
+            profile: {
+                duration: profile.duration,
+                delay: effectDelays[index],
+                ease: profile.ease,
+                peakScale: profile.peakScale
+            },
+            textureApi,
             onComplete: () => {
+                destinationVisual?.container.setAlpha(1);
                 ghost.destroy();
                 flashDestination({
                     scene,

@@ -276,6 +276,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             scene: this,
             viewModel,
             primaryPileVisuals: this.primaryPileVisuals,
+            tableCardVisuals: this.tableCardVisuals,
             handSlots: this.handSlots,
             ownedPileVisuals: this.ownedPileVisuals,
             activeEffectBatchKey: this.activeEffectBatchKey,

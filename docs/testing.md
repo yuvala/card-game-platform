@@ -64,6 +64,30 @@ What to check:
 - Each tied player reveals one face-up war card.
 - The winner collects all 10 cards from the battle pile.
 
+## War Animation Test Pack
+
+Use this URL when working specifically on the War animation:
+
+```text
+/rewrite.html?scenario=war-animation
+```
+
+What it does:
+
+- Selects `War Lite`, 2 players, the French deck, 5 cards per player, and seed `war-manual-0`.
+- Starts the table automatically.
+- Advances through the opening tie.
+- Pauses at `Battle 1 | War 1` before the face-down war cards are placed.
+
+What to check:
+
+- Press `Place War Cards`.
+- Each tied player should place 3 face-down cards on top of their own open tied card.
+- The three face-down cards should sit as a small shifted/tilted stack, not as one exact card-on-card overlap.
+- Press `Reveal War Card`.
+- Each tied player should reveal one face-up war card onto that same player stack.
+- Collection should pull the full pot from the visible table positions into the winner's `Won` pile.
+
 ## Visual QA Focus
 
 - Top player stack and bottom player `Won` pile align on the right-side player zone.

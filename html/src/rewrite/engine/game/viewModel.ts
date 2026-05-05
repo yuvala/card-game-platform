@@ -64,6 +64,7 @@ export interface CardGameViewAnimation {
 export interface CardGameViewTableCard extends CardGameViewCard {
     playerId?: string;
     caption?: string;
+    sourceCardIds?: string[];
 }
 
 export type CardGameViewTablePresentation =

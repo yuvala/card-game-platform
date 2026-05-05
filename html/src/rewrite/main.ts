@@ -7,6 +7,7 @@ import {
     getGameCatalogEntryById
 } from "./games/catalog";
 import { createGamePanel, type RewriteGameSelection } from "./app/createGamePanel";
+import { getRewriteDebugScenarioById, type RewriteDebugScenario } from "./app/debugScenarios";
 import { createRewriteGame } from "./phaser/createRewriteGame";
 
 interface ActiveRewriteRuntime {
@@ -19,6 +20,8 @@ const rewriteRoot = document.getElementById("rewrite-root");
 const rewriteSetupMount = document.getElementById("rewrite-setup");
 const rewriteGameTitle = document.getElementById("rewrite-game-title");
 const requestedParams = new URLSearchParams(window.location.search);
+const requestedDebugScenario = getRewriteDebugScenarioById(requestedParams.get("scenario"));
+const shouldAutostart = requestedParams.get("autostart") === "1" || requestedDebugScenario?.autostart === true;
 
 if (!rewriteRoot || !rewriteSetupMount || !rewriteGameTitle) {
     throw new Error("Rewrite app requires #rewrite-root, #rewrite-setup, and #rewrite-game-title containers.");
@@ -30,13 +33,13 @@ const gameTitleElement = rewriteGameTitle;
 
 let activeRuntime: ActiveRewriteRuntime | null = null;
 
-const initialSelection = getInitialSelection(requestedParams);
+const initialSelection = getInitialSelection(requestedParams, requestedDebugScenario);
 setPageGameTitle(initialSelection.gameId);
 const setupPanel = createGamePanel({
     container: setupMountElement,
     entries: gameCatalogEntries,
     initialSelection,
-    initialOpen: requestedParams.get("autostart") !== "1",
+    initialOpen: !shouldAutostart,
     getDeckLabel: (deckId) => supportedDeckDefinitions[deckId].name,
     getPlayerNames: (playerCount) => buildPlayerNames(playerCount),
     onSelectionChange: (selection) => {
@@ -49,7 +52,7 @@ const setupPanel = createGamePanel({
 
 renderEmptyTable();
 
-if (requestedParams.get("autostart") === "1") {
+if (shouldAutostart) {
     startGame(setupPanel.getSelection());
 }
 
@@ -63,8 +66,9 @@ function startGame(selection: RewriteGameSelection): void {
     };
     const playerNames = buildPlayerNames(normalizedSelection.playerCount);
     const deckDefinition = supportedDeckDefinitions[normalizedSelection.deckId];
-    const requestedCardsPerPlayer = getRequestedCardsPerPlayer(requestedParams);
-    const requestedSeed = getRequestedSeed(requestedParams);
+    const activeDebugScenario = getActiveDebugScenario(normalizedSelection, requestedDebugScenario);
+    const requestedCardsPerPlayer = getRequestedCardsPerPlayer(requestedParams, activeDebugScenario);
+    const requestedSeed = getRequestedSeed(requestedParams, activeDebugScenario);
 
     teardownActiveRuntime();
 
@@ -80,6 +84,7 @@ function startGame(selection: RewriteGameSelection): void {
 
     const game = createRewriteGame("rewrite-root", actor, selectedGame.getViewModel);
     actor.send({ type: "START" });
+    runDebugScenario(activeDebugScenario, actor);
 
     activeRuntime = {
         actor,
@@ -92,7 +97,7 @@ function startGame(selection: RewriteGameSelection): void {
         playerNames
     });
 
-    syncUrl(normalizedSelection, requestedCardsPerPlayer, requestedSeed);
+    syncUrl(normalizedSelection, requestedCardsPerPlayer, requestedSeed, activeDebugScenario);
 }
 
 function teardownActiveRuntime(): void {
@@ -124,13 +129,20 @@ function createEmptyState(): HTMLElement {
     return emptyState;
 }
 
-function getInitialSelection(params: URLSearchParams): RewriteGameSelection {
-    const selectedGame = resolveSelectedGame(params.get("game"));
+function getInitialSelection(
+    params: URLSearchParams,
+    debugScenario: RewriteDebugScenario | null
+): RewriteGameSelection {
+    const selectedGame = resolveSelectedGame(debugScenario?.selection.gameId ?? params.get("game"));
 
     return {
         gameId: selectedGame.id,
-        playerCount: resolvePlayerCount(selectedGame, Number(params.get("players")), selectedGame.maxPlayers),
-        deckId: resolveDeckId(selectedGame, params.get("deck"))
+        playerCount: resolvePlayerCount(
+            selectedGame,
+            Number(params.get("players") ?? debugScenario?.selection.playerCount),
+            debugScenario?.selection.playerCount ?? selectedGame.maxPlayers
+        ),
+        deckId: resolveDeckId(selectedGame, params.get("deck") ?? debugScenario?.selection.deckId)
     };
 }
 
@@ -156,18 +168,24 @@ function buildPlayerNames(playerCount: number): string[] {
     });
 }
 
-function getRequestedCardsPerPlayer(params: URLSearchParams): number | undefined {
+function getRequestedCardsPerPlayer(
+    params: URLSearchParams,
+    debugScenario: RewriteDebugScenario | null
+): number | undefined {
     const requestedCards = Number(params.get("cards"));
     if (!Number.isFinite(requestedCards) || requestedCards <= 0) {
-        return undefined;
+        return debugScenario?.cardsPerPlayer;
     }
 
     return Math.floor(requestedCards);
 }
 
-function getRequestedSeed(params: URLSearchParams): string | undefined {
+function getRequestedSeed(
+    params: URLSearchParams,
+    debugScenario: RewriteDebugScenario | null
+): string | undefined {
     const seed = params.get("seed")?.trim();
-    return seed || undefined;
+    return seed || debugScenario?.seed;
 }
 
 function createSeededRandom(seed: string): () => number {
@@ -186,7 +204,41 @@ function createSeededRandom(seed: string): () => number {
     };
 }
 
-function syncUrl(selection: RewriteGameSelection, cardsPerPlayer?: number, seed?: string): void {
+function getActiveDebugScenario(
+    selection: RewriteGameSelection,
+    debugScenario: RewriteDebugScenario | null
+): RewriteDebugScenario | null {
+    if (
+        !debugScenario ||
+        selection.gameId !== debugScenario.selection.gameId ||
+        selection.playerCount !== debugScenario.selection.playerCount ||
+        selection.deckId !== debugScenario.selection.deckId
+    ) {
+        return null;
+    }
+
+    return debugScenario;
+}
+
+function runDebugScenario(
+    debugScenario: RewriteDebugScenario | null,
+    actor: ActiveRewriteRuntime["actor"]
+): void {
+    if (!debugScenario?.run) {
+        return;
+    }
+
+    debugScenario.run(actor).catch((error) => {
+        console.error("Rewrite debug scenario failed:", error);
+    });
+}
+
+function syncUrl(
+    selection: RewriteGameSelection,
+    cardsPerPlayer?: number,
+    seed?: string,
+    debugScenario?: RewriteDebugScenario | null
+): void {
     const nextParams = new URLSearchParams();
     nextParams.set("game", selection.gameId);
     nextParams.set("players", String(selection.playerCount));
@@ -197,6 +249,9 @@ function syncUrl(selection: RewriteGameSelection, cardsPerPlayer?: number, seed?
     }
     if (seed) {
         nextParams.set("seed", seed);
+    }
+    if (debugScenario) {
+        nextParams.set("scenario", debugScenario.id);
     }
 
     const nextUrl = window.location.pathname + "?" + nextParams.toString();

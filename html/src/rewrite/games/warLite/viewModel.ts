@@ -1,4 +1,4 @@
-import type { CardGameViewModel } from "../../engine/game/viewModel";
+import type { CardGameViewModel, CardGameViewTableCard } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import { getPileCards } from "../../engine/game/piles";
 import type { WarLiteViewSnapshot } from "./types";
@@ -18,6 +18,18 @@ function getPlayerIconLabel(playerName: string): string {
         .join("");
 
     return initials || "P";
+}
+
+function getWarLiteTableCards(snapshot: WarLiteViewSnapshot): CardGameViewTableCard[] {
+    return snapshot.context.roundCards.map((playedCard) => {
+        return {
+            id: playedCard.card.id,
+            label: playedCard.card.displayLabel,
+            isFaceUp: playedCard.isFaceUp,
+            playerId: playedCard.playerId,
+            caption: playedCard.isComparisonCard ? playedCard.playerName : ""
+        };
+    });
 }
 
 export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameViewModel {
@@ -88,13 +100,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                 cardClickAction: "play"
             };
         }),
-        tableCards: snapshot.context.roundCards.map((playedCard) => ({
-            id: playedCard.card.id,
-            label: playedCard.card.displayLabel,
-            isFaceUp: playedCard.isFaceUp,
-            playerId: playedCard.playerId,
-            caption: playedCard.isFaceUp ? playedCard.playerName : "War"
-        })),
+        tableCards: getWarLiteTableCards(snapshot),
         tablePresentation: "table-row",
         tablePileIds: [WAR_LITE_BATTLE_PILE_ID],
         piles: [
@@ -114,7 +120,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                         ? {
                               id: topCapturedCard.id,
                               label: topCapturedCard.displayLabel,
-                              isFaceUp: true
+                              isFaceUp: false
                           }
                         : null
                 };
