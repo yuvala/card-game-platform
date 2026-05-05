@@ -7,7 +7,8 @@ export function getTableCardPosition(index: number, cardCount: number): ScenePoi
         return { x: TABLE_CENTER_X, y: 392 };
     }
 
-    const spacing = 156;
+    const maxSpread = 650;
+    const spacing = Math.min(156, maxSpread / Math.max(cardCount - 1, 1));
     const startX = TABLE_CENTER_X - (spacing * (cardCount - 1)) / 2;
 
     return {

@@ -20,6 +20,7 @@ interface CreateGamePanelOptions {
     initialOpen?: boolean;
     getDeckLabel: (deckId: SupportedDeckId) => string;
     getPlayerNames: (playerCount: number) => string[];
+    onSelectionChange?: (selection: RewriteGameSelection) => void;
     onStart: (selection: RewriteGameSelection) => void;
 }
 
@@ -209,6 +210,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                     gameId: nextGame.id,
                     deckId: nextGame.defaultDeckId
                 });
+                options.onSelectionChange?.(selection);
                 render();
             });
         });
@@ -220,6 +222,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                     ...selection,
                     playerCount: nextPlayerCount
                 });
+                options.onSelectionChange?.(selection);
                 render();
             });
         });
@@ -235,6 +238,7 @@ export function createGamePanel(options: CreateGamePanelOptions): CreateGamePane
                     ...selection,
                     deckId: nextDeckId
                 });
+                options.onSelectionChange?.(selection);
                 render();
             });
         });

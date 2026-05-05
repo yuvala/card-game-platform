@@ -11,6 +11,7 @@ export function createWarLiteMachine(playerNames: string[], options?: WarLiteOpt
     const definitionOptions: WarLiteOptions = {
         deckDefinition,
         cardsPerPlayer: options?.cardsPerPlayer,
+        warFaceDownCount: options?.warFaceDownCount,
         random
     };
 

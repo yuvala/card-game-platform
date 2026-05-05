@@ -20,6 +20,9 @@ export const warLiteConfig = defineCardGameConfig({
     supportedDeckIds: warLiteSupportedDeckIds,
     defaultDeckId: "french",
     openingHandSize: 0,
+    warRule: {
+        faceDownCount: 3
+    },
     piles: [
         {
             id: WAR_LITE_STOCK_PILE_ID,

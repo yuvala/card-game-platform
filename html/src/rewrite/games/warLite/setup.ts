@@ -36,25 +36,38 @@ function resolveCardsPerPlayer(
     return maximumCardsPerPlayer;
 }
 
+function resolveWarFaceDownCount(requestedWarFaceDownCount?: number): number {
+    if (typeof requestedWarFaceDownCount === "number" && Number.isFinite(requestedWarFaceDownCount)) {
+        return Math.max(0, Math.floor(requestedWarFaceDownCount));
+    }
+
+    return warLiteConfig.warRule.faceDownCount;
+}
+
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
-    requestedCardsPerPlayer?: number
+    requestedCardsPerPlayer?: number,
+    requestedWarFaceDownCount?: number
 ): WarLiteContext {
     const players = createPlayers(playerNames);
     const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, players.length || 2, requestedCardsPerPlayer);
+    const warFaceDownCount = resolveWarFaceDownCount(requestedWarFaceDownCount);
 
     return {
         deckDefinition,
         lastEffects: [],
         playedCardHistory: [],
         piles: createConfiguredPiles(warLiteConfig, players),
+        comparisonCards: [],
         roundCards: [],
         players,
         turnIndex: 0,
         round: 1,
         maxRounds: cardsPerPlayer,
         cardsPerPlayer,
+        warFaceDownCount,
+        warState: null,
         statusText:
             "Press Deal Cards to split the " +
             deckDefinition.name +
@@ -69,9 +82,15 @@ export function createShuffledContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
     requestedCardsPerPlayer?: number,
+    requestedWarFaceDownCount?: number,
     random: () => number = Math.random
 ): WarLiteContext {
-    const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);
+    const baseContext = createInitialContext(
+        playerNames,
+        deckDefinition,
+        requestedCardsPerPlayer,
+        requestedWarFaceDownCount
+    );
     const shuffledDeck = shuffleDeck(createDeck(deckDefinition), random).reverse();
 
     return {
@@ -126,10 +145,12 @@ export function dealOpeningHands(context: WarLiteContext): { state: WarLiteConte
             turnIndex: 0,
             round: 1,
             playedCardHistory: [],
+            comparisonCards: [],
             roundCards: [],
             lastPlayedCard: null,
             selectedCardId: null,
             winningPlayerIds: [],
+            warState: null,
             statusText:
                 "The " +
                 context.deckDefinition.name +

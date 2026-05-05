@@ -33,8 +33,43 @@ export function getPlayerAvailableCardCount(context: WarLiteContext, playerId: s
     return getPlayerStackCards(context, playerId).length + getPlayerWonCards(context, playerId).length;
 }
 
+function getPlayerById(context: WarLiteContext, playerId: string): WarLitePlayer | null {
+    return context.players.find((player) => player.id === playerId) ?? null;
+}
+
+function getActiveContenderIds(context: WarLiteContext): string[] {
+    return context.warState?.contenders.slice() ?? context.players.map((player) => player.id);
+}
+
+function getActiveContenders(context: WarLiteContext): WarLitePlayer[] {
+    return getActiveContenderIds(context).flatMap((playerId) => {
+        const player = getPlayerById(context, playerId);
+        return player ? [player] : [];
+    });
+}
+
+function getContenderNames(context: WarLiteContext, playerIds: readonly string[]): string {
+    return playerIds
+        .map((playerId) => getPlayerById(context, playerId)?.name ?? playerId)
+        .join(", ");
+}
+
+function getRequiredComparisonCount(context: WarLiteContext): number {
+    return getActiveContenderIds(context).length;
+}
+
 function getNextRevealPlayer(context: WarLiteContext): WarLitePlayer | null {
-    return context.players[context.roundCards.length] ?? null;
+    const nextPlayerId = getActiveContenderIds(context)[context.comparisonCards.length];
+    return nextPlayerId ? getPlayerById(context, nextPlayerId) : null;
+}
+
+export function getNextBattleActionPlayer(context: WarLiteContext): WarLitePlayer | null {
+    if (context.warState?.stage === "face-down") {
+        const firstContenderId = context.warState.contenders[0];
+        return firstContenderId ? getPlayerById(context, firstContenderId) : null;
+    }
+
+    return getNextRevealPlayer(context);
 }
 
 function rankPlayedCards(roundCards: readonly WarLitePlayedCard[]): WarLitePlayedCard[] {
@@ -43,12 +78,185 @@ function rankPlayedCards(roundCards: readonly WarLitePlayedCard[]): WarLitePlaye
     });
 }
 
+function createBattleCard(input: {
+    context: WarLiteContext;
+    card: WarLitePlayedCard["card"];
+    player: WarLitePlayer;
+    isFaceUp: boolean;
+    isComparisonCard: boolean;
+}): WarLitePlayedCard {
+    const warDepth = input.context.warState?.depth ?? 0;
+    const visibilityKey = input.isFaceUp ? "up" : "down";
+
+    return {
+        id: [
+            "battle",
+            input.context.round,
+            warDepth,
+            visibilityKey,
+            input.player.id,
+            input.context.roundCards.length
+        ].join("-"),
+        card: input.card,
+        playerId: input.player.id,
+        playerName: input.player.name,
+        round: input.context.round,
+        isFaceUp: input.isFaceUp,
+        isComparisonCard: input.isComparisonCard,
+        warDepth
+    };
+}
+
+function getRoundCardFaceUp(context: WarLiteContext, cardId: string): boolean {
+    return context.roundCards.find((playedCard) => playedCard.card.id === cardId)?.isFaceUp ?? true;
+}
+
+function collectBattlePileWithEffects(input: {
+    context: WarLiteContext;
+    targetPileId: string;
+    targetOwnerId?: string;
+    keyPrefix: string;
+}): { piles: WarLiteContext["piles"]; effects: CardGameEffect[] } {
+    const battleCards = getPileCards(input.context.piles, WAR_LITE_BATTLE_PILE_ID);
+    const targetPileCardCount = getPileCards(input.context.piles, input.targetPileId).length;
+    const effects = battleCards.map((card, index) => {
+        const isFaceUp = getRoundCardFaceUp(input.context, card.id);
+
+        return createCollectCardEffect({
+            card,
+            fromPileId: WAR_LITE_BATTLE_PILE_ID,
+            fromIndex: index,
+            fromPileCardCount: battleCards.length,
+            fromFaceUp: isFaceUp,
+            toPileId: input.targetPileId,
+            toOwnerId: input.targetOwnerId,
+            toIndex: targetPileCardCount + index,
+            isFaceUp,
+            keyPrefix: input.keyPrefix
+        });
+    });
+    const piles = clearPile(
+        appendCardsToPile(input.context.piles, input.targetPileId, battleCards),
+        WAR_LITE_BATTLE_PILE_ID
+    );
+
+    return {
+        piles,
+        effects
+    };
+}
+
+function collectBattleToWinnerWithEffects(input: {
+    context: WarLiteContext;
+    winningCard: WarLitePlayedCard;
+    statusText?: string;
+}): { state: WarLiteContext; effects: CardGameEffect[] } {
+    const targetPileId = getWarLiteCapturePileId(input.winningCard.playerId);
+    const battleCardCount = getPileCards(input.context.piles, WAR_LITE_BATTLE_PILE_ID).length;
+    const collectTransition = collectBattlePileWithEffects({
+        context: input.context,
+        targetPileId,
+        targetOwnerId: input.winningCard.playerId,
+        keyPrefix:
+            "battle-collect-" +
+            String(input.context.round) +
+            "-war-" +
+            String(input.context.warState?.depth ?? 0)
+    });
+    const winningPlayerIds = [input.winningCard.playerId];
+    const statusText =
+        input.statusText ??
+        (
+            input.context.warState
+                ? input.winningCard.playerName +
+                  " wins the war with " +
+                  input.winningCard.card.displayLabel +
+                  " and collects " +
+                  battleCardCount +
+                  " cards."
+                : "Battle " +
+                  input.context.round +
+                  " goes to " +
+                  input.winningCard.playerName +
+                  " with " +
+                  input.winningCard.card.displayLabel +
+                  "."
+        );
+
+    return {
+        state: {
+            ...input.context,
+            piles: collectTransition.piles,
+            players: input.context.players.map((player) => {
+                if (!winningPlayerIds.includes(player.id)) {
+                    return player;
+                }
+
+                return {
+                    ...player,
+                    score: player.score + 1
+                };
+            }),
+            playedCardHistory: input.context.playedCardHistory.concat(input.context.roundCards),
+            lastPlayedCard: input.winningCard,
+            winningPlayerIds,
+            warState: null,
+            statusText
+        },
+        effects: collectTransition.effects
+    };
+}
+
+function collectUnresolvedTieWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
+    const collectTransition = collectBattlePileWithEffects({
+        context,
+        targetPileId: WAR_LITE_DISCARD_PILE_ID,
+        keyPrefix:
+            "battle-tie-discard-" +
+            String(context.round) +
+            "-war-" +
+            String(context.warState?.depth ?? 0)
+    });
+
+    return {
+        state: {
+            ...context,
+            piles: collectTransition.piles,
+            playedCardHistory: context.playedCardHistory.concat(context.roundCards),
+            winningPlayerIds: [],
+            warState: null,
+            statusText:
+                "Battle " +
+                context.round +
+                " is an unresolved war. No tied player has cards left to continue."
+        },
+        effects: collectTransition.effects
+    };
+}
+
+export function hasPendingBattleAction(context: WarLiteContext): boolean {
+    if (context.warState?.stage === "face-down") {
+        return true;
+    }
+
+    if (context.warState?.stage === "reveal") {
+        return context.comparisonCards.length < context.warState.contenders.length;
+    }
+
+    const requiredComparisonCount = getRequiredComparisonCount(context);
+    return context.comparisonCards.length > 0 && context.comparisonCards.length < requiredComparisonCount;
+}
+
 export function canRevealBattle(context: WarLiteContext): boolean {
+    if (context.warState?.stage === "face-down") {
+        return context.warState.contenders.length >= 2;
+    }
+
     const nextPlayer = getNextRevealPlayer(context);
     return Boolean(
         context.players.length >= 2 &&
         nextPlayer &&
-        context.roundCards.length < context.players.length &&
+        context.comparisonCards.length < getRequiredComparisonCount(context) &&
         getPlayerStackCards(context, nextPlayer.id).length > 0
     );
 }
@@ -84,6 +292,18 @@ export function recycleEmptyPlayerStacks(context: WarLiteContext): WarLiteContex
 }
 
 export function setBattleStatus(context: WarLiteContext): WarLiteContext {
+    if (context.warState?.stage === "face-down") {
+        return {
+            ...context,
+            statusText:
+                "War! " +
+                getContenderNames(context, context.warState.contenders) +
+                " tied. Click Play Card to place up to " +
+                context.warFaceDownCount +
+                " face-down cards each."
+        };
+    }
+
     if (!canRevealBattle(context)) {
         return {
             ...context,
@@ -92,16 +312,16 @@ export function setBattleStatus(context: WarLiteContext): WarLiteContext {
     }
 
     const nextPlayer = getNextRevealPlayer(context);
-    const waitingPrefix = context.roundCards.length > 0
+    const waitingPrefix = context.comparisonCards.length > 0
         ? "Waiting for " + nextPlayer?.name + " to reveal. "
         : "";
+    const isWarReveal = context.warState?.stage === "reveal";
 
     return {
         ...context,
         statusText:
             waitingPrefix +
-            "Battle " +
-            context.round +
+            (isWarReveal ? "War " + context.warState?.depth : "Battle " + context.round) +
             ": click " +
             nextPlayer?.name +
             "'s stack to reveal the next card."
@@ -112,7 +332,85 @@ export function revealBattle(context: WarLiteContext): WarLiteContext {
     return revealBattleWithEffects(context).state;
 }
 
-export function revealBattleWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
+function placeWarFaceDownWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
+    if (context.warState?.stage !== "face-down") {
+        return {
+            state: context,
+            effects: []
+        };
+    }
+
+    const warState = context.warState;
+    let piles = context.piles;
+    const effects: CardGameEffect[] = [];
+    const faceDownCards: WarLitePlayedCard[] = [];
+
+    getActiveContenders(context).forEach((player) => {
+        const fromPileId = getWarLiteHandPileId(player.id);
+        const availableStackCards = getPileCards(piles, fromPileId).length;
+        const faceDownCount = Math.min(context.warFaceDownCount, Math.max(availableStackCards - 1, 0));
+
+        for (let cardIndex = 0; cardIndex < faceDownCount; cardIndex += 1) {
+            const moveResult = moveTopCardBetweenPiles(piles, fromPileId, WAR_LITE_BATTLE_PILE_ID);
+            piles = moveResult.piles;
+            if (!moveResult.card) {
+                break;
+            }
+
+            const playedCard = createBattleCard({
+                context: {
+                    ...context,
+                    roundCards: context.roundCards.concat(faceDownCards)
+                },
+                card: moveResult.card,
+                player,
+                isFaceUp: false,
+                isComparisonCard: false
+            });
+            faceDownCards.push(playedCard);
+
+            effects.push(createPlayCardEffect({
+                card: moveResult.card,
+                fromPileId,
+                fromOwnerId: player.id,
+                fromIndex: 0,
+                fromFaceUp: false,
+                toPileId: WAR_LITE_BATTLE_PILE_ID,
+                toIndex: getPileCards(piles, WAR_LITE_BATTLE_PILE_ID).length - 1,
+                isFaceUp: false,
+                keyPrefix:
+                    "war-down-" +
+                    String(context.round) +
+                    "-" +
+                    String(warState.depth) +
+                    "-" +
+                    player.id +
+                    "-" +
+                    String(cardIndex)
+            }));
+        }
+    });
+
+    return {
+        state: {
+            ...context,
+            piles,
+            comparisonCards: [],
+            roundCards: context.roundCards.concat(faceDownCards),
+            warState: {
+                ...context.warState,
+                stage: "reveal"
+            },
+            statusText:
+                faceDownCards.length > 0
+                    ? "War cards are face down. Reveal one card from each tied player."
+                    : "No face-down war cards were available. Reveal one card from each tied player."
+        },
+        effects
+    };
+}
+
+function revealComparisonCardWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
     if (!canRevealBattle(context)) {
         return {
             state: context,
@@ -145,14 +443,15 @@ export function revealBattleWithEffects(context: WarLiteContext): { state: WarLi
         };
     }
 
-    const playedCard: WarLitePlayedCard = {
-        id: "battle-" + context.round + "-" + nextPlayer.id,
+    const playedCard = createBattleCard({
+        context,
         card: topCard,
-        playerId: nextPlayer.id,
-        playerName: nextPlayer.name,
-        round: context.round
-    };
+        player: nextPlayer,
+        isFaceUp: true,
+        isComparisonCard: true
+    });
     const playedCards = context.roundCards.concat(playedCard);
+    const comparisonCards = context.comparisonCards.concat(playedCard);
     effects.push(createPlayCardEffect({
         card: topCard,
         fromPileId,
@@ -160,18 +459,27 @@ export function revealBattleWithEffects(context: WarLiteContext): { state: WarLi
         fromIndex: 0,
         fromFaceUp: false,
         toPileId: WAR_LITE_BATTLE_PILE_ID,
-        toIndex: context.roundCards.length,
+        toIndex: playedCards.length - 1,
         isFaceUp: true,
-        keyPrefix: "battle-play-" + String(context.round) + "-" + nextPlayer.id
+        keyPrefix:
+            (context.warState ? "war-reveal-" : "battle-play-") +
+            String(context.round) +
+            "-" +
+            String(context.warState?.depth ?? 0) +
+            "-" +
+            nextPlayer.id
     }));
 
-    const rankedCards = rankPlayedCards(playedCards);
+    const rankedCards = rankPlayedCards(comparisonCards);
     const leadingCard = rankedCards[0] ?? null;
+    const requiredComparisonCount = getRequiredComparisonCount(context);
+    const isWarReveal = context.warState?.stage === "reveal";
 
     return {
         state: {
             ...context,
             piles,
+            comparisonCards,
             roundCards: playedCards,
             lastPlayedCard: leadingCard,
             winningPlayerIds: [],
@@ -180,10 +488,22 @@ export function revealBattleWithEffects(context: WarLiteContext): { state: WarLi
                 nextPlayer.name +
                 " flips " +
                 topCard.displayLabel +
-                (playedCards.length < context.players.length ? ". Waiting for the next player." : ". Resolving battle.")
+                (comparisonCards.length < requiredComparisonCount
+                    ? ". Waiting for the next player."
+                    : isWarReveal
+                        ? ". Resolving the war."
+                        : ". Resolving battle.")
         },
         effects
     };
+}
+
+export function revealBattleWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
+    if (context.warState?.stage === "face-down") {
+        return placeWarFaceDownWithEffects(context);
+    }
+
+    return revealComparisonCardWithEffects(context);
 }
 
 export function finalizeBattle(context: WarLiteContext): WarLiteContext {
@@ -191,81 +511,74 @@ export function finalizeBattle(context: WarLiteContext): WarLiteContext {
 }
 
 export function finalizeBattleWithEffects(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
-    if (context.roundCards.length === 0) {
+    if (context.comparisonCards.length === 0) {
         return {
             state: context,
             effects: []
         };
     }
 
-    if (context.roundCards.length < context.players.length) {
+    if (context.comparisonCards.length < getRequiredComparisonCount(context)) {
         return {
             state: context,
             effects: []
         };
     }
 
-    const rankedCards = rankPlayedCards(context.roundCards);
+    const rankedCards = rankPlayedCards(context.comparisonCards);
     const highestSortOrder = rankedCards[0]?.card.sortOrder ?? 0;
     const winningCards = rankedCards.filter((playedCard) => playedCard.card.sortOrder === highestSortOrder);
-    const winningPlayerIds = winningCards.length === 1 ? [winningCards[0].playerId] : [];
-    const winnerNames = winningCards.map((playedCard) => playedCard.playerName).join(", ");
-    const leadCard = winningCards[0] ?? rankedCards[0] ?? context.roundCards[0];
-    const battleCards = getPileCards(context.piles, WAR_LITE_BATTLE_PILE_ID);
-    const targetPileId = winningPlayerIds.length === 1
-        ? getWarLiteCapturePileId(winningPlayerIds[0])
-        : WAR_LITE_DISCARD_PILE_ID;
-    const targetPileCardCount = getPileCards(context.piles, targetPileId).length;
-    const effects = battleCards.map((card, index) => {
-        return createCollectCardEffect({
-            card,
-            fromPileId: WAR_LITE_BATTLE_PILE_ID,
-            fromIndex: index,
-            fromPileCardCount: battleCards.length,
-            toPileId: targetPileId,
-            toOwnerId: winningPlayerIds[0],
-            toIndex: targetPileCardCount + index,
-            isFaceUp: true,
-            keyPrefix: "battle-collect-" + String(context.round)
+    const leadCard = winningCards[0] ?? rankedCards[0] ?? context.comparisonCards[0];
+
+    if (winningCards.length === 1) {
+        return collectBattleToWinnerWithEffects({
+            context,
+            winningCard: winningCards[0]
         });
+    }
+
+    const contendersWithCards = winningCards.filter((playedCard) => {
+        return getPlayerAvailableCardCount(context, playedCard.playerId) > 0;
     });
-    const piles = clearPile(
-        appendCardsToPile(context.piles, targetPileId, battleCards),
-        WAR_LITE_BATTLE_PILE_ID
-    );
+
+    if (contendersWithCards.length === 1) {
+        const winner = contendersWithCards[0];
+        return collectBattleToWinnerWithEffects({
+            context,
+            winningCard: winner,
+            statusText:
+                winner.playerName +
+                " wins the war because the other tied player has no cards left to continue."
+        });
+    }
+
+    if (contendersWithCards.length < 2) {
+        return collectUnresolvedTieWithEffects(context);
+    }
+
+    const contenderIds = contendersWithCards.map((playedCard) => playedCard.playerId);
+    const nextWarDepth = (context.warState?.depth ?? 0) + 1;
+
     return {
         state: {
             ...context,
-            piles,
-            players: context.players.map((player) => {
-                if (!winningPlayerIds.includes(player.id)) {
-                    return player;
-                }
-
-                return {
-                    ...player,
-                    score: player.score + 1
-                };
-            }),
-            playedCardHistory: context.playedCardHistory.concat(context.roundCards),
+            comparisonCards: [],
             lastPlayedCard: leadCard,
-            winningPlayerIds,
+            selectedCardId: null,
+            warState: {
+                contenders: contenderIds,
+                depth: nextWarDepth,
+                stage: "face-down"
+            },
+            winningPlayerIds: [],
             statusText:
-                winningCards.length === 1
-                    ? "Battle " +
-                      context.round +
-                      " goes to " +
-                      winnerNames +
-                      " with " +
-                      winningCards[0].card.displayLabel +
-                      "."
-                    : "Battle " +
-                      context.round +
-                      " is a tie at " +
-                      winningCards[0].card.displayLabel +
-                      ". No point awarded."
+                "War! " +
+                getContenderNames(context, contenderIds) +
+                " tied at " +
+                winningCards[0].card.displayLabel +
+                "."
         },
-        effects
+        effects: []
     };
 }
 
@@ -273,8 +586,10 @@ export function advanceToNextRound(context: WarLiteContext): WarLiteContext {
     return {
         ...context,
         round: context.round + 1,
+        comparisonCards: [],
         roundCards: [],
         selectedCardId: null,
+        warState: null,
         winningPlayerIds: []
     };
 }
@@ -308,7 +623,9 @@ export function finishGame(context: WarLiteContext): WarLiteContext {
 
     return {
         ...context,
+        comparisonCards: [],
         roundCards: [],
+        warState: null,
         winningPlayerIds,
         statusText:
             context.deckDefinition.name +

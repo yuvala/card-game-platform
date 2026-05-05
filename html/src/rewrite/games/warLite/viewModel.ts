@@ -2,6 +2,7 @@ import type { CardGameViewModel } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import { getPileCards } from "../../engine/game/piles";
 import type { WarLiteViewSnapshot } from "./types";
+import { getNextBattleActionPlayer } from "./rules";
 import {
     WAR_LITE_BATTLE_PILE_ID,
     getWarLiteCapturePileId,
@@ -23,21 +24,23 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
     const currentPhase = String(snapshot.value);
     const isBattleReady = snapshot.matches("battleReady");
     const isGameOver = snapshot.matches("gameOver");
-    const nextRevealPlayerId = snapshot.context.players[snapshot.context.roundCards.length]?.id ?? null;
-    const nextRevealPlayer = snapshot.context.players.find((player) => player.id === nextRevealPlayerId) ?? null;
-    const remainingStackCards = snapshot.context.players.reduce((count, player) => {
-        return count + getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length;
-    }, 0);
+    const nextRevealPlayer = getNextBattleActionPlayer(snapshot.context);
+    const nextRevealPlayerId = nextRevealPlayer?.id ?? null;
+    const isWarFaceDown = snapshot.context.warState?.stage === "face-down";
+    const isWarReveal = snapshot.context.warState?.stage === "reveal";
+    const battleCards = getPileCards(snapshot.context.piles, WAR_LITE_BATTLE_PILE_ID);
     const totalAvailableCards = snapshot.context.players.reduce((count, player) => {
         return (
             count +
             getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id)).length +
             getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id)).length
         );
-    }, 0);
+    }, battleCards.length);
     return {
         phaseLabel: currentPhase.toUpperCase(),
-        roundLabel: "Battle " + snapshot.context.round,
+        roundLabel: snapshot.context.warState
+            ? "Battle " + snapshot.context.round + " | War " + snapshot.context.warState.depth
+            : "Battle " + snapshot.context.round,
         deckId: snapshot.context.deckDefinition.id,
         cardSkinId: DEFAULT_CARD_SKIN_ID,
         deckLabel:
@@ -78,16 +81,19 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                 handPresentation: "hidden-stack",
                 isCurrentTurn: isBattleReady && player.id === nextRevealPlayerId,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
-                canInteract: isBattleReady && player.id === nextRevealPlayerId && stackCards.length > 0,
+                canInteract:
+                    isBattleReady &&
+                    player.id === nextRevealPlayerId &&
+                    (stackCards.length > 0 || isWarFaceDown),
                 cardClickAction: "play"
             };
         }),
         tableCards: snapshot.context.roundCards.map((playedCard) => ({
             id: playedCard.card.id,
             label: playedCard.card.displayLabel,
-            isFaceUp: true,
+            isFaceUp: playedCard.isFaceUp,
             playerId: playedCard.playerId,
-            caption: playedCard.playerName
+            caption: playedCard.isFaceUp ? playedCard.playerName : "War"
         })),
         tablePresentation: "table-row",
         tablePileIds: [WAR_LITE_BATTLE_PILE_ID],
@@ -116,7 +122,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
         ],
         controls: {
             canStart: snapshot.matches("idle"),
-            canPlay: snapshot.matches("battleReady"),
+            canPlay: snapshot.matches("battleReady") && Boolean(nextRevealPlayer || isWarFaceDown),
             canRestart: snapshot.matches("gameOver")
         },
         outcome: isGameOver
@@ -126,15 +132,27 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
                   winnerPlayerIds: snapshot.context.winningPlayerIds
               }
             : null,
-        primaryAction: isBattleReady && nextRevealPlayer
+        primaryAction: isBattleReady && (nextRevealPlayer || isWarFaceDown)
             ? {
-                  label: "Reveal Card",
-                  hint: "Click " + nextRevealPlayer.name + "'s stack to reveal the next card.",
+                  label: isWarFaceDown
+                      ? "Place War Cards"
+                      : isWarReveal
+                          ? "Reveal War Card"
+                          : "Reveal Card",
+                  hint: isWarFaceDown
+                      ? "Place up to " +
+                        snapshot.context.warFaceDownCount +
+                        " face-down cards for each tied player."
+                      : "Click " + nextRevealPlayer?.name + "'s stack to reveal the next card.",
                   eventType: "PLAY_CARD",
-                  target: {
-                      type: "player-hand",
-                      playerId: nextRevealPlayer.id
-                  }
+                  target: nextRevealPlayer
+                      ? {
+                            type: "player-hand",
+                            playerId: nextRevealPlayer.id
+                        }
+                      : {
+                            type: "table"
+                        }
               }
             : null,
         animation: null,

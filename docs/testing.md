@@ -33,6 +33,7 @@ What to check:
 - Press `▶` to auto-run.
 - The first revealed card stays on the table until the second player reveals.
 - Cards collect into the winner's `Won` pile.
+- If both revealed cards tie, War starts: tied cards stay in the battle pile, each tied player places up to 3 face-down cards, then each reveals one face-up card, and the winner collects the full pot.
 - The game reaches `Game Over` quickly.
 - The winner text appears in the HUD.
 
@@ -46,6 +47,22 @@ What to check:
 - `autostart=1` starts the table immediately.
 
 Remove `cards=...` for a normal full-length game.
+
+## Manual War Tie Smoke URL
+
+Use this URL to force War on the first battle:
+
+```text
+/rewrite.html?game=war-lite&players=2&deck=french&cards=5&seed=war-manual-0&autostart=1
+```
+
+What to check:
+
+- The first battle ties on two `10` cards.
+- The UI enters `War 1`.
+- Each tied player places 3 face-down cards.
+- Each tied player reveals one face-up war card.
+- The winner collects all 10 cards from the battle pile.
 
 ## Visual QA Focus
 

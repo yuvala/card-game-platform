@@ -5,7 +5,7 @@ import {
     spanishDeckDefinition
 } from "../../html/src/rewrite/engine/cards/deckDefinitions";
 import { createDeck } from "../../html/src/rewrite/engine/cards/createDeck";
-import type { DeckDefinition } from "../../html/src/rewrite/engine/cards/types";
+import type { CardInstance, DeckDefinition } from "../../html/src/rewrite/engine/cards/types";
 import { getPileCards, setPileCards } from "../../html/src/rewrite/engine/game/piles";
 import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
 import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
@@ -43,6 +43,50 @@ const tinyWarDeckDefinition: DeckDefinition = {
         { id: "high", label: "High", shortLabel: "H", sortOrder: 14 }
     ]
 };
+
+const warTieDeckDefinition: DeckDefinition = {
+    id: "war-tie",
+    name: "War Tie Test Deck",
+    suits: [
+        { id: "test", label: "Test", shortLabel: "T" }
+    ],
+    ranks: [
+        { id: "low", label: "Low", shortLabel: "L", sortOrder: 2 },
+        { id: "mid", label: "Mid", shortLabel: "M", sortOrder: 10 },
+        { id: "high", label: "High", shortLabel: "H", sortOrder: 14 }
+    ]
+};
+
+function createWarTestCard(id: string, displayLabel: string, sortOrder: number): CardInstance {
+    return {
+        id,
+        deckId: warTieDeckDefinition.id,
+        suitId: "test",
+        suitLabel: "Test",
+        suitShortLabel: "T",
+        rankId: id,
+        rankLabel: displayLabel,
+        rankShortLabel: displayLabel,
+        sortOrder,
+        displayLabel
+    };
+}
+
+function createSeededRandom(seed: string): () => number {
+    let state = 2166136261;
+    for (let index = 0; index < seed.length; index += 1) {
+        state ^= seed.charCodeAt(index);
+        state = Math.imul(state, 16777619);
+    }
+
+    return () => {
+        state += 0x6d2b79f5;
+        let value = state;
+        value = Math.imul(value ^ (value >>> 15), value | 1);
+        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
+        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
+    };
+}
 
 async function waitFor(condition: () => boolean, timeoutMs = 4000) {
     const startedAt = Date.now();
@@ -395,6 +439,136 @@ async function runWarLiteShortDeckOptionTest() {
     actor.stop();
 }
 
+async function runWarLiteManualWarSeedTest() {
+    const machine = createWarLiteMachine(["Avi", "Dany"], {
+        deckDefinition: frenchDeckDefinition,
+        cardsPerPlayer: 5,
+        random: createSeededRandom("war-manual-0")
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
+    await waitFor(() => actor.getSnapshot().value === "battleReady");
+
+    const beforeBattle = actor.getSnapshot();
+    const firstPlayer = beforeBattle.context.players[0];
+    const secondPlayer = beforeBattle.context.players[1];
+    const firstPlayerCards = getPileCards(
+        beforeBattle.context.piles,
+        getWarLiteHandPileId(firstPlayer.id)
+    );
+    const secondPlayerCards = getPileCards(
+        beforeBattle.context.piles,
+        getWarLiteHandPileId(secondPlayer.id)
+    );
+    const firstPlayerTopCard = firstPlayerCards[firstPlayerCards.length - 1];
+    const secondPlayerTopCard = secondPlayerCards[secondPlayerCards.length - 1];
+
+    assert(
+        firstPlayerTopCard?.sortOrder === secondPlayerTopCard?.sortOrder,
+        "The documented war-manual-0 URL should start with a tied battle."
+    );
+
+    actor.send({ type: "PLAY_CARD" });
+    await waitFor(() => {
+        const snapshot = actor.getSnapshot();
+        return snapshot.value === "battleReady" && snapshot.context.comparisonCards.length === 1;
+    }, 5000);
+    actor.send({ type: "PLAY_CARD" });
+    await waitFor(() => {
+        const snapshot = actor.getSnapshot();
+        return snapshot.value === "battleReady" && snapshot.context.warState?.stage === "face-down";
+    }, 5000);
+
+    const warSnapshot = actor.getSnapshot();
+    assert(
+        getPileCards(warSnapshot.context.piles, WAR_LITE_BATTLE_PILE_ID).length === 2,
+        "The documented war-manual-0 URL should keep the tied cards in the battle pile."
+    );
+    assert(
+        warSnapshot.context.statusText.includes("War!"),
+        "The documented war-manual-0 URL should expose a War status after the first tie."
+    );
+
+    actor.stop();
+}
+
+function runWarLiteWarTieRuleTest() {
+    const context = createInitialWarLiteContext(["Avi", "Dany"], warTieDeckDefinition, 5);
+    const firstPlayer = context.players[0];
+    const secondPlayer = context.players[1];
+    assert(firstPlayer && secondPlayer, "War tie test requires two players.");
+
+    const firstPlayerCards = [
+        createWarTestCard("p1-war-up", "H1", 14),
+        createWarTestCard("p1-down-3", "D3", 3),
+        createWarTestCard("p1-down-2", "D2", 3),
+        createWarTestCard("p1-down-1", "D1", 3),
+        createWarTestCard("p1-tie", "T1", 10)
+    ];
+    const secondPlayerCards = [
+        createWarTestCard("p2-war-up", "L1", 2),
+        createWarTestCard("p2-down-3", "E3", 4),
+        createWarTestCard("p2-down-2", "E2", 4),
+        createWarTestCard("p2-down-1", "E1", 4),
+        createWarTestCard("p2-tie", "T2", 10)
+    ];
+    let state = {
+        ...context,
+        piles: setPileCards(
+            setPileCards(context.piles, getWarLiteHandPileId(firstPlayer.id), firstPlayerCards),
+            getWarLiteHandPileId(secondPlayer.id),
+            secondPlayerCards
+        )
+    };
+
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    let transition = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" });
+    state = transition.state;
+
+    assert(state.warState?.stage === "face-down", "War Lite should enter face-down war setup after a tied battle.");
+    assert(getPileCards(state.piles, WAR_LITE_BATTLE_PILE_ID).length === 2, "The tied cards should stay in the battle pile.");
+    assert(getPileCards(state.piles, WAR_LITE_DISCARD_PILE_ID).length === 0, "Tied battle cards should not move to discard.");
+
+    transition = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" });
+    state = transition.state;
+    assert(
+        (transition.effects ?? []).filter((effect) => effect.reason === "play" && effect.card.isFaceUp === false).length === 6,
+        "War Lite should place three face-down cards from each tied player."
+    );
+    assert(state.warState?.stage === "reveal", "War Lite should ask for face-up war cards after face-down placement.");
+    assert(state.roundCards.length === 8, "The battle pot should contain tied cards plus six face-down war cards.");
+    assert(state.comparisonCards.length === 0, "Face-down war cards should not be comparison cards.");
+
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    transition = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" });
+    state = transition.state;
+
+    assert(
+        (transition.effects ?? []).filter((effect) => effect.reason === "collect").length === 10,
+        "War Lite should collect the full war pot after the face-up war cards resolve."
+    );
+    assert(state.warState === null, "War Lite should clear war state after the war resolves.");
+    assert(
+        state.winningPlayerIds.length === 1 && state.winningPlayerIds[0] === firstPlayer.id,
+        "The player with the higher face-up war card should win the war."
+    );
+    assert(
+        getPileCards(state.piles, getWarLiteCapturePileId(firstPlayer.id)).length === 10,
+        "The war winner should collect all tied, face-down, and face-up war cards."
+    );
+    assert(getPileCards(state.piles, WAR_LITE_BATTLE_PILE_ID).length === 0, "The battle pile should be empty after collection.");
+    assert(state.playedCardHistory.length === 10, "War Lite should record every card in the resolved war pot.");
+}
+
 async function runBriscaLiteMachineTest() {
     const machine = createBriscaLiteMachine(["Avi", "Dany"], {
         deckDefinition: spanishDeckDefinition,
@@ -515,6 +689,8 @@ async function main() {
     runWarLiteGameOverRuleTest();
     await runWarLiteMachineGameOverTest();
     await runWarLiteShortDeckOptionTest();
+    await runWarLiteManualWarSeedTest();
+    runWarLiteWarTieRuleTest();
     await runBriscaLiteMachineTest();
     console.log("gameMachines.test.ts passed");
 }

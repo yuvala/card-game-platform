@@ -17,18 +17,21 @@ interface ActiveRewriteRuntime {
 const seedPlayerNames = playersData.players.map((player) => player.playerName);
 const rewriteRoot = document.getElementById("rewrite-root");
 const rewriteSetupMount = document.getElementById("rewrite-setup");
+const rewriteGameTitle = document.getElementById("rewrite-game-title");
 const requestedParams = new URLSearchParams(window.location.search);
 
-if (!rewriteRoot || !rewriteSetupMount) {
-    throw new Error("Rewrite app requires #rewrite-root and #rewrite-setup containers.");
+if (!rewriteRoot || !rewriteSetupMount || !rewriteGameTitle) {
+    throw new Error("Rewrite app requires #rewrite-root, #rewrite-setup, and #rewrite-game-title containers.");
 }
 
 const rootElement = rewriteRoot;
 const setupMountElement = rewriteSetupMount;
+const gameTitleElement = rewriteGameTitle;
 
 let activeRuntime: ActiveRewriteRuntime | null = null;
 
 const initialSelection = getInitialSelection(requestedParams);
+setPageGameTitle(initialSelection.gameId);
 const setupPanel = createGamePanel({
     container: setupMountElement,
     entries: gameCatalogEntries,
@@ -36,6 +39,9 @@ const setupPanel = createGamePanel({
     initialOpen: requestedParams.get("autostart") !== "1",
     getDeckLabel: (deckId) => supportedDeckDefinitions[deckId].name,
     getPlayerNames: (playerCount) => buildPlayerNames(playerCount),
+    onSelectionChange: (selection) => {
+        setPageGameTitle(selection.gameId);
+    },
     onStart: (selection) => {
         startGame(selection);
     }
@@ -49,6 +55,7 @@ if (requestedParams.get("autostart") === "1") {
 
 function startGame(selection: RewriteGameSelection): void {
     const selectedGame = resolveSelectedGame(selection.gameId);
+    setPageGameTitle(selectedGame.id);
     const normalizedSelection = {
         gameId: selectedGame.id,
         playerCount: resolvePlayerCount(selectedGame, selection.playerCount, selectedGame.maxPlayers),
@@ -137,6 +144,10 @@ function resolveSelectedGame(gameId: string | null | undefined): AnyGameCatalogE
     }
 
     return selectedGame;
+}
+
+function setPageGameTitle(gameId: string): void {
+    gameTitleElement.textContent = resolveSelectedGame(gameId).label;
 }
 
 function buildPlayerNames(playerCount: number): string[] {

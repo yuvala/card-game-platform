@@ -182,7 +182,8 @@ function getDestinationPoint(input: {
     }
 
     if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
-        const position = getTableCardPosition(effect.toIndex ?? 0, 2);
+        const tableCardCount = Math.max(viewModel.tableCards.length, (effect.toIndex ?? 0) + 1, 2);
+        const position = getTableCardPosition(effect.toIndex ?? 0, tableCardCount);
         return {
             x: position.x,
             y: position.y,

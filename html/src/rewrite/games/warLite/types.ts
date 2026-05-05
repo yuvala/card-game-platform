@@ -30,14 +30,30 @@ export interface WarLitePlayedCard {
     playerId: string;
     playerName: string;
     round: number;
+    isFaceUp: boolean;
+    isComparisonCard: boolean;
+    warDepth: number;
+}
+
+export type WarLiteWarStage = "face-down" | "reveal";
+
+export interface WarLiteWarState {
+    contenders: string[];
+    depth: number;
+    stage: WarLiteWarStage;
 }
 
 export interface WarLiteContext
     extends CardGameSession<CardInstance, WarLitePlayer, WarLitePlayedCard> {
+    comparisonCards: WarLitePlayedCard[];
     roundCards: WarLitePlayedCard[];
+    warFaceDownCount: number;
+    warState: WarLiteWarState | null;
 }
 
-export type WarLiteOptions = CardGameOptions;
+export interface WarLiteOptions extends CardGameOptions {
+    warFaceDownCount?: number;
+}
 
 export type WarLiteEvent = CardGameEvent;
 

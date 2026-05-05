@@ -8,6 +8,7 @@ import {
     finalizeBattleWithEffects,
     finishGame,
     getPlayerAvailableCardCount,
+    hasPendingBattleAction,
     recycleEmptyPlayerStacks,
     revealBattleWithEffects,
     setBattleStatus
@@ -39,7 +40,7 @@ function getPlayersWithAvailableCards(state: WarLiteContext): number {
 }
 
 function hasMorePlayersToReveal(state: WarLiteContext): boolean {
-    return state.roundCards.length > 0 && state.roundCards.length < state.players.length;
+    return state.comparisonCards.length > 0 && state.comparisonCards.length < state.players.length;
 }
 
 export const warLiteGameDefinition: GameDefinition<
@@ -54,7 +55,12 @@ export const warLiteGameDefinition: GameDefinition<
     id: "rewriteWarLite",
     name: "War Lite",
     setup: ({ playerNames, options }) => {
-        return createInitialContext(playerNames, options.deckDefinition, options.cardsPerPlayer);
+        return createInitialContext(
+            playerNames,
+            options.deckDefinition,
+            options.cardsPerPlayer,
+            options.warFaceDownCount
+        );
     },
     getLegalMoves: (state) => {
         return canRevealBattle(state) ? [{ type: "reveal-battle" }] : [];
@@ -65,11 +71,12 @@ export const warLiteGameDefinition: GameDefinition<
                 return {
                     state: createShuffledContext(
                         getPlayerNames(state),
-                    state.deckDefinition,
-                    state.cardsPerPlayer,
-                    move.random
-                )
-            };
+                        state.deckDefinition,
+                        state.cardsPerPlayer,
+                        state.warFaceDownCount,
+                        move.random
+                    )
+                };
             case "deal-opening-hands":
                 return dealOpeningHands(state);
             case "prepare-battle":
@@ -94,7 +101,7 @@ export const warLiteGameDefinition: GameDefinition<
         return getPlayersWithAvailableCards(state) < 2 && state.roundCards.length === 0;
     },
     getAutomaticMove: (state) => {
-        if (hasMorePlayersToReveal(state)) {
+        if (hasPendingBattleAction(state) || hasMorePlayersToReveal(state)) {
             return { type: "prepare-battle" };
         }
 
