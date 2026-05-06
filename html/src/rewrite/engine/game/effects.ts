@@ -2,9 +2,25 @@ import type { CardInstance } from "../cards/types";
 
 export type CardGameEffectReason = "deal" | "play" | "draw" | "collect";
 
+export type CardGameEffectType =
+    | "move-card"
+    | "shuffle-deck"
+    | "flip-card"
+    | "discard-card"
+    | "sort-hand"
+    | "highlight-playable"
+    | "invalid-move";
+
+interface BaseCardGameEffect<TType extends CardGameEffectType> {
+    type: TType;
+    key: string;
+    delayMs?: number;
+}
+
 export interface MoveCardEffect {
     type: "move-card";
     key: string;
+    delayMs?: number;
     reason: CardGameEffectReason;
     card: {
         id: string;
@@ -21,7 +37,47 @@ export interface MoveCardEffect {
     toIndex?: number;
 }
 
-export type CardGameEffect = MoveCardEffect;
+export interface ShuffleDeckEffect extends BaseCardGameEffect<"shuffle-deck"> {
+    pileId: string;
+}
+
+export interface FlipCardEffect extends BaseCardGameEffect<"flip-card"> {
+    cardId: string;
+    faceUp: boolean;
+    pileId?: string;
+    ownerId?: string;
+}
+
+export interface DiscardCardEffect extends BaseCardGameEffect<"discard-card"> {
+    cardId: string;
+    fromPileId: string;
+    toPileId: string;
+}
+
+export interface SortHandEffect extends BaseCardGameEffect<"sort-hand"> {
+    ownerId: string;
+    cardIds: string[];
+}
+
+export interface HighlightPlayableEffect extends BaseCardGameEffect<"highlight-playable"> {
+    ownerId: string;
+    cardIds: string[];
+}
+
+export interface InvalidMoveEffect extends BaseCardGameEffect<"invalid-move"> {
+    cardId?: string;
+    ownerId?: string;
+    pileId?: string;
+}
+
+export type CardGameEffect =
+    | MoveCardEffect
+    | ShuffleDeckEffect
+    | FlipCardEffect
+    | DiscardCardEffect
+    | SortHandEffect
+    | HighlightPlayableEffect
+    | InvalidMoveEffect;
 
 type MoveCardEffectInput = {
     reason: CardGameEffectReason;

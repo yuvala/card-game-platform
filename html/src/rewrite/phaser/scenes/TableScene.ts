@@ -31,6 +31,7 @@ import {
 import { createSeatBadge, type SeatBadge } from "./factories/createSeatBadge";
 import { createTableCardVisual, type TableCardVisual } from "./factories/createTableCardVisual";
 import { animateShuffleDeck } from "./animations/cardStackAnimations";
+import { playShuffleSound } from "./audio/cardSoundEffects";
 import { getSeatLayouts } from "./layout/seatLayouts";
 import type { SeatLayout } from "./layout/types";
 import { syncHandPresentation, type HandSlotVisual } from "./presenters/handPresenter";
@@ -309,6 +310,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         }
 
         this.activeShuffleAnimationKey = shuffleAnimationKey;
+        playShuffleSound(this);
         animateShuffleDeck({
             scene: this,
             x: this.primaryPileVisuals.drawPileFrame.x,

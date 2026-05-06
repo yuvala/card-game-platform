@@ -90,6 +90,10 @@ Current rewrite code is split into these areas:
   Pure layout helpers for seats, hands, table cards, and pile placement.
 - `html/src/rewrite/phaser/scenes/presenters/`
   Presentation helpers for hands, piles, and table cards.
+- `html/src/rewrite/phaser/scenes/animations/`
+  Reusable card movement, reveal, stack, collection, and shuffle animations.
+- `html/src/rewrite/phaser/scenes/audio/`
+  Reusable card sound effects for Phaser presentation.
 - `html/src/rewrite/phaser/scenes/factories/`
   Phaser display-object factories for reusable visuals.
 
@@ -399,6 +403,84 @@ This lets the UI guide the player without knowing game-specific rules. For examp
 - `single-card` for a trump or marker card
 - `capture-pile` for won/taken card piles owned by a player
 
+## Effects And Animations
+
+The rewrite uses generic game effects to describe presentation work caused by a state transition.
+
+The game rules decide what happened:
+
+- which card moved
+- from which pile or owner
+- to which pile or owner
+- whether the card is face-up after the move
+- why the move happened, such as deal, draw, play, or collect
+
+The Phaser layer decides how to show it:
+
+- movement curve
+- delay and timing
+- stack scatter
+- reveal flip
+- destination flash
+- sound effect
+
+Current effect types live in:
+
+- `html/src/rewrite/engine/game/effects.ts`
+
+`move-card` is the implemented effect currently used by the games. The type system also reserves generic effect shapes for future presentation work:
+
+- `shuffle-deck`
+- `flip-card`
+- `discard-card`
+- `sort-hand`
+- `highlight-playable`
+- `invalid-move`
+
+These types are intentionally generic. They should not mention War, Brisca, Poker, trump, battle, or trick rules.
+
+The current `Phaser` effect bridge lives in:
+
+- `html/src/rewrite/phaser/scenes/presenters/effectPresenter.ts`
+
+It filters to `move-card` effects and delegates to reusable animation helpers in:
+
+- `html/src/rewrite/phaser/scenes/animations/cardStackAnimations.ts`
+
+The important boundary is:
+
+- rules produce effect data
+- presenters interpret effect data
+- animations move display objects
+
+Do not call Phaser animation APIs from game rules.
+
+## Sound Effects
+
+Sound is part of presentation, not game logic.
+
+Current card SFX live in:
+
+- `html/src/rewrite/phaser/scenes/audio/cardSoundEffects.ts`
+
+The implementation currently uses procedural Web Audio because the project does not include external audio assets. The public functions are still semantic:
+
+- `playCardMoveSound(scene, reason)`
+- `playCardFlipSound(scene)`
+- `playShuffleSound(scene)`
+- `playInvalidMoveSound(scene)`
+
+This keeps the call sites stable if the procedural sounds are later replaced by loaded `mp3` or `ogg` files.
+
+Good rules for future sound work:
+
+- keep sound calls inside Phaser presenters or animation orchestration
+- do not add sound calls to game rules
+- keep sounds short and subtle
+- add small pitch/volume variation
+- throttle repeated sounds during multi-card animations
+- provide a mute/volume control before adding louder or longer assets
+
 ## Shared Machine Shell
 
 The rewrite also now uses:
@@ -444,11 +526,29 @@ Those should live in:
 The engine should not know what a trump suit is.  
 It should only know how to host a game that does.
 
+The current Brisca presentation has one reusable exception in the Phaser pile presenter: when a view model exposes a draw pile and a `role: "trump"` pile, Phaser renders them as a combined stock/trump layout. This is still presentation logic, not rules logic:
+
+- the stock is a face-down deck
+- the trump card is face-up, rotated sideways, and partially covered by the stock
+- the stock frame/title are hidden in this combined layout
+- captured piles remain ordinary `capture-pile` visuals
+
+The game still owns which card is trump and when it is drawn.
+
 ### How This Applies To War Lite
 
 `War Lite` also keeps its special rules inside its game module. Each player has a hidden stack plus a `Won` capture pile. When a player's stack is empty but their `Won` pile still has cards, `games/warLite/rules.ts` shuffles those won cards back into that player's hidden stack. The UI presents the game as an open-ended card battle rather than a fixed round-count game.
 
 The engine only provides generic pile operations. It does not know that a `Won` pile can become a playable stack; that behavior belongs to the War Lite rulebook.
+
+War tie handling is now implemented as ordinary pile moves plus presentation effects:
+
+- tied face-up cards remain in the battle area
+- each tied player places up to 3 face-down cards onto their own battle stack
+- each tied player reveals a comparison card
+- the winner collects the full battle pot
+
+The animation helpers make the face-down war stack and the final collection look natural, but they do not decide who won.
 
 ### Adding A New Game
 
@@ -495,11 +595,12 @@ It should not be the long-term home for all seat math, pile placement rules, and
 
 ## Recommended Next Steps
 
-1. Continue replacing scene-local layout assumptions with view-model-driven layout hints where useful.
-2. Keep `playedCardHistory` only where explicit played-card history is actually needed.
-3. Add deeper rule edge-case tests beyond the current engine, config, and machine coverage.
-4. Tighten typing around the generic catalog helper and machine factory.
-5. Move to a fuller `Brisca` ruleset only after the current `Brisca-lite` contract remains stable.
+1. Add mute/volume UI before expanding sound assets.
+2. Continue replacing scene-local layout assumptions with view-model-driven layout hints where useful.
+3. Keep `playedCardHistory` only where explicit played-card history is actually needed.
+4. Add deeper rule edge-case tests beyond the current engine, config, and machine coverage.
+5. Tighten typing around the generic catalog helper and machine factory.
+6. Move to a fuller `Brisca` ruleset only after the current `Brisca-lite` contract remains stable.
 
 ## Short Version
 

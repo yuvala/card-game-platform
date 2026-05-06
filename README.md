@@ -45,7 +45,7 @@ The rewrite currently includes a Create Game flow and these games:
 ## Docs
 
 - `docs/rewrite-architecture.md` - architecture notes for the Phaser + XState rewrite and future multi-game support
-- `docs/testing.md` - short rewrite QA commands and deterministic War Lite smoke URLs
+- `docs/testing.md` - short rewrite QA commands plus deterministic War Lite, Brisca Lite, visual, and sound smoke checks
 - `TODO.md` - prioritized fix/build/optimize backlog for the rewrite
 
 ## Main Files
@@ -58,6 +58,8 @@ The rewrite currently includes a Create Game flow and these games:
 - `html/src/rewrite/games/` - concrete game modules and game catalog
 - `html/src/rewrite/phaser/scenes/layout/` - pure layout helpers used by the rewrite scenes
 - `html/src/rewrite/phaser/scenes/presenters/` - scene presentation helpers for hands, piles, and table cards
+- `html/src/rewrite/phaser/scenes/animations/` - reusable card movement, stack, reveal, collection, and shuffle animations
+- `html/src/rewrite/phaser/scenes/audio/` - reusable Phaser-side card sound effects
 - `html/src/rewrite/phaser/scenes/factories/` - Phaser display-object factories used by the rewrite scenes
 - `html/css/main.css` - styles
 - `html/css/rewrite.css` - rewrite shell styles

@@ -197,9 +197,10 @@ export function animateFinalCardReveal(input: {
     ghost: Phaser.GameObjects.Image;
     effect: MoveCardEffect;
     textureApi: CardAnimationTextureApi;
+    onReveal?: () => void;
     onComplete: () => void;
 }): void {
-    const { scene, ghost, effect, textureApi, onComplete } = input;
+    const { scene, ghost, effect, textureApi, onReveal, onComplete } = input;
 
     scene.tweens.add({
         targets: ghost,
@@ -207,6 +208,7 @@ export function animateFinalCardReveal(input: {
         duration: 95,
         ease: "Sine.easeIn",
         onComplete: () => {
+            onReveal?.();
             ghost.setScale(1);
             restoreCardDisplaySize(ghost);
             textureApi.applyCardTexture(ghost, effect.card, "compact");
@@ -230,9 +232,11 @@ export function animateCardToStack(input: {
     destination: CardAnimationPoint;
     profile: CardAnimationProfile;
     textureApi: CardAnimationTextureApi;
+    onLanded?: () => void;
+    onReveal?: () => void;
     onComplete: () => void;
 }): void {
-    const { scene, ghost, effect, destination, profile, textureApi, onComplete } = input;
+    const { scene, ghost, effect, destination, profile, textureApi, onLanded, onReveal, onComplete } = input;
 
     scene.tweens.add({
         targets: ghost,
@@ -245,6 +249,7 @@ export function animateCardToStack(input: {
         delay: profile.delay,
         ease: profile.ease,
         onComplete: () => {
+            onLanded?.();
             ghost.setScale(1);
             if (!shouldRevealFinalCard(effect)) {
                 onComplete();
@@ -256,6 +261,7 @@ export function animateCardToStack(input: {
                 ghost,
                 effect,
                 textureApi,
+                onReveal,
                 onComplete
             });
         }

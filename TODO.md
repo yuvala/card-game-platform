@@ -1,19 +1,14 @@
 # TODO
 
-## Priority 1: Fix
+## Priority 1: Fix / Stabilize
 
-- Finish `War Lite` as the first end-to-end vertical slice:
-  - Start from the Create Game drawer and deal opening stacks.
-  - Each player reveals exactly one card from their own hidden stack in turn.
-  - The first revealed card stays on the table while waiting for the next player.
-  - After all players reveal, the battle resolves and cards move into the winner's `Won` pile.
-  - If a player stack is empty, their `Won` pile shuffles back into their stack.
-  - If a player has no stack and no `Won` cards, the game reaches `gameOver`.
-  - HUD text and enabled actions match the current step.
-  - No central stock/discard UI appears for War Lite.
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
+- Add visual regression coverage or repeatable screenshots for the highest-risk table states:
+  - War Lite tie / war stack / collection
+  - Brisca Lite stock + trump layout
+  - crowded 5-6 player tables
+- Add a mute/volume control for the new card SFX layer before adding louder or longer audio assets.
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
-- Review the new `GameConfig` layer after the next feature pass and decide whether more setup defaults belong there.
 - Review UI states manually for crowded tables:
   - `5-6` players
   - trick-taking layouts
@@ -27,8 +22,16 @@
   - real point values
   - proper supported player counts
   - 40/48-card variant decision
-- Continue shrinking [html/src/rewrite/phaser/scenes/TableScene.ts](/d:/yuval/card/cardGame/html/src/rewrite/phaser/scenes/TableScene.ts:1) by moving more layout intent into view-model/layout hints where useful.
+- Continue shrinking [TableScene.ts](/d:/yuval/card/cardGame/html/src/rewrite/phaser/scenes/TableScene.ts:1) by moving more layout intent into view-model/layout hints where useful.
 - Tighten typing around `machineFactory`, the configured catalog helper, and remaining catalog-side casts.
+- Continue turning effect concepts into generic typed effects:
+  - `shuffle-deck`
+  - `flip-card`
+  - `discard-card`
+  - `sort-hand`
+  - `highlight-playable`
+  - `invalid-move`
+- Replace procedural SFX with curated `mp3`/`ogg` assets if better sounds are needed, while keeping the existing semantic sound API.
 - Continue removing transitional legacy shapes where `piles` already cover the same meaning.
 
 ## Priority 3: Optimize
@@ -36,6 +39,20 @@
 - Reduce rewrite bundle size with code splitting.
 - Review `viewModel` shape and remove remaining legacy duplication where possible.
 - Add more repeatable runtime smoke tests so refactors do not rely only on manual verification.
+
+## Completed / No Longer Open
+
+- War Lite is now the first end-to-end vertical slice:
+  - opening stacks deal through the Create Game flow
+  - battles reveal one card per player
+  - ties enter War
+  - war face-down cards stack with offsets/rotation
+  - final war cards reveal
+  - battle cards collect into the winner's `Won` pile
+  - empty stacks can recycle `Won` cards when the rules allow it
+- `Won` piles show face-down card backs and no active-card outline.
+- Brisca Lite has a combined stock/trump table presentation.
+- Card movement, collection, reveal, shuffle, and procedural SFX are separated from game rules.
 
 ## Frozen
 

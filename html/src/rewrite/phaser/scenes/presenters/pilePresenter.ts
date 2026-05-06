@@ -65,6 +65,9 @@ export interface SupplementalPileVisual {
 export interface PrimaryPileVisuals {
     drawPileFrame: Phaser.GameObjects.Rectangle;
     drawPileTitle: Phaser.GameObjects.Text;
+    drawCard: Phaser.GameObjects.Container;
+    drawCardImage: Phaser.GameObjects.Image;
+    drawCardOutline: Phaser.GameObjects.Rectangle;
     deckText: Phaser.GameObjects.Text;
     discardPileFrame: Phaser.GameObjects.Rectangle;
     discardPileTitle: Phaser.GameObjects.Text;
@@ -155,14 +158,15 @@ function getPilePresentation(pile: CardGameViewPile): NonNullable<CardGameViewPi
 function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisuals): void {
     const primaryPile = getPrimaryPile(viewModel);
     const secondaryPile = getSecondaryPile(viewModel);
+    const showTrumpWithDrawPile = secondaryPile?.role === "trump";
     const showSecondaryTitle = !(viewModel.tableCards.length > 0 && secondaryPile?.role === "discard");
     const showPrimaryPile = Boolean(primaryPile) || viewModel.drawPileLabel.length > 0;
-    const showSecondaryPile = Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0;
+    const showSecondaryPile = !showTrumpWithDrawPile && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
 
     visuals.drawPileTitle.setText(primaryPile?.label ?? "Draw Pile");
     visuals.deckText.setText(primaryPile?.countLabel ?? viewModel.drawPileLabel);
-    visuals.drawPileFrame.setVisible(showPrimaryPile);
-    visuals.drawPileTitle.setVisible(showPrimaryPile);
+    visuals.drawPileFrame.setVisible(showPrimaryPile && !showTrumpWithDrawPile);
+    visuals.drawPileTitle.setVisible(showPrimaryPile && !showTrumpWithDrawPile);
     visuals.deckText.setVisible(showPrimaryPile);
 
     visuals.discardPileTitle.setText(secondaryPile?.label ?? "Discard");
@@ -170,6 +174,24 @@ function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisua
     visuals.discardPileTitle.setVisible(showSecondaryTitle && showSecondaryPile);
     visuals.discardText.setText(secondaryPile?.countLabel ?? viewModel.discardPileLabel);
     visuals.discardText.setVisible(showSecondaryPile);
+}
+
+function syncDrawPileCard(
+    viewModel: CardGameViewModel,
+    visuals: PrimaryPileVisuals,
+    textureApi: Pick<CardTextureApi, "applyCardBackTexture">
+): void {
+    const primaryPile = getPrimaryPile(viewModel);
+    const showDrawDeck = Boolean(primaryPile && primaryPile.cardCount > 0);
+
+    if (!showDrawDeck) {
+        visuals.drawCard.setVisible(false);
+        return;
+    }
+
+    textureApi.applyCardBackTexture(visuals.drawCardImage);
+    visuals.drawCardOutline.setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
+    visuals.drawCard.setVisible(true);
 }
 
 function syncDiscardPileCard(
@@ -230,6 +252,13 @@ export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisual
         ...pileStyle,
         fontSize: "24px"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
+    const drawCardImage = scene.add.image(0, 0, "__MISSING");
+    setCardImageDisplaySize(drawCardImage, DISCARD_CARD_WIDTH, DISCARD_CARD_HEIGHT);
+    const drawCardOutline = scene.add.rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
+        .setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
+    const drawCard = scene.add.container(TABLE_CENTER_X, 184, [drawCardImage, drawCardOutline])
+        .setDepth(62)
+        .setVisible(false);
 
     const discardPileFrame = scene.add.rectangle(
         TABLE_CENTER_X,
@@ -256,6 +285,9 @@ export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisual
     return {
         drawPileFrame,
         drawPileTitle,
+        drawCard,
+        drawCardImage,
+        drawCardOutline,
         deckText,
         discardPileFrame,
         discardPileTitle,
@@ -367,31 +399,50 @@ export function createSupplementalPileVisual(
 export function syncPrimaryPilePresentation(input: PrimaryPilePresentationInput): void {
     const { playerCount, viewModel, visuals, textureApi } = input;
     const layout = getPrimaryPileLayout(playerCount);
+    const secondaryPile = getSecondaryPile(viewModel);
+    const showTrumpWithDrawPile = secondaryPile?.role === "trump";
+    const drawCenterY = showTrumpWithDrawPile
+        ? TABLE_CENTER_Y
+        : layout.drawCenterY;
 
     visuals.drawPileFrame
-        .setPosition(TABLE_CENTER_X, layout.drawCenterY)
+        .setPosition(TABLE_CENTER_X, drawCenterY)
         .setSize(layout.frameWidth, layout.frameHeight);
     visuals.drawPileTitle
-        .setPosition(TABLE_CENTER_X, layout.drawCenterY - layout.drawTitleOffsetY)
+        .setPosition(TABLE_CENTER_X, drawCenterY - layout.drawTitleOffsetY)
         .setFontSize(`${layout.titleFontSize}px`);
     visuals.deckText
-        .setPosition(TABLE_CENTER_X, layout.drawCenterY)
-        .setFontSize(`${layout.deckCountFontSize}px`);
+        .setPosition(TABLE_CENTER_X, drawCenterY + layout.discardTextOffsetY)
+        .setFontSize(`${showTrumpWithDrawPile ? Math.round(layout.deckCountFontSize * 0.5) : layout.deckCountFontSize}px`);
+    visuals.drawCard.setPosition(TABLE_CENTER_X, drawCenterY);
+    visuals.drawCard.setDepth(showTrumpWithDrawPile ? 62 : 60);
+    textureApi.setCardDisplaySize(visuals.drawCardImage, layout.discardCardWidth, layout.discardCardHeight);
+    visuals.drawCardOutline.setSize(layout.discardCardWidth + 4, layout.discardCardHeight + 4);
 
+    const discardCenterY = showTrumpWithDrawPile
+        ? drawCenterY
+        : layout.discardCenterY;
+    const discardCenterX = showTrumpWithDrawPile
+        ? TABLE_CENTER_X - Math.round(layout.discardCardHeight * 0.34)
+        : TABLE_CENTER_X;
     visuals.discardPileFrame
-        .setPosition(TABLE_CENTER_X, layout.discardCenterY)
+        .setPosition(discardCenterX, discardCenterY)
         .setSize(layout.frameWidth, layout.frameHeight);
     visuals.discardPileTitle
-        .setPosition(TABLE_CENTER_X, layout.discardCenterY - layout.discardTitleOffsetY)
+        .setPosition(discardCenterX, discardCenterY - layout.discardTitleOffsetY)
         .setFontSize(`${layout.titleFontSize}px`);
     visuals.discardText
-        .setPosition(TABLE_CENTER_X, layout.discardCenterY + layout.discardTextOffsetY)
+        .setPosition(discardCenterX, discardCenterY + layout.discardTextOffsetY)
         .setFontSize(`${layout.countFontSize}px`);
-    visuals.discardCard.setPosition(TABLE_CENTER_X, layout.discardCenterY);
+    visuals.discardCard
+        .setPosition(discardCenterX, discardCenterY)
+        .setAngle(showTrumpWithDrawPile ? 90 : 0)
+        .setDepth(showTrumpWithDrawPile ? 58 : 60);
     textureApi.setCardDisplaySize(visuals.discardCardImage, layout.discardCardWidth, layout.discardCardHeight);
     visuals.discardCardOutline.setSize(layout.discardCardWidth + 4, layout.discardCardHeight + 4);
 
     syncPileSummary(viewModel, visuals);
+    syncDrawPileCard(viewModel, visuals, textureApi);
     syncDiscardPileCard(viewModel, visuals, textureApi);
 }
 
@@ -456,26 +507,18 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         });
 
         if (pile.topCard) {
-            textureApi.applyCardTexture(visual.image, pile.topCard, "compact");
+            textureApi.applyCardBackTexture(visual.image);
             visual.image.setAlpha(1);
             visual.image.setVisible(true);
-            visual.outline.setVisible(true);
-            visual.outline.setStrokeStyle(
-                2,
-                owner?.isRoundWinner ? 0xffd166 : (pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE),
-                0.9
-            );
+            visual.outline.setVisible(false);
+            visual.outline.setAlpha(0);
         } else {
             const shouldShowEmptyStack = pile.cardCount > 0 || presentation === "hidden-stack";
             textureApi.applyCardBackTexture(visual.image);
             visual.image.setVisible(shouldShowEmptyStack);
-            visual.outline.setVisible(shouldShowEmptyStack);
             visual.image.setAlpha(shouldShowEmptyStack ? 0.96 : 0);
-            visual.outline.setStrokeStyle(
-                2,
-                owner?.isRoundWinner ? 0xffd166 : (pile.cardCount > 0 ? CARD_BACK_STROKE : 0x355449),
-                0.9
-            );
+            visual.outline.setVisible(false);
+            visual.outline.setAlpha(0);
         }
     });
 }

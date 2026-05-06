@@ -15,6 +15,7 @@ import {
     prepareCollectedCardGhostTexture,
     prepareCardMoveGhostTexture
 } from "../animations/cardStackAnimations";
+import { playCardFlipSound, playCardMoveSound } from "../audio/cardSoundEffects";
 import type { PrimaryPileVisuals } from "./pilePresenter";
 import type { OwnedPileVisual } from "./pilePresenter";
 import type { HandSlotVisual } from "./handPresenter";
@@ -43,6 +44,10 @@ interface EffectPresentationInput {
 
 function getEffectBatchKey(effects: readonly CardGameEffect[]): string {
     return effects.map((effect) => effect.key).join("|");
+}
+
+function isMoveCardEffect(effect: CardGameEffect): effect is MoveCardEffect {
+    return effect.type === "move-card";
 }
 
 function getEffectProfile(reason: CardGameEffectReason): {
@@ -83,7 +88,7 @@ function getEffectProfile(reason: CardGameEffectReason): {
     }
 }
 
-function getEffectDelays(effects: readonly CardGameEffect[]): number[] {
+function getEffectDelays(effects: readonly MoveCardEffect[]): number[] {
     const delays: number[] = [];
     let groupStartDelay = 0;
     let groupReason: CardGameEffectReason | null = null;
@@ -112,12 +117,12 @@ function getEffectDelays(effects: readonly CardGameEffect[]): number[] {
 }
 
 function getTableMoveVisual(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     viewModel: CardGameViewModel;
     tableCardVisuals: readonly TableCardVisual[];
 }): TableCardVisual | null {
     const { effect, viewModel, tableCardVisuals } = input;
-    if (effect.type !== "move-card" || !(viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
+    if (!(viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
         return null;
     }
 
@@ -126,12 +131,12 @@ function getTableMoveVisual(input: {
 }
 
 function getSourceTableMoveVisual(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     viewModel: CardGameViewModel;
     tableCardVisuals: readonly TableCardVisual[];
 }): TableCardVisual | null {
     const { effect, viewModel, tableCardVisuals } = input;
-    if (effect.type !== "move-card" || !(viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
+    if (!(viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
         return null;
     }
 
@@ -140,11 +145,11 @@ function getSourceTableMoveVisual(input: {
 }
 
 function getEffectTableCardIndex(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     viewModel: CardGameViewModel;
 }): number | null {
     const { effect, viewModel } = input;
-    if (effect.type !== "move-card" || viewModel.tableCards.length === 0) {
+    if (viewModel.tableCards.length === 0) {
         return null;
     }
 
@@ -168,7 +173,7 @@ function getEffectTableCardIndex(input: {
 }
 
 function getEffectTableCardPoint(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     viewModel: CardGameViewModel;
 }): { x: number; y: number; angle: number } | null {
     const tableCardIndex = getEffectTableCardIndex(input);
@@ -185,13 +190,13 @@ function getEffectTableCardPoint(input: {
 }
 
 function getSourcePoint(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
 }): { x: number; y: number } | null {
     const { effect, viewModel, primaryPileVisuals, handSlots } = input;
-    if (effect.type === "move-card" && effect.fromOwnerId) {
+    if (effect.fromOwnerId) {
         const slots = handSlots.get(effect.fromOwnerId);
         const sourceSlot = slots?.[effect.fromIndex ?? 0];
         if (sourceSlot) {
@@ -202,14 +207,14 @@ function getSourcePoint(input: {
         }
     }
 
-    if (effect.type === "move-card" && effect.fromPileId === "stock") {
+    if (effect.fromPileId === "stock") {
         return {
             x: primaryPileVisuals.drawPileFrame.x,
             y: primaryPileVisuals.drawPileFrame.y
         };
     }
 
-    if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
+    if ((viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
         const visibleTablePoint = getEffectTableCardPoint({ effect, viewModel });
         if (visibleTablePoint) {
             return {
@@ -225,22 +230,18 @@ function getSourcePoint(input: {
         };
     }
 
-    if (effect.type === "move-card") {
-        return {
-            x: primaryPileVisuals.discardPileFrame.x,
-            y: primaryPileVisuals.discardPileFrame.y
-        };
-    }
-
-    return null;
+    return {
+        x: primaryPileVisuals.discardPileFrame.x,
+        y: primaryPileVisuals.discardPileFrame.y
+    };
 }
 
 function getDestinationSlot(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     handSlots: Map<string, HandSlotVisual[]>;
 }): HandSlotVisual | null {
     const { effect, handSlots } = input;
-    if (effect.type !== "move-card" || !effect.toOwnerId) {
+    if (!effect.toOwnerId) {
         return null;
     }
 
@@ -249,7 +250,7 @@ function getDestinationSlot(input: {
 }
 
 function getDestinationPoint(input: {
-    effect: CardGameEffect;
+    effect: MoveCardEffect;
     viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
@@ -274,7 +275,7 @@ function getDestinationPoint(input: {
         };
     }
 
-    if (effect.type === "move-card" && (viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
+    if ((viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
         const visibleTablePoint = getEffectTableCardPoint({ effect, viewModel });
         if (visibleTablePoint) {
             return {
@@ -293,7 +294,7 @@ function getDestinationPoint(input: {
         };
     }
 
-    if (effect.type === "move-card" && effect.toPileId !== "stock") {
+    if (effect.toPileId !== "stock") {
         return {
             x: primaryPileVisuals.discardPileFrame.x,
             y: primaryPileVisuals.discardPileFrame.y,
@@ -423,6 +424,9 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
         scene,
         items: collectItems,
         textureApi,
+        onCardLanded: (item) => {
+            playCardMoveSound(scene, item.effect.reason);
+        },
         onComplete: () => {
             destinationPileVisuals.forEach((visual) => {
                 restoreOwnedPileCardLayersAlpha(visual);
@@ -446,7 +450,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
         textureApi,
         onEffectsDone
     } = input;
-    const effects = viewModel.effects.filter((effect) => effect.type === "move-card");
+    const effects = viewModel.effects.filter(isMoveCardEffect);
     if (effects.length === 0) {
         return "";
     }
@@ -456,7 +460,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
         return activeEffectBatchKey;
     }
 
-    if (effects.every((effect) => effect.type === "move-card" && effect.reason === "collect")) {
+    if (effects.every((effect) => effect.reason === "collect")) {
         return runCollectEffects(input, effects);
     }
 
@@ -518,6 +522,12 @@ export function runViewEffects(input: EffectPresentationInput): string {
                 peakScale: profile.peakScale
             },
             textureApi,
+            onLanded: () => {
+                playCardMoveSound(scene, effect.reason);
+            },
+            onReveal: () => {
+                playCardFlipSound(scene);
+            },
             onComplete: () => {
                 destinationVisual?.container.setAlpha(1);
                 ghost.destroy();
