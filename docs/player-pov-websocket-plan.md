@@ -153,7 +153,7 @@ This is important for hidden information. The server should not send the raw gam
 5. Add a player page with a player dropdown.
 6. Add `viewerId` support to view-model factories.
 7. Render the player page in a Phaser mobile-proportioned frame.
-8. Route player actions through the server with legal-move validation.
+8. Route player actions through the server with legal-move validation. Initial server-side validation added.
 9. Add hidden-information behavior per game where needed.
 10. Add smoke tests for session sync and player-specific views.
 
@@ -189,6 +189,7 @@ Added a standalone rewrite WebSocket backend that can be run separately from the
   - `npm run serve:rewrite-ws`
 
 The backend currently owns one in-memory session and broadcasts `session-view` messages to connected clients. The existing `rewrite.html` admin UI still uses the local browser session until the next migration step.
+Player-originated `game-event` messages are validated against the selected player's server-generated POV before reaching the actor. Admin/table messages use `playerId: null` and can still send table-control events such as animation completion and restart.
 
 ## Current Project Structure Direction
 

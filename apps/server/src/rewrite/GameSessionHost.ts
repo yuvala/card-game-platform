@@ -25,6 +25,11 @@ export interface RewriteSessionHostOptions {
     cardsPerPlayer?: number;
 }
 
+export interface RewriteClientEventResult {
+    ok: boolean;
+    message?: string;
+}
+
 export class RewriteGameSessionHost {
     readonly sessionId: string;
     private entry: AnyGameCatalogEntry;
@@ -59,6 +64,21 @@ export class RewriteGameSessionHost {
 
     send(event: CardGameEvent): void {
         this.session.send(event);
+    }
+
+    sendClientEvent(playerId: string | null | undefined, event: CardGameEvent): RewriteClientEventResult {
+        if (!playerId) {
+            this.session.send(event);
+            return { ok: true };
+        }
+
+        const validation = this.validatePlayerEvent(playerId, event);
+        if (!validation.ok) {
+            return validation;
+        }
+
+        this.session.send(event);
+        return { ok: true };
     }
 
     getSessionView(viewerId: string | null): RewriteServerMessage {
@@ -117,6 +137,56 @@ export class RewriteGameSessionHost {
         this.listeners.forEach((listener) => {
             listener();
         });
+    }
+
+    private validatePlayerEvent(playerId: string, event: CardGameEvent): RewriteClientEventResult {
+        const viewModel = this.session.getViewModel(playerId);
+        const player = viewModel.players.find((candidate) => candidate.id === playerId);
+        if (!player) {
+            return {
+                ok: false,
+                message: "Unknown player for this session."
+            };
+        }
+
+        switch (event.type) {
+            case "SELECT_CARD": {
+                const selectedCard = player.hand.find((card) => card.id === event.cardId);
+                if (
+                    !player.canInteract ||
+                    !selectedCard?.isFaceUp ||
+                    player.cardClickAction === "play"
+                ) {
+                    return {
+                        ok: false,
+                        message: "Player cannot select that card now."
+                    };
+                }
+
+                return { ok: true };
+            }
+            case "PLAY_CARD":
+                if (!viewModel.controls.canPlay || viewModel.primaryAction?.eventType !== "PLAY_CARD") {
+                    return {
+                        ok: false,
+                        message: "Player cannot play now."
+                    };
+                }
+
+                return { ok: true };
+            case "START":
+            case "RESTART":
+            case "ANIMATION_DONE":
+                return {
+                    ok: false,
+                    message: "Only the admin table can send table control events."
+                };
+            default:
+                return {
+                    ok: false,
+                    message: "Unsupported player event."
+                };
+        }
     }
 }
 

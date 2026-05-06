@@ -97,7 +97,12 @@ function handleClientMessage(client: RewriteClient, message: RewriteClientMessag
             gameHost.configure(message.config);
             return;
         case "game-event":
-            gameHost.send(message.event);
+            {
+                const result = gameHost.sendClientEvent(message.playerId, message.event);
+                if (!result.ok) {
+                    sendError(client, result.message ?? "Illegal player event.");
+                }
+            }
             return;
     }
 }
