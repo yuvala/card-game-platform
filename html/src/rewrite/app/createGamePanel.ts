@@ -1,5 +1,5 @@
-import type { SupportedDeckId } from "../engine/cards/deckDefinitions";
-import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "../engine/game/catalog";
+import type { SupportedDeckId } from "@rewrite-core/engine/cards/deckDefinitions";
+import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "@rewrite-core/engine/game/catalog";
 
 export interface RewriteGameSelection {
     gameId: string;

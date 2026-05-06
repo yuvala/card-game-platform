@@ -4,7 +4,7 @@ import type {
     CardGameViewCard,
     CardGameViewHandPresentation,
     CardGameViewModel
-} from "../../../engine/game/viewModel";
+} from "@rewrite-core/engine/game/viewModel";
 import { CARD_BACK_STROKE, PLAYER_ZONE_LEFT_X, PLAYER_ZONE_RIGHT_X } from "../layout/constants";
 import { getHandSlotDisplayStates } from "../layout/handLayouts";
 import type { HandSlotOrigin } from "../layout/types";

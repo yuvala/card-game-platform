@@ -11,13 +11,16 @@
     "skipLibCheck": true,
     "types": ["node"],
     "outDir": ".tmp-rewrite-server",
-    "rootDir": "."
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@rewrite-core": ["packages/rewrite-core/src/index.ts"],
+      "@rewrite-core/*": ["packages/rewrite-core/src/*"]
+    }
   },
   "include": [
     "apps/server/**/*.ts",
     "packages/**/*.ts",
-    "html/src/rewrite/engine/**/*.ts",
-    "html/src/rewrite/games/**/*.ts",
     "html/data/**/*.json"
   ]
 }

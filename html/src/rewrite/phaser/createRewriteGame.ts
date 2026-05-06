@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 
-import type { CardGameSession } from "../engine/game/session";
+import type { CardGameSession } from "@rewrite-core/engine/game/session";
 import { HUD_WIDTH, REWRITE_HEIGHT, REWRITE_WIDTH } from "./layout";
 import { BootScene } from "./scenes/BootScene";
 import { TableScene } from "./scenes/TableScene";

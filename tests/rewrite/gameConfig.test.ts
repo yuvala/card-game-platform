@@ -1,5 +1,5 @@
-import { createConfiguredPiles, defineCardGameConfig } from "../../html/src/rewrite/engine/game/config";
-import type { CardGamePlayer } from "../../html/src/rewrite/engine/game/types";
+import { createConfiguredPiles, defineCardGameConfig } from "@rewrite-core/engine/game/config";
+import type { CardGamePlayer } from "@rewrite-core/engine/game/types";
 
 interface TestCard {
     id: string;

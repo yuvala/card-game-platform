@@ -6,7 +6,7 @@ const repoRoot = path.resolve(__dirname, "..");
 const outDir = path.join(repoRoot, ".tmp-rewrite-tests");
 const isWindows = process.platform === "win32";
 const tscPath = path.join(repoRoot, "node_modules", ".bin", isWindows ? "tsc.cmd" : "tsc");
-
+const aliasResolverPath = path.join(repoRoot, "scripts", "resolve-rewrite-core-aliases.cjs");
 const testEntries = [
     "tests/rewrite/piles.test.ts",
     "tests/rewrite/gameConfig.test.ts",
@@ -40,25 +40,8 @@ try {
         force: true
     });
 
-    run(tscPath, [
-        "--ignoreConfig",
-        "--target",
-        "ES2020",
-        "--module",
-        "commonjs",
-        "--moduleResolution",
-        "node",
-        "--ignoreDeprecations",
-        "6.0",
-        "--esModuleInterop",
-        "--resolveJsonModule",
-        "--skipLibCheck",
-        "--outDir",
-        outDir,
-        "--rootDir",
-        ".",
-        ...testEntries
-    ]);
+    run(tscPath, ["-p", "tsconfig.rewrite-tests.json"]);
+    run(process.execPath, [aliasResolverPath, outDir]);
 
     for (const entry of testEntries) {
         const compiledPath = path.join(

@@ -60,29 +60,29 @@ Each game brings its own rulebook.
 
 Current rewrite code is split into these areas:
 
-- `html/src/rewrite/engine/cards/`
+- `packages/rewrite-core/src/engine/cards/`
   Generic card and deck support.
-- `html/src/rewrite/engine/game/types.ts`
+- `packages/rewrite-core/src/engine/game/types.ts`
   Base session, player, turn, options, and event types.
-- `html/src/rewrite/engine/game/definition.ts`
+- `packages/rewrite-core/src/engine/game/definition.ts`
   The generic game contract used by concrete games.
-- `html/src/rewrite/engine/game/config.ts`
+- `packages/rewrite-core/src/engine/game/config.ts`
   Shared game config and pile config helpers.
-- `html/src/rewrite/engine/game/piles.ts`
+- `packages/rewrite-core/src/engine/game/piles.ts`
   Generic pile helpers such as create, move, draw, append, and clear.
-- `html/src/rewrite/engine/game/machineFactory.ts`
+- `packages/rewrite-core/src/engine/game/machineFactory.ts`
   Shared `XState` shell for the common card-game runtime flow.
-- `html/src/rewrite/engine/game/viewModel.ts`
+- `packages/rewrite-core/src/engine/game/viewModel.ts`
   Generic actor and view model contracts used by the UI.
-- `html/src/rewrite/engine/game/catalog.ts`
+- `packages/rewrite-core/src/engine/game/catalog.ts`
   Shared catalog metadata and runtime entry contract.
-- `html/src/rewrite/games/pokerLite/`
+- `packages/rewrite-core/src/games/pokerLite/`
   Concrete game implementation.
-- `html/src/rewrite/games/warLite/`
+- `packages/rewrite-core/src/games/warLite/`
   Concrete game implementation.
-- `html/src/rewrite/games/briscaLite/`
+- `packages/rewrite-core/src/games/briscaLite/`
   Concrete game implementation.
-- `html/src/rewrite/games/catalog.ts`
+- `packages/rewrite-core/src/games/catalog.ts`
   Registration of currently available games.
 - `html/src/rewrite/phaser/`
   Generic `Phaser` scenes and game bootstrap.
@@ -214,7 +214,7 @@ If a rule only makes sense for one family of games, it should not be pushed into
 
 Each game should own its own module under:
 
-- `html/src/rewrite/games/<game-name>/`
+- `packages/rewrite-core/src/games/<game-name>/`
 
 Recommended files:
 
@@ -244,16 +244,16 @@ Expected responsibilities:
 
 The generic game contract now lives at:
 
-- `html/src/rewrite/engine/game/definition.ts`
+- `packages/rewrite-core/src/engine/game/definition.ts`
 
 Concrete games implement it through files such as:
 
-- `html/src/rewrite/games/pokerLite/config.ts`
-- `html/src/rewrite/games/pokerLite/definition.ts`
-- `html/src/rewrite/games/warLite/config.ts`
-- `html/src/rewrite/games/warLite/definition.ts`
-- `html/src/rewrite/games/briscaLite/config.ts`
-- `html/src/rewrite/games/briscaLite/definition.ts`
+- `packages/rewrite-core/src/games/pokerLite/config.ts`
+- `packages/rewrite-core/src/games/pokerLite/definition.ts`
+- `packages/rewrite-core/src/games/warLite/config.ts`
+- `packages/rewrite-core/src/games/warLite/definition.ts`
+- `packages/rewrite-core/src/games/briscaLite/config.ts`
+- `packages/rewrite-core/src/games/briscaLite/definition.ts`
 
 Example shape:
 
@@ -285,7 +285,7 @@ This lets the engine ask a game:
 
 The rewrite separates stable game metadata from rule execution through:
 
-- `html/src/rewrite/engine/game/config.ts`
+- `packages/rewrite-core/src/engine/game/config.ts`
 
 Each concrete game config defines:
 
@@ -426,7 +426,7 @@ The Phaser layer decides how to show it:
 
 Current effect types live in:
 
-- `html/src/rewrite/engine/game/effects.ts`
+- `packages/rewrite-core/src/engine/game/effects.ts`
 
 `move-card` is the implemented effect currently used by the games. The type system also reserves generic effect shapes for future presentation work:
 
@@ -485,7 +485,7 @@ Good rules for future sound work:
 
 The rewrite also now uses:
 
-- `html/src/rewrite/engine/game/machineFactory.ts`
+- `packages/rewrite-core/src/engine/game/machineFactory.ts`
 
 This file holds the shared `XState` shell for the common runtime flow:
 

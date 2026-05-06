@@ -1,12 +1,12 @@
 import type Phaser from "phaser";
 
-import { createDeck } from "../../engine/cards/createDeck";
-import type { CardInstance, DeckDefinition } from "../../engine/cards/types";
+import { createDeck } from "@rewrite-core/engine/cards/createDeck";
+import type { CardInstance, DeckDefinition } from "@rewrite-core/engine/cards/types";
 import type {
     CardSkinDefinition,
     CardSuitAppearance,
     SuitEmblemKind
-} from "../../engine/cards/skinPacks";
+} from "@rewrite-core/engine/cards/skinPacks";
 
 const TEXTURE_WIDTH = 180;
 const TEXTURE_HEIGHT = 264;

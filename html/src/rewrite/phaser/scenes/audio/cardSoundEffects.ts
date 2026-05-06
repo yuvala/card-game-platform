@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 
-import type { CardGameEffectReason } from "../../../engine/game/effects";
+import type { CardGameEffectReason } from "@rewrite-core/engine/game/effects";
 
 type AudioWindow = Window & typeof globalThis & {
     webkitAudioContext?: typeof AudioContext;

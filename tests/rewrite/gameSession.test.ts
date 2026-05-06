@@ -1,6 +1,6 @@
-import { supportedDeckDefinitions } from "../../html/src/rewrite/engine/cards/deckDefinitions";
-import { createLocalGameSession } from "../../html/src/rewrite/engine/game/session";
-import { gameCatalog } from "../../html/src/rewrite/games/catalog";
+import { supportedDeckDefinitions } from "@rewrite-core/engine/cards/deckDefinitions";
+import { createLocalGameSession } from "@rewrite-core/engine/game/session";
+import { gameCatalog } from "@rewrite-core/games/catalog";
 
 function assert(condition: unknown, message: string): asserts condition {
     if (!condition) {

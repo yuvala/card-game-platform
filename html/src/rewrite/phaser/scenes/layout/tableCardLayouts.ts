@@ -1,6 +1,6 @@
 import { TABLE_CENTER_X, TABLE_CENTER_Y } from "../../layout";
 
-import type { CardGameViewPlayer, CardGameViewTableCard } from "../../../engine/game/viewModel";
+import type { CardGameViewPlayer, CardGameViewTableCard } from "@rewrite-core/engine/game/viewModel";
 import { getSeatLayouts } from "./seatLayouts";
 import type { ScenePoint } from "./types";
 

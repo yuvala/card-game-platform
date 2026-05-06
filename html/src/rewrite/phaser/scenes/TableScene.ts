@@ -1,14 +1,14 @@
 import * as Phaser from "phaser";
 
-import { supportedDeckDefinitions } from "../../engine/cards/deckDefinitions";
-import { getCardSkinById } from "../../engine/cards/skinPacks";
-import type { CardGameSession } from "../../engine/game/session";
+import { supportedDeckDefinitions } from "@rewrite-core/engine/cards/deckDefinitions";
+import { getCardSkinById } from "@rewrite-core/engine/cards/skinPacks";
+import type { CardGameSession } from "@rewrite-core/engine/game/session";
 import type {
     CardGameViewCard,
     CardGameViewPile,
     CardGameViewTableCard,
     CardGameViewModel
-} from "../../engine/game/viewModel";
+} from "@rewrite-core/engine/game/viewModel";
 import {
     ensureDeckTextures,
     getCardBackTextureKey,

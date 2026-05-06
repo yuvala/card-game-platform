@@ -5,7 +5,7 @@ import type {
     CardGameViewModel,
     CardGameViewPile,
     CardGameViewTableCard
-} from "../../../engine/game/viewModel";
+} from "@rewrite-core/engine/game/viewModel";
 import { TABLE_CENTER_X, TABLE_CENTER_Y } from "../../layout";
 import {
     CARD_BACK_STROKE,

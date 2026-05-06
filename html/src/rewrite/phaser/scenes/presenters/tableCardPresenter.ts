@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 
-import type { CardGameViewCard, CardGameViewModel, CardGameViewTableCard } from "../../../engine/game/viewModel";
+import type { CardGameViewCard, CardGameViewModel, CardGameViewTableCard } from "@rewrite-core/engine/game/viewModel";
 import { TABLE_CENTER_X } from "../../layout";
 import { CARD_BACK_STROKE, TABLE_CARD_HEIGHT, TABLE_CARD_WIDTH } from "../layout/constants";
 import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../layout/tableCardLayouts";

@@ -1,8 +1,8 @@
 import * as Phaser from "phaser";
 
-import { isMoveCardEffect, type CardGameEffect, type MoveCardEffect } from "../../../engine/game/effects";
-import type { CardGameEffectReason } from "../../../engine/game/effects";
-import type { CardGameViewCard, CardGameViewModel } from "../../../engine/game/viewModel";
+import { isMoveCardEffect, type CardGameEffect, type MoveCardEffect } from "@rewrite-core/engine/game/effects";
+import type { CardGameEffectReason } from "@rewrite-core/engine/game/effects";
+import type { CardGameViewCard, CardGameViewModel } from "@rewrite-core/engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
 import { getTableCardDisplayState, getTableCardPosition } from "../layout/tableCardLayouts";
 import {

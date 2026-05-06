@@ -11,7 +11,7 @@
     "test-rewrite": "\"%npm_node_execpath%\" .\\scripts\\run-rewrite-tests.cjs",
     "smoke:rewrite": "node .\\scripts\\smoke-rewrite.cjs",
     "build:rewrite-server": "tsc -p tsconfig.server.json --noEmit",
-    "serve:rewrite-ws": "tsc -p tsconfig.server.json && node .tmp-rewrite-server/apps/server/src/rewrite/rewriteServer.js",
+    "serve:rewrite-ws": "tsc -p tsconfig.server.json && node .\\scripts\\resolve-rewrite-core-aliases.cjs .tmp-rewrite-server && node .tmp-rewrite-server/apps/server/src/rewrite/rewriteServer.js",
     "preview": "vite preview --config vite.config.js",
     "serve:legacy": "node node.js/server.js"
   },

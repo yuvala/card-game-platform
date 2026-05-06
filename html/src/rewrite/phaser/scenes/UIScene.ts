@@ -1,9 +1,9 @@
 import * as Phaser from "phaser";
 
-import type { CardGameSession } from "../../engine/game/session";
+import type { CardGameSession } from "@rewrite-core/engine/game/session";
 import type {
     CardGameViewModel
-} from "../../engine/game/viewModel";
+} from "@rewrite-core/engine/game/viewModel";
 import { HUD_WIDTH, HUD_X, REWRITE_HEIGHT } from "../layout";
 import {
     TABLE_CREAM,

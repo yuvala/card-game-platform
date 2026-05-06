@@ -1,4 +1,4 @@
-import { createRemoteGameSession, type RemoteGameSession } from "./engine/session/remoteSession";
+import { createRemoteGameSession, type RemoteGameSession } from "./session/remoteSession";
 import { createRewriteGame } from "./phaser/createRewriteGame";
 
 const playerRootElement = document.getElementById("player-root");

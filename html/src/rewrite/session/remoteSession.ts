@@ -1,12 +1,12 @@
-import type { CardGameSession } from "../game/session";
-import type { CardGameEvent } from "../game/types";
-import type { CardGameViewModel } from "../game/viewModel";
+import type { CardGameSession } from "@rewrite-core/engine/game/session";
+import type { CardGameEvent } from "@rewrite-core/engine/game/types";
+import type { CardGameViewModel } from "@rewrite-core/engine/game/viewModel";
 import {
     isRewriteServerMessage,
     type SessionPlayerSummary,
     type RewriteClientMessage,
     type RewriteServerMessage
-} from "../../../../../packages/rewrite-core/src/session/protocol";
+} from "@rewrite-core/session/protocol";
 
 interface RemoteGameSessionInput {
     url: string;
@@ -74,7 +74,7 @@ function createConnectedRemoteGameSession(
         send: (event: CardGameEvent) => {
             sendClientMessage(socket, {
                 type: "game-event",
-            playerId: activeViewerId,
+                playerId: activeViewerId,
                 event
             });
         },

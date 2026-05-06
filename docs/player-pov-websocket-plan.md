@@ -193,6 +193,8 @@ apps/
 packages/
   rewrite-core/
     src/session/protocol.ts
+    src/engine/
+    src/games/
 
 html/
   player.html
@@ -200,7 +202,17 @@ html/
   src/rewrite/
 ```
 
-Only the protocol has moved into `packages/rewrite-core` so far. The game engine and game definitions still live under `html/src/rewrite` until a separate low-risk refactor moves them.
+The protocol, game engine, and game definitions now live under `packages/rewrite-core`. Browser-only code such as Phaser rendering, setup panels, and WebSocket client adapters still lives under `html/src/rewrite`.
+
+Imports should use the `@rewrite-core` alias instead of long relative paths:
+
+```ts
+import { createLocalGameSession } from "@rewrite-core/engine/game/session";
+import { gameCatalogEntries } from "@rewrite-core/games/catalog";
+import type { RewriteClientMessage } from "@rewrite-core/session/protocol";
+```
+
+The Vite build, server TypeScript build, and rewrite test runner all resolve this alias.
 
 ## Current Admin WebSocket Slice
 

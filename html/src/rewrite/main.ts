@@ -1,13 +1,13 @@
 import playersData from "../../data/players.json";
-import { supportedDeckDefinitions } from "./engine/cards/deckDefinitions";
-import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "./engine/game/catalog";
-import { createLocalGameSession, type CardGameSession } from "./engine/game/session";
-import { createRemoteGameSession } from "./engine/session/remoteSession";
+import { supportedDeckDefinitions } from "@rewrite-core/engine/cards/deckDefinitions";
+import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "@rewrite-core/engine/game/catalog";
+import { createLocalGameSession, type CardGameSession } from "@rewrite-core/engine/game/session";
+import { createRemoteGameSession } from "./session/remoteSession";
 import {
     DEFAULT_GAME_ID,
     gameCatalogEntries,
     getGameCatalogEntryById
-} from "./games/catalog";
+} from "@rewrite-core/games/catalog";
 import { createGamePanel, type RewriteGameSelection } from "./app/createGamePanel";
 import { getRewriteDebugScenarioById, type RewriteDebugScenario } from "./app/debugScenarios";
 import { createRewriteGame } from "./phaser/createRewriteGame";

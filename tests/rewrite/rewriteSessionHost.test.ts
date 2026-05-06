@@ -1,5 +1,5 @@
 import { RewriteGameSessionHost } from "../../apps/server/src/rewrite/GameSessionHost";
-import type { CardGameViewModel } from "../../html/src/rewrite/engine/game/viewModel";
+import type { CardGameViewModel } from "@rewrite-core/engine/game/viewModel";
 
 function assert(condition: unknown, message: string): asserts condition {
     if (!condition) {

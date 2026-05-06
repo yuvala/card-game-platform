@@ -8,7 +8,7 @@ import {
     moveTopCardBetweenPiles,
     removeCardFromPile,
     setPileCards
-} from "../../html/src/rewrite/engine/game/piles";
+} from "@rewrite-core/engine/game/piles";
 
 interface TestCard {
     id: string;

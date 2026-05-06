@@ -3,6 +3,11 @@ const { defineConfig } = require("vite");
 
 module.exports = defineConfig({
     root: "html",
+    resolve: {
+        alias: {
+            "@rewrite-core": resolve(__dirname, "packages/rewrite-core/src")
+        }
+    },
     server: {
         host: "127.0.0.1",
         port: 8000

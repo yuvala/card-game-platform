@@ -1,12 +1,12 @@
 import { createActor } from "xstate";
 
-import { frenchDeckDefinition, spanishDeckDefinition } from "../../html/src/rewrite/engine/cards/deckDefinitions";
-import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
-import { getBriscaLiteViewModel } from "../../html/src/rewrite/games/briscaLite/viewModel";
-import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
-import { getPokerLiteViewModel } from "../../html/src/rewrite/games/pokerLite/viewModel";
-import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
-import { getWarLiteViewModel } from "../../html/src/rewrite/games/warLite/viewModel";
+import { frenchDeckDefinition, spanishDeckDefinition } from "@rewrite-core/engine/cards/deckDefinitions";
+import { createBriscaLiteMachine } from "@rewrite-core/games/briscaLite/machine";
+import { getBriscaLiteViewModel } from "@rewrite-core/games/briscaLite/viewModel";
+import { createPokerLiteMachine } from "@rewrite-core/games/pokerLite/machine";
+import { getPokerLiteViewModel } from "@rewrite-core/games/pokerLite/viewModel";
+import { createWarLiteMachine } from "@rewrite-core/games/warLite/machine";
+import { getWarLiteViewModel } from "@rewrite-core/games/warLite/viewModel";
 import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../../html/src/rewrite/phaser/scenes/layout/tableCardLayouts";
 
 declare const process: { exitCode?: number };

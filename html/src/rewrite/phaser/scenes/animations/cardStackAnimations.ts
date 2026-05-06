@@ -1,7 +1,7 @@
 import * as Phaser from "phaser";
 
-import type { MoveCardEffect } from "../../../engine/game/effects";
-import type { CardGameViewCard } from "../../../engine/game/viewModel";
+import type { MoveCardEffect } from "@rewrite-core/engine/game/effects";
+import type { CardGameViewCard } from "@rewrite-core/engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
 
 export interface CardAnimationPoint {

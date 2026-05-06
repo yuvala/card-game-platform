@@ -1,7 +1,7 @@
 import { createActor } from "xstate";
 
-import { frenchDeckDefinition } from "../../html/src/rewrite/engine/cards/deckDefinitions";
-import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
+import { frenchDeckDefinition } from "@rewrite-core/engine/cards/deckDefinitions";
+import { createWarLiteMachine } from "@rewrite-core/games/warLite/machine";
 import { getRewriteDebugScenarioById } from "../../html/src/rewrite/app/debugScenarios";
 
 declare const process: { exitCode?: number };

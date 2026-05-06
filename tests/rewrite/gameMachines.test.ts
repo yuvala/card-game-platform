@@ -3,22 +3,22 @@ import { createActor } from "xstate";
 import {
     frenchDeckDefinition,
     spanishDeckDefinition
-} from "../../html/src/rewrite/engine/cards/deckDefinitions";
-import { createDeck } from "../../html/src/rewrite/engine/cards/createDeck";
-import type { CardInstance, DeckDefinition } from "../../html/src/rewrite/engine/cards/types";
-import { isMoveCardEffect } from "../../html/src/rewrite/engine/game/effects";
-import { getPileCards, setPileCards } from "../../html/src/rewrite/engine/game/piles";
-import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
-import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
-import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "../../html/src/rewrite/games/briscaLite/types";
-import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/machine";
-import { getPokerLiteHandPileId } from "../../html/src/rewrite/games/pokerLite/types";
-import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
-import { warLiteGameDefinition } from "../../html/src/rewrite/games/warLite/definition";
-import { createInitialContext as createInitialWarLiteContext } from "../../html/src/rewrite/games/warLite/setup";
-import { recycleEmptyPlayerStacks } from "../../html/src/rewrite/games/warLite/rules";
-import { getWarLiteCapturePileId, getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
-import type { WarLiteContext } from "../../html/src/rewrite/games/warLite/types";
+} from "@rewrite-core/engine/cards/deckDefinitions";
+import { createDeck } from "@rewrite-core/engine/cards/createDeck";
+import type { CardInstance, DeckDefinition } from "@rewrite-core/engine/cards/types";
+import { isMoveCardEffect } from "@rewrite-core/engine/game/effects";
+import { getPileCards, setPileCards } from "@rewrite-core/engine/game/piles";
+import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "@rewrite-core/games/briscaLite/types";
+import { createBriscaLiteMachine } from "@rewrite-core/games/briscaLite/machine";
+import { getBriscaLiteCapturePileId, getBriscaLiteHandPileId } from "@rewrite-core/games/briscaLite/types";
+import { createPokerLiteMachine } from "@rewrite-core/games/pokerLite/machine";
+import { getPokerLiteHandPileId } from "@rewrite-core/games/pokerLite/types";
+import { createWarLiteMachine } from "@rewrite-core/games/warLite/machine";
+import { warLiteGameDefinition } from "@rewrite-core/games/warLite/definition";
+import { createInitialContext as createInitialWarLiteContext } from "@rewrite-core/games/warLite/setup";
+import { recycleEmptyPlayerStacks } from "@rewrite-core/games/warLite/rules";
+import { getWarLiteCapturePileId, getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "@rewrite-core/games/warLite/types";
+import type { WarLiteContext } from "@rewrite-core/games/warLite/types";
 
 declare const process: { exitCode?: number };
 

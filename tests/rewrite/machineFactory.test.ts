@@ -1,8 +1,8 @@
 import { createActor } from "xstate";
 
-import type { GameDefinition } from "../../html/src/rewrite/engine/game/definition";
-import { createCardGameMachine } from "../../html/src/rewrite/engine/game/machineFactory";
-import type { CardGameEvent } from "../../html/src/rewrite/engine/game/types";
+import type { GameDefinition } from "@rewrite-core/engine/game/definition";
+import { createCardGameMachine } from "@rewrite-core/engine/game/machineFactory";
+import type { CardGameEvent } from "@rewrite-core/engine/game/types";
 
 declare const process: { exitCode?: number };
 

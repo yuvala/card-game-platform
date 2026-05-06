@@ -1,5 +1,5 @@
-import type { SupportedDeckId } from "../engine/cards/deckDefinitions";
-import type { CardGameActor } from "../engine/game/viewModel";
+import type { SupportedDeckId } from "@rewrite-core/engine/cards/deckDefinitions";
+import type { CardGameActor } from "@rewrite-core/engine/game/viewModel";
 import type { RewriteGameSelection } from "./createGamePanel";
 
 interface DebugSnapshot {
