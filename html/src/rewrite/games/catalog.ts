@@ -40,13 +40,13 @@ function createConfiguredCatalogEntry<TSnapshot, TOptions extends CardGameCatalo
         supportedDeckIds: config.supportedDeckIds,
         defaultDeckId: config.defaultDeckId,
         definition,
-        getViewModel: ((snapshot: TSnapshot) => {
+        getViewModel: ((snapshot: TSnapshot, viewerId?: string | null) => {
             const toViewModel = definition.toViewModel;
             if (!toViewModel) {
                 throw new Error(config.label + " game definition is missing a view model adapter.");
             }
 
-            return toViewModel(snapshot);
+            return toViewModel(snapshot, viewerId);
         }) as CardGameViewModelFactory<TSnapshot>,
         createActor: (playerNames, options) => {
             return createActor(createMachine(playerNames, options)) as CardGameActorRuntime<TSnapshot>;

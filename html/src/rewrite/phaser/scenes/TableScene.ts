@@ -2,13 +2,12 @@ import * as Phaser from "phaser";
 
 import { supportedDeckDefinitions } from "../../engine/cards/deckDefinitions";
 import { getCardSkinById } from "../../engine/cards/skinPacks";
+import type { CardGameSession } from "../../engine/game/session";
 import type {
-    CardGameActor,
     CardGameViewCard,
     CardGameViewPile,
     CardGameViewTableCard,
-    CardGameViewModel,
-    CardGameViewModelFactory
+    CardGameViewModel
 } from "../../engine/game/viewModel";
 import {
     ensureDeckTextures,
@@ -55,8 +54,8 @@ interface CardDisplaySize {
 }
 
 export class TableScene<TSnapshot> extends Phaser.Scene {
-    private readonly actor: CardGameActor<TSnapshot>;
-    private readonly getViewModel: CardGameViewModelFactory<TSnapshot>;
+    private readonly session: CardGameSession<TSnapshot>;
+    private readonly viewerId: string | null;
     private subscription?: { unsubscribe(): void };
     private primaryPileVisuals!: PrimaryPileVisuals;
     private seatBadges = new Map<string, SeatBadge>();
@@ -72,10 +71,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private activeDeckId = "";
     private activeCardSkinId = "";
 
-    constructor(actor: CardGameActor<TSnapshot>, getViewModel: CardGameViewModelFactory<TSnapshot>) {
+    constructor(session: CardGameSession<TSnapshot>, viewerId?: string | null) {
         super("rewrite-table");
-        this.actor = actor;
-        this.getViewModel = getViewModel;
+        this.session = session;
+        this.viewerId = viewerId ?? null;
     }
 
     create(): void {
@@ -96,8 +95,8 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.createPiles();
 
-        this.subscription = this.actor.subscribe((snapshot) => {
-            const viewModel = this.getViewModel(snapshot);
+        this.subscription = this.session.subscribe(() => {
+            const viewModel = this.session.getViewModel(this.viewerId);
             this.syncViewModel(viewModel);
             if (viewModel.animation) {
                 this.animatePlayedCard(viewModel);
@@ -111,7 +110,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             this.subscription = undefined;
         });
 
-        this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
+        this.syncViewModel(this.session.getViewModel(this.viewerId));
     }
 
     private createPiles(): void {
@@ -170,12 +169,12 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 const cardId = container.getData("cardId");
                 const cardClickAction = container.getData("cardClickAction");
                 if (cardClickAction === "play") {
-                    this.actor.send({ type: "PLAY_CARD" });
+                    this.session.send({ type: "PLAY_CARD" });
                     return;
                 }
 
                 if (typeof cardId === "string") {
-                    this.actor.send({ type: "SELECT_CARD", cardId });
+                    this.session.send({ type: "SELECT_CARD", cardId });
                 }
             });
             hitTarget.on(Phaser.Input.Events.POINTER_OVER, () => {
@@ -288,7 +287,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant)
             },
             onEffectsDone: () => {
-                this.actor.send({ type: "ANIMATION_DONE" });
+                this.session.send({ type: "ANIMATION_DONE" });
             }
         });
         this.runShuffleAnimation(viewModel);
@@ -425,7 +424,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             discardCard: this.primaryPileVisuals.discardCard,
             activeAnimationKey: this.activeAnimationKey,
             onAnimationDone: () => {
-                this.actor.send({ type: "ANIMATION_DONE" });
+                this.session.send({ type: "ANIMATION_DONE" });
             }
         });
     }

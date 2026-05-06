@@ -10,15 +10,19 @@
     "test:rewrite": "\"%npm_node_execpath%\" .\\scripts\\run-rewrite-tests.cjs",
     "test-rewrite": "\"%npm_node_execpath%\" .\\scripts\\run-rewrite-tests.cjs",
     "smoke:rewrite": "node .\\scripts\\smoke-rewrite.cjs",
+    "build:rewrite-server": "tsc -p tsconfig.server.json --noEmit",
+    "serve:rewrite-ws": "tsc -p tsconfig.server.json && node .tmp-rewrite-server/server/rewrite/rewriteServer.js",
     "preview": "vite preview --config vite.config.js",
     "serve:legacy": "node node.js/server.js"
   },
   "devDependencies": {
+    "@types/ws": "^8.18.1",
     "typescript": "^6.0.3",
     "vite": "^8.0.10"
   },
   "dependencies": {
     "phaser": "^4.0.0",
+    "ws": "^8.20.0",
     "xstate": "^5.30.0"
   }
 }

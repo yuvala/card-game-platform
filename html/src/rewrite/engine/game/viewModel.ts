@@ -113,4 +113,7 @@ export interface CardGameViewModel {
     effects: CardGameEffect[];
 }
 
-export type CardGameViewModelFactory<TSnapshot> = (snapshot: TSnapshot) => CardGameViewModel;
+export type CardGameViewModelFactory<TSnapshot> = (
+    snapshot: TSnapshot,
+    viewerId?: string | null
+) => CardGameViewModel;

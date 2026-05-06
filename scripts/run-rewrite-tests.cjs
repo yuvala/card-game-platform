@@ -10,6 +10,8 @@ const tscPath = path.join(repoRoot, "node_modules", ".bin", isWindows ? "tsc.cmd
 const testEntries = [
     "tests/rewrite/piles.test.ts",
     "tests/rewrite/gameConfig.test.ts",
+    "tests/rewrite/gameSession.test.ts",
+    "tests/rewrite/rewriteSessionHost.test.ts",
     "tests/rewrite/machineFactory.test.ts",
     "tests/rewrite/debugScenarios.test.ts",
     "tests/rewrite/gameMachines.test.ts",
@@ -49,6 +51,7 @@ try {
         "--ignoreDeprecations",
         "6.0",
         "--esModuleInterop",
+        "--resolveJsonModule",
         "--skipLibCheck",
         "--outDir",
         outDir,

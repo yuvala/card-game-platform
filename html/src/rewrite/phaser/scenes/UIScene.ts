@@ -1,9 +1,8 @@
 import * as Phaser from "phaser";
 
+import type { CardGameSession } from "../../engine/game/session";
 import type {
-    CardGameActor,
-    CardGameViewModel,
-    CardGameViewModelFactory
+    CardGameViewModel
 } from "../../engine/game/viewModel";
 import { HUD_WIDTH, HUD_X, REWRITE_HEIGHT } from "../layout";
 import {
@@ -26,8 +25,8 @@ interface ButtonRefs {
 const UI_TEXT_RESOLUTION = TABLE_TEXT_RESOLUTION;
 
 export class UIScene<TSnapshot> extends Phaser.Scene {
-    private readonly actor: CardGameActor<TSnapshot>;
-    private readonly getViewModel: CardGameViewModelFactory<TSnapshot>;
+    private readonly session: CardGameSession<TSnapshot>;
+    private readonly viewerId: string | null;
     private subscription?: { unsubscribe(): void };
     private phaseBadge!: Phaser.GameObjects.Text;
     private roundText!: Phaser.GameObjects.Text;
@@ -41,10 +40,10 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
     private isAutoRunEnabled = false;
     private pendingAutoRunStep?: Phaser.Time.TimerEvent;
 
-    constructor(actor: CardGameActor<TSnapshot>, getViewModel: CardGameViewModelFactory<TSnapshot>) {
+    constructor(session: CardGameSession<TSnapshot>, viewerId?: string | null) {
         super("rewrite-ui");
-        this.actor = actor;
-        this.getViewModel = getViewModel;
+        this.session = session;
+        this.viewerId = viewerId ?? null;
     }
 
     create(): void {
@@ -112,17 +111,17 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
 
         this.buttons = {
             start: this.createButton(HUD_X + HUD_WIDTH / 2, 398, "Deal Cards", () => {
-                this.actor.send({ type: "START" });
+                this.session.send({ type: "START" });
             }),
             play: this.createButton(HUD_X + HUD_WIDTH / 2 - 58, 458, "Play Card", () => {
-                this.actor.send({ type: "PLAY_CARD" });
+                this.session.send({ type: "PLAY_CARD" });
             }),
             autoRun: this.createButton(HUD_X + HUD_WIDTH / 2 + 76, 458, "▶", () => {
                 this.toggleAutoRun();
             }),
             restart: this.createButton(HUD_X + HUD_WIDTH / 2, 518, "Restart", () => {
                 this.stopAutoRun();
-                this.actor.send({ type: "RESTART" });
+                this.session.send({ type: "RESTART" });
             })
         };
 
@@ -150,8 +149,8 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             lineSpacing: 5
         }).setResolution(UI_TEXT_RESOLUTION);
 
-        this.subscription = this.actor.subscribe((snapshot) => {
-            this.syncViewModel(this.getViewModel(snapshot));
+        this.subscription = this.session.subscribe(() => {
+            this.syncViewModel(this.session.getViewModel(this.viewerId));
         });
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
@@ -160,7 +159,7 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
             this.subscription = undefined;
         });
 
-        this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
+        this.syncViewModel(this.session.getViewModel(this.viewerId));
     }
 
     private createButton(
@@ -246,12 +245,12 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
     private toggleAutoRun(): void {
         if (this.isAutoRunEnabled) {
             this.stopAutoRun();
-            this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
+            this.syncViewModel(this.session.getViewModel(this.viewerId));
             return;
         }
 
         this.isAutoRunEnabled = true;
-        this.syncViewModel(this.getViewModel(this.actor.getSnapshot()));
+        this.syncViewModel(this.session.getViewModel(this.viewerId));
     }
 
     private stopAutoRun(): void {
@@ -275,18 +274,18 @@ export class UIScene<TSnapshot> extends Phaser.Scene {
 
         this.pendingAutoRunStep = this.time.delayedCall(420, () => {
             this.pendingAutoRunStep = undefined;
-            const latestViewModel = this.getViewModel(this.actor.getSnapshot());
+            const latestViewModel = this.session.getViewModel(this.viewerId);
             if (!this.isAutoRunEnabled) {
                 return;
             }
 
             if (latestViewModel.controls.canStart) {
-                this.actor.send({ type: "START" });
+                this.session.send({ type: "START" });
                 return;
             }
 
             if (latestViewModel.controls.canPlay) {
-                this.actor.send({ type: "PLAY_CARD" });
+                this.session.send({ type: "PLAY_CARD" });
             }
         });
     }

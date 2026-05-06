@@ -1,6 +1,7 @@
 import playersData from "../../data/players.json";
 import { supportedDeckDefinitions } from "./engine/cards/deckDefinitions";
 import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "./engine/game/catalog";
+import { createLocalGameSession, type CardGameSession } from "./engine/game/session";
 import {
     DEFAULT_GAME_ID,
     gameCatalogEntries,
@@ -11,7 +12,7 @@ import { getRewriteDebugScenarioById, type RewriteDebugScenario } from "./app/de
 import { createRewriteGame } from "./phaser/createRewriteGame";
 
 interface ActiveRewriteRuntime {
-    actor: ReturnType<AnyGameCatalogEntry["createActor"]>;
+    session: CardGameSession<any>;
     game: ReturnType<typeof createRewriteGame>;
 }
 
@@ -75,19 +76,24 @@ function startGame(selection: RewriteGameSelection): void {
     rootElement.replaceChildren();
     rootElement.classList.remove("is-empty");
 
-    const actor = selectedGame.createActor(playerNames, {
-        deckDefinition,
-        cardsPerPlayer: requestedCardsPerPlayer,
-        random: requestedSeed ? createSeededRandom(requestedSeed) : undefined
+    const session = createLocalGameSession({
+        id: createLocalSessionId(),
+        entry: selectedGame,
+        playerNames,
+        options: {
+            deckDefinition,
+            cardsPerPlayer: requestedCardsPerPlayer,
+            random: requestedSeed ? createSeededRandom(requestedSeed) : undefined
+        }
     });
-    actor.start();
+    session.start();
 
-    const game = createRewriteGame("rewrite-root", actor, selectedGame.getViewModel);
-    actor.send({ type: "START" });
-    runDebugScenario(activeDebugScenario, actor);
+    const game = createRewriteGame("rewrite-root", session);
+    session.send({ type: "START" });
+    runDebugScenario(activeDebugScenario, session);
 
     activeRuntime = {
-        actor,
+        session,
         game
     };
 
@@ -105,7 +111,7 @@ function teardownActiveRuntime(): void {
         return;
     }
 
-    activeRuntime.actor.stop();
+    activeRuntime.session.stop();
     activeRuntime.game.destroy(true);
     activeRuntime = null;
 }
@@ -204,6 +210,10 @@ function createSeededRandom(seed: string): () => number {
     };
 }
 
+function createLocalSessionId(): string {
+    return "local-" + Date.now().toString(36);
+}
+
 function getActiveDebugScenario(
     selection: RewriteGameSelection,
     debugScenario: RewriteDebugScenario | null
@@ -222,7 +232,7 @@ function getActiveDebugScenario(
 
 function runDebugScenario(
     debugScenario: RewriteDebugScenario | null,
-    actor: ActiveRewriteRuntime["actor"]
+    actor: ActiveRewriteRuntime["session"]
 ): void {
     if (!debugScenario?.run) {
         return;

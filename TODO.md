@@ -22,6 +22,10 @@
 
 ## Priority 2: Build
 
+- Start the synchronized Player POV work using [player-pov-websocket-plan.md](/d:/yuval/card/cardGame/docs/player-pov-websocket-plan.md:1):
+  - introduce a backend-owned `GameSession`
+  - connect admin/player screens through WebSocket
+  - add a player dropdown POV without login/join flow
 - Upgrade `Brisca-lite` toward real `Brisca`:
   - real card rank order
   - real point values
