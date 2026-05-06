@@ -98,7 +98,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             playerId: playedCard.playerId,
             caption: playedCard.playerName
         })),
-        tablePresentation: "table-row",
+        tablePresentation: "trick-seats",
         tablePileIds: [BRISCA_LITE_TRICK_PILE_ID],
         piles: [
             {

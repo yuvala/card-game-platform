@@ -49,12 +49,12 @@ export function createTableCardVisual(scene: Phaser.Scene, backTextureKey: strin
     } satisfies CardDisplaySize);
     const outline = scene.add.rectangle(0, 0, TABLE_CARD_WIDTH + 4, TABLE_CARD_HEIGHT + 4, 0x000000, 0)
         .setStrokeStyle(3, TABLE_GOLD, 0.9);
-    const stackCountBadge = scene.add.rectangle(24, 35, 38, 22, 0x06140f, 0.78)
+    const stackCountBadge = scene.add.rectangle(20, 35, 54, 22, 0x06140f, 0.78)
         .setStrokeStyle(1, TABLE_GOLD, 0.78)
         .setVisible(false);
-    const stackCountText = scene.add.text(24, 35, "", {
+    const stackCountText = scene.add.text(20, 35, "", {
         fontFamily: TABLE_FONT_FAMILY,
-        fontSize: "15px",
+        fontSize: "11px",
         color: TABLE_CREAM,
         fontStyle: "bold"
     }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION).setVisible(false);

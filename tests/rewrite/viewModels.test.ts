@@ -7,7 +7,7 @@ import { createPokerLiteMachine } from "../../html/src/rewrite/games/pokerLite/m
 import { getPokerLiteViewModel } from "../../html/src/rewrite/games/pokerLite/viewModel";
 import { createWarLiteMachine } from "../../html/src/rewrite/games/warLite/machine";
 import { getWarLiteViewModel } from "../../html/src/rewrite/games/warLite/viewModel";
-import { getTableCardDisplayState } from "../../html/src/rewrite/phaser/scenes/layout/tableCardLayouts";
+import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../../html/src/rewrite/phaser/scenes/layout/tableCardLayouts";
 
 declare const process: { exitCode?: number };
 
@@ -355,8 +355,18 @@ async function runBriscaLiteViewModelTest() {
     viewModel = getBriscaLiteViewModel(actor.getSnapshot());
     assert(
         viewModel.tablePileIds?.length === 1 &&
-        viewModel.tableCards.length === 1 && viewModel.tableCards[0].isFaceUp,
+        viewModel.tableCards.length === 1 && viewModel.tableCards[0].isFaceUp &&
+            viewModel.tablePresentation === "trick-seats",
         "Brisca-lite should expose the first trick card on the table after the first play."
+    );
+    const firstTrickCardPosition = getTrickSeatCardDisplayState({
+        cards: viewModel.tableCards,
+        players: viewModel.players,
+        index: 0
+    });
+    assert(
+        firstTrickCardPosition.y > 360,
+        "Brisca-lite should place the first player's trick card near that player's table side."
     );
 
     const respondingPlayer = viewModel.players.find((player) => player.canInteract);
@@ -365,6 +375,18 @@ async function runBriscaLiteViewModelTest() {
     actor.send({ type: "SELECT_CARD", cardId: responseCardId });
     actor.send({ type: "PLAY_CARD" });
     actor.send({ type: "ANIMATION_DONE" });
+    viewModel = getBriscaLiteViewModel(actor.getSnapshot());
+    assert(viewModel.tableCards.length === 2, "Brisca-lite should expose both trick cards before animation completes.");
+    const secondTrickCardPosition = getTrickSeatCardDisplayState({
+        cards: viewModel.tableCards,
+        players: viewModel.players,
+        index: 1
+    });
+    assert(
+        firstTrickCardPosition.y !== secondTrickCardPosition.y ||
+            firstTrickCardPosition.x !== secondTrickCardPosition.x,
+        "Brisca-lite trick-seat layout should give different players different trick-card slots."
+    );
     await waitFor(() => actor.getSnapshot().context.round === 2);
 
     viewModel = getBriscaLiteViewModel(actor.getSnapshot());

@@ -1,6 +1,6 @@
 import * as Phaser from "phaser";
 
-import type { CardGameEffect, MoveCardEffect } from "../../../engine/game/effects";
+import { isMoveCardEffect, type CardGameEffect, type MoveCardEffect } from "../../../engine/game/effects";
 import type { CardGameEffectReason } from "../../../engine/game/effects";
 import type { CardGameViewCard, CardGameViewModel } from "../../../engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
@@ -44,10 +44,6 @@ interface EffectPresentationInput {
 
 function getEffectBatchKey(effects: readonly CardGameEffect[]): string {
     return effects.map((effect) => effect.key).join("|");
-}
-
-function isMoveCardEffect(effect: CardGameEffect): effect is MoveCardEffect {
-    return effect.type === "move-card";
 }
 
 function getEffectProfile(reason: CardGameEffectReason): {

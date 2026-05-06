@@ -150,3 +150,7 @@ export function createCollectCardEffect(input: SpecificMoveCardEffectInput): Mov
         reason: "collect"
     });
 }
+
+export function isMoveCardEffect(effect: CardGameEffect): effect is MoveCardEffect {
+    return effect.type === "move-card";
+}

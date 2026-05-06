@@ -21,13 +21,34 @@ function getPlayerIconLabel(playerName: string): string {
 }
 
 function getWarLiteTableCards(snapshot: WarLiteViewSnapshot): CardGameViewTableCard[] {
+    const faceDownCountsByPlayer = new Map<string, number>();
+    const lastFaceDownCardIdByPlayer = new Map<string, string>();
+
+    snapshot.context.roundCards.forEach((playedCard) => {
+        if (playedCard.isFaceUp) {
+            return;
+        }
+
+        faceDownCountsByPlayer.set(
+            playedCard.playerId,
+            (faceDownCountsByPlayer.get(playedCard.playerId) ?? 0) + 1
+        );
+        lastFaceDownCardIdByPlayer.set(playedCard.playerId, playedCard.id);
+    });
+
     return snapshot.context.roundCards.map((playedCard) => {
+        const faceDownCount = faceDownCountsByPlayer.get(playedCard.playerId) ?? 0;
+        const isLastFaceDownCard = lastFaceDownCardIdByPlayer.get(playedCard.playerId) === playedCard.id;
+
         return {
             id: playedCard.card.id,
             label: playedCard.card.displayLabel,
             isFaceUp: playedCard.isFaceUp,
             playerId: playedCard.playerId,
-            caption: playedCard.isComparisonCard ? playedCard.playerName : ""
+            caption: playedCard.isComparisonCard ? playedCard.playerName : "",
+            stackBadgeLabel: !playedCard.isFaceUp && isLastFaceDownCard && faceDownCount > 1
+                ? String(faceDownCount) + " down"
+                : undefined
         };
     });
 }

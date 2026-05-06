@@ -12,6 +12,7 @@ export interface CardGameViewCard {
     label: string;
     isFaceUp: boolean;
     stackCount?: number;
+    stackBadgeLabel?: string;
 }
 
 export type CardGameViewHandPresentation =
@@ -68,7 +69,8 @@ export interface CardGameViewTableCard extends CardGameViewCard {
 }
 
 export type CardGameViewTablePresentation =
-    | "table-row";
+    | "table-row"
+    | "trick-seats";
 
 export type CardGameViewPilePresentation =
     | "hidden-stack"

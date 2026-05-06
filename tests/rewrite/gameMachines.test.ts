@@ -6,6 +6,7 @@ import {
 } from "../../html/src/rewrite/engine/cards/deckDefinitions";
 import { createDeck } from "../../html/src/rewrite/engine/cards/createDeck";
 import type { CardInstance, DeckDefinition } from "../../html/src/rewrite/engine/cards/types";
+import { isMoveCardEffect } from "../../html/src/rewrite/engine/game/effects";
 import { getPileCards, setPileCards } from "../../html/src/rewrite/engine/game/piles";
 import { BRISCA_LITE_STOCK_PILE_ID, BRISCA_LITE_TRICK_PILE_ID, BRISCA_LITE_TRUMP_PILE_ID } from "../../html/src/rewrite/games/briscaLite/types";
 import { createBriscaLiteMachine } from "../../html/src/rewrite/games/briscaLite/machine";
@@ -17,6 +18,7 @@ import { warLiteGameDefinition } from "../../html/src/rewrite/games/warLite/defi
 import { createInitialContext as createInitialWarLiteContext } from "../../html/src/rewrite/games/warLite/setup";
 import { recycleEmptyPlayerStacks } from "../../html/src/rewrite/games/warLite/rules";
 import { getWarLiteCapturePileId, getWarLiteHandPileId, WAR_LITE_BATTLE_PILE_ID, WAR_LITE_DISCARD_PILE_ID } from "../../html/src/rewrite/games/warLite/types";
+import type { WarLiteContext } from "../../html/src/rewrite/games/warLite/types";
 
 declare const process: { exitCode?: number };
 
@@ -218,7 +220,7 @@ async function runWarLiteMachineTest() {
     actor.send({ type: "PLAY_CARD" });
     let battleSnapshot = actor.getSnapshot();
     assert(
-        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "play").length === 1,
+        battleSnapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "play").length === 1,
         "War Lite should emit one play effect when the next player reveals a battle card."
     );
 
@@ -235,14 +237,14 @@ async function runWarLiteMachineTest() {
     actor.send({ type: "PLAY_CARD" });
     battleSnapshot = actor.getSnapshot();
     assert(
-        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "play").length === 1,
+        battleSnapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "play").length === 1,
         "War Lite should emit one play effect when the second player reveals a battle card."
     );
 
     await waitFor(() => actor.getSnapshot().value === "resolvingBattle");
     battleSnapshot = actor.getSnapshot();
     assert(
-        battleSnapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
+        battleSnapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "collect").length === 2,
         "War Lite should emit collect effects after both battle cards are revealed."
     );
 
@@ -394,7 +396,7 @@ async function runWarLiteMachineGameOverTest() {
     await waitFor(() => actor.getSnapshot().value === "resolvingBattle");
     snapshot = actor.getSnapshot();
     assert(
-        snapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
+        snapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "collect").length === 2,
         "War Lite tiny deck should collect both revealed cards after the battle resolves."
     );
 
@@ -437,6 +439,62 @@ async function runWarLiteShortDeckOptionTest() {
     );
 
     actor.stop();
+}
+
+function runWarLiteFullDeckAutoRunSmokeTest() {
+    let state: WarLiteContext = warLiteGameDefinition.setup({
+        playerNames: ["Avi", "Dany"],
+        options: {
+            deckDefinition: frenchDeckDefinition,
+            random: createSeededRandom("war-full-smoke-1")
+        }
+    });
+    let transition = warLiteGameDefinition.applyMove(state, {
+        type: "prepare-shuffle",
+        random: createSeededRandom("war-full-smoke-1")
+    });
+    state = transition.state;
+    transition = warLiteGameDefinition.applyMove(state, { type: "deal-opening-hands" });
+    state = transition.state;
+    transition = warLiteGameDefinition.applyMove(state, { type: "prepare-battle" });
+    state = transition.state;
+
+    let stepCount = 0;
+    const maxStepCount = 1000;
+
+    while (!warLiteGameDefinition.isGameOver(state) && stepCount < maxStepCount) {
+        const legalRevealMove = warLiteGameDefinition.getLegalMoves(state)[0];
+        if (legalRevealMove) {
+            transition = warLiteGameDefinition.applyMove(state, legalRevealMove);
+            state = transition.state;
+            transition = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" });
+            state = transition.state;
+        }
+
+        const automaticMove = warLiteGameDefinition.getAutomaticMove?.(state);
+        if (automaticMove) {
+            transition = warLiteGameDefinition.applyMove(state, automaticMove);
+            state = transition.state;
+        }
+
+        stepCount += 1;
+    }
+
+    assert(stepCount < maxStepCount, "War Lite full-deck smoke should finish before the safety step limit.");
+    assert(warLiteGameDefinition.isGameOver(state), "War Lite full-deck smoke should reach game over.");
+    assert(state.roundCards.length === 0, "War Lite full-deck smoke should not leave cards on the battle table.");
+    assert(
+        getPileCards(state.piles, WAR_LITE_BATTLE_PILE_ID).length === 0,
+        "War Lite full-deck smoke should empty the battle pile at game over."
+    );
+    assert(
+        state.winningPlayerIds.length >= 1,
+        "War Lite full-deck smoke should expose at least one winner at game over."
+    );
+    assert(
+        state.statusText.includes("wins War Lite") || state.statusText.includes("Tie"),
+        "War Lite full-deck smoke should expose a final game-over status."
+    );
 }
 
 async function runWarLiteManualWarSeedTest() {
@@ -538,7 +596,9 @@ function runWarLiteWarTieRuleTest() {
     transition = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" });
     state = transition.state;
     assert(
-        (transition.effects ?? []).filter((effect) => effect.reason === "play" && effect.card.isFaceUp === false).length === 6,
+        (transition.effects ?? []).filter((effect) => {
+            return isMoveCardEffect(effect) && effect.reason === "play" && effect.card.isFaceUp === false;
+        }).length === 6,
         "War Lite should place three face-down cards from each tied player."
     );
     assert(state.warState?.stage === "reveal", "War Lite should ask for face-up war cards after face-down placement.");
@@ -553,7 +613,7 @@ function runWarLiteWarTieRuleTest() {
     state = transition.state;
 
     assert(
-        (transition.effects ?? []).filter((effect) => effect.reason === "collect").length === 10,
+        (transition.effects ?? []).filter((effect) => isMoveCardEffect(effect) && effect.reason === "collect").length === 10,
         "War Lite should collect the full war pot after the face-up war cards resolve."
     );
     assert(state.warState === null, "War Lite should clear war state after the war resolves.");
@@ -638,11 +698,11 @@ async function runBriscaLiteMachineTest() {
     snapshot = actor.getSnapshot();
 
     assert(
-        snapshot.context.lastEffects.filter((effect) => effect.reason === "collect").length === 2,
+        snapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "collect").length === 2,
         "Brisca-lite should emit collect effects when moving trick cards to the winner capture pile."
     );
     assert(
-        snapshot.context.lastEffects.filter((effect) => effect.reason === "draw").length === 2,
+        snapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "draw").length === 2,
         "Brisca-lite should emit draw effects when refilling both players after a trick."
     );
     assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
@@ -689,6 +749,7 @@ async function main() {
     runWarLiteGameOverRuleTest();
     await runWarLiteMachineGameOverTest();
     await runWarLiteShortDeckOptionTest();
+    runWarLiteFullDeckAutoRunSmokeTest();
     await runWarLiteManualWarSeedTest();
     runWarLiteWarTieRuleTest();
     await runBriscaLiteMachineTest();

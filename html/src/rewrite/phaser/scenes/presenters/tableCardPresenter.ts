@@ -3,7 +3,7 @@ import * as Phaser from "phaser";
 import type { CardGameViewCard, CardGameViewModel, CardGameViewTableCard } from "../../../engine/game/viewModel";
 import { TABLE_CENTER_X } from "../../layout";
 import { CARD_BACK_STROKE } from "../layout/constants";
-import { getTableCardDisplayState } from "../layout/tableCardLayouts";
+import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../layout/tableCardLayouts";
 import type { HandSlotVisual } from "./handPresenter";
 import type { TableCardVisual } from "../factories/createTableCardVisual";
 
@@ -52,7 +52,8 @@ function syncTableCardStackDepth(input: {
 }): void {
     const { card, visual, textureApi } = input;
     const stackCount = card.stackCount ?? 0;
-    const shouldShowStackDepth = !card.isFaceUp && stackCount > 1;
+    const stackBadgeLabel = card.stackBadgeLabel ?? "";
+    const shouldShowStackDepth = !card.isFaceUp && (stackBadgeLabel.length > 0 || stackCount > 1);
     const visibleBackCount = shouldShowStackDepth
         ? Math.min(visual.stackBacks.length, stackCount - 1)
         : 0;
@@ -66,7 +67,7 @@ function syncTableCardStackDepth(input: {
 
     visual.stackCountBadge.setVisible(shouldShowStackDepth);
     visual.stackCountText.setVisible(shouldShowStackDepth);
-    visual.stackCountText.setText(shouldShowStackDepth ? "x" + String(stackCount) : "");
+    visual.stackCountText.setText(shouldShowStackDepth ? stackBadgeLabel || "x" + String(stackCount) : "");
 }
 
 export function syncTableCardPresentation(input: TableCardPresentationInput): string {
@@ -96,14 +97,21 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
         return [
             card.id,
             card.isFaceUp ? "up" : "down",
-            String(card.stackCount ?? 1)
+            String(card.stackCount ?? 1),
+            card.stackBadgeLabel ?? ""
         ].join(":");
     }).join("|");
     const shouldAnimateFlip = flipKey !== activeTableCardFlipKey;
 
     tableCards.forEach((card, index) => {
         const visual = tableCardVisuals[index];
-        const position = getTableCardDisplayState(tableCards, index);
+        const position = viewModel.tablePresentation === "trick-seats"
+            ? getTrickSeatCardDisplayState({
+                  cards: tableCards,
+                  players: viewModel.players,
+                  index
+              })
+            : getTableCardDisplayState(tableCards, index);
         visual.container.setPosition(position.x, position.y);
         visual.container.setAngle(position.angle);
         visual.container.setDepth(80 + position.stackIndex);
