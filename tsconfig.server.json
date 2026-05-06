@@ -14,7 +14,7 @@
     "rootDir": "."
   },
   "include": [
-    "server/**/*.ts",
+    "apps/server/**/*.ts",
     "html/src/rewrite/engine/**/*.ts",
     "html/src/rewrite/games/**/*.ts",
     "html/data/**/*.json"

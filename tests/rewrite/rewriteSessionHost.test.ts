@@ -1,4 +1,4 @@
-import { RewriteGameSessionHost } from "../../server/rewrite/GameSessionHost";
+import { RewriteGameSessionHost } from "../../apps/server/src/rewrite/GameSessionHost";
 
 function assert(condition: unknown, message: string): asserts condition {
     if (!condition) {

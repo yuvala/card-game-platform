@@ -1,16 +1,16 @@
-import playersData from "../../html/data/players.json";
-import { supportedDeckDefinitions } from "../../html/src/rewrite/engine/cards/deckDefinitions";
-import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "../../html/src/rewrite/engine/game/catalog";
-import { createLocalGameSession, type CardGameSession } from "../../html/src/rewrite/engine/game/session";
-import type { CardGameEvent } from "../../html/src/rewrite/engine/game/types";
+import playersData from "../../../../html/data/players.json";
+import { supportedDeckDefinitions } from "../../../../html/src/rewrite/engine/cards/deckDefinitions";
+import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "../../../../html/src/rewrite/engine/game/catalog";
+import { createLocalGameSession, type CardGameSession } from "../../../../html/src/rewrite/engine/game/session";
+import type { CardGameEvent } from "../../../../html/src/rewrite/engine/game/types";
 import type {
     RewriteServerMessage,
     SessionPlayerSummary
-} from "../../html/src/rewrite/engine/session/protocol";
+} from "../../../../html/src/rewrite/engine/session/protocol";
 import {
     DEFAULT_GAME_ID,
     getGameCatalogEntryById
-} from "../../html/src/rewrite/games/catalog";
+} from "../../../../html/src/rewrite/games/catalog";
 
 interface PlayerSeedRecord {
     playerName?: string;

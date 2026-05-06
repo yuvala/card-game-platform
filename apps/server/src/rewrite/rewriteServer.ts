@@ -5,7 +5,7 @@ import {
     isRewriteClientMessage,
     type RewriteClientMessage,
     type RewriteServerMessage
-} from "../../html/src/rewrite/engine/session/protocol";
+} from "../../../../html/src/rewrite/engine/session/protocol";
 import { RewriteGameSessionHost } from "./GameSessionHost";
 
 interface RewriteClient {

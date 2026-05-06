@@ -172,8 +172,8 @@ The smallest useful slice:
 Added a standalone rewrite WebSocket backend that can be run separately from the current Vite UI.
 
 - Shared protocol: `html/src/rewrite/engine/session/protocol.ts`
-- Session host: `server/rewrite/GameSessionHost.ts`
-- WebSocket server: `server/rewrite/rewriteServer.ts`
+- Session host: `apps/server/src/rewrite/GameSessionHost.ts`
+- WebSocket server: `apps/server/src/rewrite/rewriteServer.ts`
 - Server TypeScript config: `tsconfig.server.json`
 - Scripts:
   - `npm run build:rewrite-server`
