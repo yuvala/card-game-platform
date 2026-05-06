@@ -249,7 +249,7 @@ player.html?player=p1
 player.html?wsUrl=ws://127.0.0.1:8787/
 ```
 
-This first player screen reuses the current Phaser table renderer inside a mobile-proportioned frame. Dedicated player-only layout and hidden-information rules are still future work.
+The player screen now uses a dedicated Phaser renderer instead of the admin table renderer.
 
 Current POV behavior:
 
@@ -260,6 +260,5 @@ Current POV behavior:
 
 Future work:
 
-- dedicated mobile table composition
 - player-only controls at the bottom of the phone frame
 - richer hidden-information rules per game where table/admin views need different detail levels

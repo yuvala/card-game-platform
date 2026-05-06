@@ -1,5 +1,5 @@
 import { createRemoteGameSession, type RemoteGameSession } from "./session/remoteSession";
-import { createRewriteGame } from "./phaser/createRewriteGame";
+import { createPlayerGame } from "./player/createPlayerGame";
 
 const playerRootElement = document.getElementById("player-root");
 const playerSelectElement = document.getElementById("player-viewer-select");
@@ -18,7 +18,7 @@ const playerSelect = playerSelectElement;
 const playerStatus = playerStatusElement;
 
 let activeSession: RemoteGameSession | null = null;
-let activeGame: ReturnType<typeof createRewriteGame> | null = null;
+let activeGame: ReturnType<typeof createPlayerGame> | null = null;
 
 startPlayerPov().catch((error) => {
     playerStatus.textContent = error instanceof Error ? error.message : "Failed to connect to table.";
@@ -31,7 +31,7 @@ async function startPlayerPov(): Promise<void> {
     });
 
     activeSession = session;
-    activeGame = createRewriteGame("player-root", session);
+    activeGame = createPlayerGame("player-root", session);
     renderPlayerOptions(session);
     selectInitialViewer(session);
     session.start();
