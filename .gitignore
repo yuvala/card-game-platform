@@ -2,3 +2,5 @@
 .c9/
 dist/
 node_modules/
+.tmp-rewrite-server/
+.tmp-rewrite-tests/

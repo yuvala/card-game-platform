@@ -6,7 +6,7 @@ import type { CardGameEvent } from "../../../../html/src/rewrite/engine/game/typ
 import type {
     RewriteServerMessage,
     SessionPlayerSummary
-} from "../../../../html/src/rewrite/engine/session/protocol";
+} from "../../../../packages/rewrite-core/src/session/protocol";
 import {
     DEFAULT_GAME_ID,
     getGameCatalogEntryById

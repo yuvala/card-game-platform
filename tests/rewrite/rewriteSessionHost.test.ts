@@ -1,4 +1,5 @@
 import { RewriteGameSessionHost } from "../../apps/server/src/rewrite/GameSessionHost";
+import type { CardGameViewModel } from "../../html/src/rewrite/engine/game/viewModel";
 
 function assert(condition: unknown, message: string): asserts condition {
     if (!condition) {
@@ -25,7 +26,8 @@ try {
     const playerView = host.getSessionView(adminView.players[0].id);
     assert(playerView.type === "session-view", "Host should return a player session-view message.");
     assert(playerView.viewerId === adminView.players[0].id, "Host should produce viewer-specific session views.");
-    assert(playerView.viewModel.players.length === 2, "Host should include a renderable view model.");
+    const playerViewModel = playerView.viewModel as CardGameViewModel;
+    assert(playerViewModel.players.length === 2, "Host should include a renderable view model.");
 } finally {
     host.stop();
 }

@@ -171,7 +171,7 @@ The smallest useful slice:
 
 Added a standalone rewrite WebSocket backend that can be run separately from the current Vite UI.
 
-- Shared protocol: `html/src/rewrite/engine/session/protocol.ts`
+- Shared protocol: `packages/rewrite-core/src/session/protocol.ts`
 - Session host: `apps/server/src/rewrite/GameSessionHost.ts`
 - WebSocket server: `apps/server/src/rewrite/rewriteServer.ts`
 - Server TypeScript config: `tsconfig.server.json`
@@ -180,6 +180,27 @@ Added a standalone rewrite WebSocket backend that can be run separately from the
   - `npm run serve:rewrite-ws`
 
 The backend currently owns one in-memory session and broadcasts `session-view` messages to connected clients. The existing `rewrite.html` admin UI still uses the local browser session until the next migration step.
+
+## Current Project Structure Direction
+
+The project is moving toward a small monorepo shape:
+
+```text
+apps/
+  server/
+    src/rewrite/
+
+packages/
+  rewrite-core/
+    src/session/protocol.ts
+
+html/
+  player.html
+  rewrite.html
+  src/rewrite/
+```
+
+Only the protocol has moved into `packages/rewrite-core` so far. The game engine and game definitions still live under `html/src/rewrite` until a separate low-risk refactor moves them.
 
 ## Current Admin WebSocket Slice
 

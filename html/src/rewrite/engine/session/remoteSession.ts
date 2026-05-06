@@ -6,7 +6,7 @@ import {
     type SessionPlayerSummary,
     type RewriteClientMessage,
     type RewriteServerMessage
-} from "./protocol";
+} from "../../../../../packages/rewrite-core/src/session/protocol";
 
 interface RemoteGameSessionInput {
     url: string;
@@ -52,7 +52,7 @@ function createConnectedRemoteGameSession(
 
         latestMessage = message;
         listeners.forEach((listener) => {
-            listener(latestMessage.viewModel);
+            listener(getLatestViewModel(latestMessage));
         });
     });
 
@@ -62,7 +62,7 @@ function createConnectedRemoteGameSession(
         get playerNames() {
             return latestMessage.players.map((player) => player.name);
         },
-        getSnapshot: () => latestMessage.viewModel,
+        getSnapshot: () => getLatestViewModel(latestMessage),
         subscribe: (listener) => {
             listeners.add(listener);
             return {
@@ -87,7 +87,7 @@ function createConnectedRemoteGameSession(
         stop: () => {
             socket.close();
         },
-        getViewModel: () => latestMessage.viewModel,
+        getViewModel: () => getLatestViewModel(latestMessage),
         getPlayers: () => latestMessage.players,
         getViewerId: () => activeViewerId,
         setViewer: (playerId) => {
@@ -98,6 +98,12 @@ function createConnectedRemoteGameSession(
             });
         }
     };
+}
+
+function getLatestViewModel(
+    message: Extract<RewriteServerMessage, { type: "session-view" }>
+): CardGameViewModel {
+    return message.viewModel as CardGameViewModel;
 }
 
 function waitForInitialSessionView(

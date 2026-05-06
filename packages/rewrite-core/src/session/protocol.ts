@@ -1,15 +1,19 @@
-import type { CardGameEvent } from "../game/types";
-import type { CardGameViewModel } from "../game/viewModel";
-
 export interface SessionPlayerSummary {
     id: string;
     name: string;
 }
 
+export type RewriteProtocolGameEvent =
+    | { type: "START" }
+    | { type: "SELECT_CARD"; cardId: string }
+    | { type: "PLAY_CARD" }
+    | { type: "ANIMATION_DONE" }
+    | { type: "RESTART" };
+
 export type RewriteClientMessage =
     | { type: "watch-session"; sessionId?: string }
     | { type: "set-viewer"; playerId: string | null }
-    | { type: "game-event"; playerId?: string | null; event: CardGameEvent };
+    | { type: "game-event"; playerId?: string | null; event: RewriteProtocolGameEvent };
 
 export type RewriteServerMessage =
     | {
@@ -18,7 +22,7 @@ export type RewriteServerMessage =
         gameId: string;
         players: SessionPlayerSummary[];
         viewerId: string | null;
-        viewModel: CardGameViewModel;
+        viewModel: unknown;
     }
     | { type: "error"; message: string };
 
@@ -32,7 +36,7 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
         return true;
     }
 
-    return message.type === "game-event" && isCardGameEvent(message.event);
+    return message.type === "game-event" && isRewriteProtocolGameEvent(message.event);
 }
 
 export function isRewriteServerMessage(value: unknown): value is RewriteServerMessage {
@@ -54,7 +58,7 @@ export function isRewriteServerMessage(value: unknown): value is RewriteServerMe
     );
 }
 
-function isCardGameEvent(value: unknown): value is CardGameEvent {
+function isRewriteProtocolGameEvent(value: unknown): value is RewriteProtocolGameEvent {
     if (!value || typeof value !== "object") {
         return false;
     }
