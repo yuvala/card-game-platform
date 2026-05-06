@@ -96,7 +96,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             label: playedCard.card.displayLabel,
             isFaceUp: true,
             playerId: playedCard.playerId,
-            caption: playedCard.playerName
+            caption: ""
         })),
         tablePresentation: "trick-seats",
         tablePileIds: [BRISCA_LITE_TRICK_PILE_ID],

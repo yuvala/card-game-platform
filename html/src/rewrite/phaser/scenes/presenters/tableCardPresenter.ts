@@ -2,7 +2,7 @@ import * as Phaser from "phaser";
 
 import type { CardGameViewCard, CardGameViewModel, CardGameViewTableCard } from "../../../engine/game/viewModel";
 import { TABLE_CENTER_X } from "../../layout";
-import { CARD_BACK_STROKE } from "../layout/constants";
+import { CARD_BACK_STROKE, TABLE_CARD_HEIGHT, TABLE_CARD_WIDTH } from "../layout/constants";
 import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../layout/tableCardLayouts";
 import type { HandSlotVisual } from "./handPresenter";
 import type { TableCardVisual } from "../factories/createTableCardVisual";
@@ -70,6 +70,24 @@ function syncTableCardStackDepth(input: {
     visual.stackCountText.setText(shouldShowStackDepth ? stackBadgeLabel || "x" + String(stackCount) : "");
 }
 
+function drawTableCardContour(input: {
+    visual: TableCardVisual;
+    color: number;
+    alpha: number;
+}): void {
+    const { visual, color, alpha } = input;
+
+    visual.outline.clear();
+    visual.outline.lineStyle(2, color, alpha);
+    visual.outline.strokeRoundedRect(
+        -TABLE_CARD_WIDTH / 2 + 1,
+        -TABLE_CARD_HEIGHT / 2 + 1,
+        TABLE_CARD_WIDTH - 2,
+        TABLE_CARD_HEIGHT - 2,
+        6
+    );
+}
+
 export function syncTableCardPresentation(input: TableCardPresentationInput): string {
     const {
         scene,
@@ -117,7 +135,21 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
         visual.container.setDepth(80 + position.stackIndex);
         visual.caption.setText(position.stackIndex === 0 ? card.caption ?? "" : "");
         visual.container.setVisible(true);
-        visual.outline.setStrokeStyle(3, card.isFaceUp ? 0xffd166 : CARD_BACK_STROKE, 0.9);
+        if (viewModel.tablePresentation === "trick-seats") {
+            visual.shadow.setVisible(false);
+            visual.outline.setVisible(false);
+            visual.outline.setAlpha(0);
+            visual.outline.clear();
+        } else {
+            visual.shadow.setVisible(true);
+            visual.outline.setVisible(true);
+            visual.outline.setAlpha(1);
+            drawTableCardContour({
+                visual,
+                color: card.isFaceUp ? 0xffd166 : CARD_BACK_STROKE,
+                alpha: 0.9
+            });
+        }
         syncTableCardStackDepth({
             card,
             visual,

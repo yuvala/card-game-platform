@@ -217,13 +217,21 @@ function syncDiscardPileCard(
 
     if (secondaryPile.topCard) {
         textureApi.applyCardTexture(visuals.discardCardImage, secondaryPile.topCard, "showcase");
-        visuals.discardCardOutline.setStrokeStyle(
-            3,
-            secondaryPile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE
-        );
+        if (secondaryPile.role === "trump" || getPilePresentation(secondaryPile) === "single-card") {
+            visuals.discardCardOutline.setVisible(false);
+        } else {
+            visuals.discardCardOutline
+                .setVisible(true)
+                .setStrokeStyle(
+                    3,
+                    secondaryPile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE
+                );
+        }
     } else {
         textureApi.applyCardBackTexture(visuals.discardCardImage);
-        visuals.discardCardOutline.setStrokeStyle(3, CARD_BACK_STROKE);
+        visuals.discardCardOutline
+            .setVisible(true)
+            .setStrokeStyle(3, CARD_BACK_STROKE);
     }
 
     visuals.discardCard.setVisible(true);

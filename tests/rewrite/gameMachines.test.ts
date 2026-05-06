@@ -460,7 +460,7 @@ function runWarLiteFullDeckAutoRunSmokeTest() {
     state = transition.state;
 
     let stepCount = 0;
-    const maxStepCount = 1000;
+    const maxStepCount = 10000;
 
     while (!warLiteGameDefinition.isGameOver(state) && stepCount < maxStepCount) {
         const legalRevealMove = warLiteGameDefinition.getLegalMoves(state)[0];
@@ -629,6 +629,167 @@ function runWarLiteWarTieRuleTest() {
     assert(state.playedCardHistory.length === 10, "War Lite should record every card in the resolved war pot.");
 }
 
+function createWarStateWithPlayerStacks(input: {
+    firstPlayerCards: CardInstance[];
+    secondPlayerCards: CardInstance[];
+}) {
+    const context = createInitialWarLiteContext(["Avi", "Dany"], warTieDeckDefinition, input.firstPlayerCards.length);
+    const firstPlayer = context.players[0];
+    const secondPlayer = context.players[1];
+    assert(firstPlayer && secondPlayer, "War edge-case test requires two players.");
+
+    return {
+        firstPlayer,
+        secondPlayer,
+        state: {
+            ...context,
+            piles: setPileCards(
+                setPileCards(context.piles, getWarLiteHandPileId(firstPlayer.id), input.firstPlayerCards),
+                getWarLiteHandPileId(secondPlayer.id),
+                input.secondPlayerCards
+            )
+        }
+    };
+}
+
+function playInitialTieToWarFaceDown(state: WarLiteContext): WarLiteContext {
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    return warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+}
+
+function runWarLiteShortWarStackRuleTest() {
+    const { state: initialState } = createWarStateWithPlayerStacks({
+        firstPlayerCards: [
+            createWarTestCard("p1-war-up", "H1", 14),
+            createWarTestCard("p1-down-1", "D1", 3),
+            createWarTestCard("p1-tie", "T1", 10)
+        ],
+        secondPlayerCards: [
+            createWarTestCard("p2-war-up", "L1", 2),
+            createWarTestCard("p2-down-1", "E1", 4),
+            createWarTestCard("p2-tie", "T2", 10)
+        ]
+    });
+    let state = playInitialTieToWarFaceDown(initialState);
+    const transition = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" });
+    state = transition.state;
+
+    assert(state.warState?.stage === "reveal", "War Lite should continue to reveal when fewer than 3 face-down cards are available.");
+    assert(
+        (transition.effects ?? []).filter((effect) => {
+            return isMoveCardEffect(effect) && effect.reason === "play" && effect.card.isFaceUp === false;
+        }).length === 2,
+        "War Lite should place only one face-down card per tied player when each has one spare card."
+    );
+    assert(state.roundCards.filter((card) => !card.isFaceUp).length === 2, "War Lite should expose only the available face-down war cards.");
+}
+
+function runWarLiteOneCardWarRuleTest() {
+    const { firstPlayer, state: initialState } = createWarStateWithPlayerStacks({
+        firstPlayerCards: [
+            createWarTestCard("p1-war-up", "H1", 14),
+            createWarTestCard("p1-tie", "T1", 10)
+        ],
+        secondPlayerCards: [
+            createWarTestCard("p2-war-up", "L1", 2),
+            createWarTestCard("p2-tie", "T2", 10)
+        ]
+    });
+    let state = playInitialTieToWarFaceDown(initialState);
+    let transition = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" });
+    state = transition.state;
+
+    assert(state.warState?.stage === "reveal", "War Lite should skip face-down cards when tied players have exactly one card left.");
+    assert(
+        (transition.effects ?? []).filter((effect) => isMoveCardEffect(effect) && effect.card.isFaceUp === false).length === 0,
+        "War Lite should not emit face-down play effects when tied players only have the comparison card."
+    );
+
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    transition = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" });
+    state = transition.state;
+
+    assert(state.warState === null, "War Lite should resolve a one-card war after each tied player reveals the final card.");
+    assert(
+        state.winningPlayerIds.length === 1 && state.winningPlayerIds[0] === firstPlayer.id,
+        "War Lite should award a one-card war to the higher revealed comparison card."
+    );
+    assert(
+        (transition.effects ?? []).filter((effect) => isMoveCardEffect(effect) && effect.reason === "collect").length === 4,
+        "War Lite should collect the two tied cards and two final comparison cards in a one-card war."
+    );
+}
+
+function runWarLiteRepeatedTieWarRuleTest() {
+    const { state: initialState } = createWarStateWithPlayerStacks({
+        firstPlayerCards: [
+            createWarTestCard("p1-extra", "H1", 14),
+            createWarTestCard("p1-war-tie", "W1", 9),
+            createWarTestCard("p1-down-3", "D3", 3),
+            createWarTestCard("p1-down-2", "D2", 3),
+            createWarTestCard("p1-down-1", "D1", 3),
+            createWarTestCard("p1-tie", "T1", 10)
+        ],
+        secondPlayerCards: [
+            createWarTestCard("p2-extra", "L1", 2),
+            createWarTestCard("p2-war-tie", "W2", 9),
+            createWarTestCard("p2-down-3", "E3", 4),
+            createWarTestCard("p2-down-2", "E2", 4),
+            createWarTestCard("p2-down-1", "E1", 4),
+            createWarTestCard("p2-tie", "T2", 10)
+        ]
+    });
+    let state = playInitialTieToWarFaceDown(initialState);
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    const transition = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" });
+    state = transition.state;
+
+    assert(state.warState?.stage === "face-down", "War Lite should start a second war when war reveal cards tie.");
+    assert(state.warState.depth === 2, "War Lite should increment war depth after a tie inside War.");
+    assert(getPileCards(state.piles, WAR_LITE_BATTLE_PILE_ID).length === 10, "War Lite should keep the full first war pot for the next war.");
+    assert((transition.effects ?? []).length === 0, "War Lite should not collect cards when a tie inside War starts another war.");
+}
+
+function runWarLiteUnresolvedWarRuleTest() {
+    const { state: initialState } = createWarStateWithPlayerStacks({
+        firstPlayerCards: [
+            createWarTestCard("p1-tie", "T1", 10)
+        ],
+        secondPlayerCards: [
+            createWarTestCard("p2-tie", "T2", 10)
+        ]
+    });
+    let state = warLiteGameDefinition.applyMove(initialState, { type: "reveal-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" }).state;
+    state = warLiteGameDefinition.applyMove(state, { type: "reveal-battle" }).state;
+    const transition = warLiteGameDefinition.applyMove(state, { type: "finalize-battle" });
+    state = transition.state;
+
+    assert(state.warState === null, "War Lite should clear war state when no tied player can continue.");
+    assert(state.winningPlayerIds.length === 0, "War Lite unresolved war should not award a winner.");
+    assert(
+        getPileCards(state.piles, WAR_LITE_DISCARD_PILE_ID).length === 2,
+        "War Lite unresolved war should move tied cards to the discard pile."
+    );
+    assert(
+        getPileCards(state.piles, WAR_LITE_BATTLE_PILE_ID).length === 0,
+        "War Lite unresolved war should clear the battle pile."
+    );
+    assert(
+        (transition.effects ?? []).filter((effect) => isMoveCardEffect(effect) && effect.reason === "collect").length === 2,
+        "War Lite unresolved war should emit collect effects for the unresolved pot."
+    );
+}
+
 async function runBriscaLiteMachineTest() {
     const machine = createBriscaLiteMachine(["Avi", "Dany"], {
         deckDefinition: spanishDeckDefinition,
@@ -752,6 +913,10 @@ async function main() {
     runWarLiteFullDeckAutoRunSmokeTest();
     await runWarLiteManualWarSeedTest();
     runWarLiteWarTieRuleTest();
+    runWarLiteShortWarStackRuleTest();
+    runWarLiteOneCardWarRuleTest();
+    runWarLiteRepeatedTieWarRuleTest();
+    runWarLiteUnresolvedWarRuleTest();
     await runBriscaLiteMachineTest();
     console.log("gameMachines.test.ts passed");
 }

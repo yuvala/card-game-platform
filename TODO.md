@@ -3,16 +3,9 @@
 ## Priority 1: Fix / Stabilize
 
 - Finish War Lite product polish in this order:
-  1. Add rule tests for War edge cases:
-     - tie inside War
-     - player has fewer than 3 cards during War
-     - player has exactly 1 card during War
-     - unresolved War when no tied player can continue
-     - recycle of `Won` pile after a battle
-     - Critical for correctness, low visual regression risk.
-  2. Add repeatable visual screenshots for War tie / War stack / collection.
+  1. Add repeatable visual screenshots for War tie / War stack / collection.
      - High value, but depends on stable visuals.
-  3. Improve War HUD text for battle pot size and next player.
+  2. Improve War HUD text for battle pot size and next player.
      - Useful polish, lower priority than stack clarity and tests.
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
 - Add visual regression coverage or repeatable screenshots for the highest-risk table states:
@@ -65,6 +58,12 @@
 - War face-down stacks show a small `3 down` style badge.
 - War table stacks use clearer grouped offsets/depths for tie cards, face-down cards, and reveal cards.
 - War Lite has a full-deck auto-run smoke test that reaches `gameOver`.
+- War Lite has rule coverage for key War edge cases:
+  - tie inside War
+  - fewer than 3 face-down cards available
+  - exactly 1 card available for War reveal
+  - unresolved War when no tied player can continue
+  - recycle of `Won` pile after a battle
 - `Won` piles show face-down card backs and no active-card outline.
 - Brisca Lite has a combined stock/trump table presentation.
 - Brisca Lite uses generic `trick-seats` table-card placement for trick cards.

@@ -20,7 +20,7 @@ export interface TableCardVisual {
     shadow: Phaser.GameObjects.Rectangle;
     stackBacks: Phaser.GameObjects.Image[];
     image: Phaser.GameObjects.Image;
-    outline: Phaser.GameObjects.Rectangle;
+    outline: Phaser.GameObjects.Graphics;
     stackCountBadge: Phaser.GameObjects.Rectangle;
     stackCountText: Phaser.GameObjects.Text;
     caption: Phaser.GameObjects.Text;
@@ -47,8 +47,7 @@ export function createTableCardVisual(scene: Phaser.Scene, backTextureKey: strin
         width: TABLE_CARD_WIDTH,
         height: TABLE_CARD_HEIGHT
     } satisfies CardDisplaySize);
-    const outline = scene.add.rectangle(0, 0, TABLE_CARD_WIDTH + 4, TABLE_CARD_HEIGHT + 4, 0x000000, 0)
-        .setStrokeStyle(3, TABLE_GOLD, 0.9);
+    const outline = scene.add.graphics();
     const stackCountBadge = scene.add.rectangle(20, 35, 54, 22, 0x06140f, 0.78)
         .setStrokeStyle(1, TABLE_GOLD, 0.78)
         .setVisible(false);
