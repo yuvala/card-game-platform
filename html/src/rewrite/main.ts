@@ -84,6 +84,7 @@ async function startGame(selection: RewriteGameSelection): Promise<void> {
 
     const session = await createActiveSession({
         selectedGame,
+        selection: normalizedSelection,
         playerNames,
         deckDefinition,
         requestedCardsPerPlayer,
@@ -232,6 +233,7 @@ function createLocalSessionId(): string {
 
 interface CreateActiveSessionInput {
     selectedGame: AnyGameCatalogEntry;
+    selection: RewriteGameSelection;
     playerNames: string[];
     deckDefinition: typeof supportedDeckDefinitions[keyof typeof supportedDeckDefinitions];
     requestedCardsPerPlayer?: number;
@@ -244,7 +246,12 @@ async function createActiveSession(input: CreateActiveSessionInput): Promise<Car
             url: getRequestedWebSocketUrl(requestedParams),
             sessionId: requestedParams.get("session") ?? undefined
         });
-        session.start();
+        await session.configure({
+            gameId: input.selection.gameId,
+            playerCount: input.selection.playerCount,
+            deckId: input.selection.deckId,
+            cardsPerPlayer: input.requestedCardsPerPlayer
+        });
         return session;
     }
 

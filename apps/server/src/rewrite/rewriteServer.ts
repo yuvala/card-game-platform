@@ -34,6 +34,7 @@ const server = http.createServer((_request, response) => {
 const wss = new WebSocketServer({ server });
 
 gameHost.subscribe(() => {
+    sanitizeClientViewers();
     broadcastViews();
 });
 
@@ -92,10 +93,27 @@ function handleClientMessage(client: RewriteClient, message: RewriteClientMessag
             client.viewerId = message.playerId;
             sendView(client);
             return;
+        case "configure-session":
+            gameHost.configure(message.config);
+            return;
         case "game-event":
             gameHost.send(message.event);
             return;
     }
+}
+
+function sanitizeClientViewers(): void {
+    const sessionView = gameHost.getSessionView(null);
+    if (sessionView.type !== "session-view") {
+        return;
+    }
+
+    const activePlayerIds = new Set(sessionView.players.map((player) => player.id));
+    clients.forEach((client) => {
+        if (client.viewerId && !activePlayerIds.has(client.viewerId)) {
+            client.viewerId = null;
+        }
+    });
 }
 
 function broadcastViews(): void {

@@ -55,7 +55,13 @@ async function startPlayerPov(): Promise<void> {
 
 function renderPlayerOptions(session: RemoteGameSession): void {
     const players = session.getPlayers();
-    const selectedPlayerId = playerSelect.value || session.getViewerId() || players[0]?.id || "";
+    const currentViewerId = session.getViewerId();
+    const currentSelectValue = playerSelect.value;
+    const selectedPlayerId =
+        players.find((player) => player.id === currentViewerId)?.id ??
+        players.find((player) => player.id === currentSelectValue)?.id ??
+        players[0]?.id ??
+        "";
     playerSelect.replaceChildren(...players.map((player) => {
         const option = document.createElement("option");
         option.value = player.id;
@@ -63,6 +69,10 @@ function renderPlayerOptions(session: RemoteGameSession): void {
         option.selected = player.id === selectedPlayerId;
         return option;
     }));
+
+    if (selectedPlayerId && selectedPlayerId !== currentViewerId) {
+        session.setViewer(selectedPlayerId);
+    }
 }
 
 function selectInitialViewer(session: RemoteGameSession): void {

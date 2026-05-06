@@ -5,6 +5,7 @@ import {
     isRewriteServerMessage,
     type SessionPlayerSummary,
     type RewriteClientMessage,
+    type RewriteSessionConfig,
     type RewriteServerMessage
 } from "@rewrite-core/session/protocol";
 
@@ -19,6 +20,7 @@ type RemoteSessionListener = (snapshot: CardGameViewModel) => void;
 export interface RemoteGameSession extends CardGameSession<CardGameViewModel> {
     getPlayers(): SessionPlayerSummary[];
     getViewerId(): string | null;
+    configure(config: RewriteSessionConfig): Promise<void>;
     setViewer(playerId: string | null): void;
 }
 
@@ -38,6 +40,7 @@ function createConnectedRemoteGameSession(
     let latestMessage = initialMessage;
     let activeViewerId = viewerId;
     const listeners = new Set<RemoteSessionListener>();
+    const pendingSessionViewResolvers = new Set<() => void>();
 
     socket.addEventListener("message", (event) => {
         const message = parseServerMessage(event.data);
@@ -51,9 +54,14 @@ function createConnectedRemoteGameSession(
         }
 
         latestMessage = message;
+        activeViewerId = message.viewerId;
         listeners.forEach((listener) => {
             listener(getLatestViewModel(latestMessage));
         });
+        pendingSessionViewResolvers.forEach((resolve) => {
+            resolve();
+        });
+        pendingSessionViewResolvers.clear();
     });
 
     return {
@@ -90,6 +98,14 @@ function createConnectedRemoteGameSession(
         getViewModel: () => getLatestViewModel(latestMessage),
         getPlayers: () => latestMessage.players,
         getViewerId: () => activeViewerId,
+        configure: (config) => {
+            return waitForNextSessionView(socket, pendingSessionViewResolvers, () => {
+                sendClientMessage(socket, {
+                    type: "configure-session",
+                    config
+                });
+            });
+        },
         setViewer: (playerId) => {
             activeViewerId = playerId;
             sendClientMessage(socket, {
@@ -98,6 +114,44 @@ function createConnectedRemoteGameSession(
             });
         }
     };
+}
+
+function waitForNextSessionView(
+    socket: WebSocket,
+    resolvers: Set<() => void>,
+    sendMessage: () => void
+): Promise<void> {
+    if (socket.readyState !== WebSocket.OPEN) {
+        return Promise.reject(new Error("Rewrite WebSocket is not open."));
+    }
+
+    return new Promise((resolve, reject) => {
+        const cleanup = () => {
+            resolvers.delete(handleSessionView);
+            socket.removeEventListener("close", handleClose);
+            socket.removeEventListener("error", handleError);
+        };
+
+        const handleSessionView = () => {
+            cleanup();
+            resolve();
+        };
+
+        const handleClose = () => {
+            cleanup();
+            reject(new Error("Rewrite WebSocket closed before session configuration completed."));
+        };
+
+        const handleError = () => {
+            cleanup();
+            reject(new Error("Rewrite WebSocket failed before session configuration completed."));
+        };
+
+        resolvers.add(handleSessionView);
+        socket.addEventListener("close", handleClose);
+        socket.addEventListener("error", handleError);
+        sendMessage();
+    });
 }
 
 function getLatestViewModel(

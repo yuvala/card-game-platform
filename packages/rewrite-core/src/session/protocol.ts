@@ -10,8 +10,16 @@ export type RewriteProtocolGameEvent =
     | { type: "ANIMATION_DONE" }
     | { type: "RESTART" };
 
+export interface RewriteSessionConfig {
+    gameId: string;
+    playerCount: number;
+    deckId: string;
+    cardsPerPlayer?: number;
+}
+
 export type RewriteClientMessage =
     | { type: "watch-session"; sessionId?: string }
+    | { type: "configure-session"; config: RewriteSessionConfig }
     | { type: "set-viewer"; playerId: string | null }
     | { type: "game-event"; playerId?: string | null; event: RewriteProtocolGameEvent };
 
@@ -31,9 +39,13 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
         return false;
     }
 
-    const message = value as { type?: unknown; event?: unknown };
+    const message = value as { type?: unknown; event?: unknown; config?: unknown };
     if (message.type === "watch-session" || message.type === "set-viewer") {
         return true;
+    }
+
+    if (message.type === "configure-session") {
+        return isRewriteSessionConfig(message.config);
     }
 
     return message.type === "game-event" && isRewriteProtocolGameEvent(message.event);
@@ -75,4 +87,31 @@ function isRewriteProtocolGameEvent(value: unknown): value is RewriteProtocolGam
         default:
             return false;
     }
+}
+
+function isRewriteSessionConfig(value: unknown): value is RewriteSessionConfig {
+    if (!value || typeof value !== "object") {
+        return false;
+    }
+
+    const config = value as {
+        gameId?: unknown;
+        playerCount?: unknown;
+        deckId?: unknown;
+        cardsPerPlayer?: unknown;
+    };
+
+    return (
+        typeof config.gameId === "string" &&
+        typeof config.playerCount === "number" &&
+        Number.isFinite(config.playerCount) &&
+        typeof config.deckId === "string" &&
+        (
+            typeof config.cardsPerPlayer === "undefined" ||
+            (
+                typeof config.cardsPerPlayer === "number" &&
+                Number.isFinite(config.cardsPerPlayer)
+            )
+        )
+    );
 }

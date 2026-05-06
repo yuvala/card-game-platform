@@ -5,6 +5,7 @@ import { createLocalGameSession, type CardGameSession } from "@rewrite-core/engi
 import type { CardGameEvent } from "@rewrite-core/engine/game/types";
 import type {
     RewriteServerMessage,
+    RewriteSessionConfig,
     SessionPlayerSummary
 } from "@rewrite-core/session/protocol";
 import {
@@ -26,38 +27,34 @@ export interface RewriteSessionHostOptions {
 
 export class RewriteGameSessionHost {
     readonly sessionId: string;
-    private readonly entry: AnyGameCatalogEntry;
-    private readonly session: CardGameSession<any>;
+    private entry: AnyGameCatalogEntry;
+    private session: CardGameSession<any>;
+    private sessionSubscription: { unsubscribe(): void } | null = null;
+    private readonly listeners = new Set<() => void>();
 
     constructor(options: RewriteSessionHostOptions = {}) {
-        this.entry = resolveGame(options.gameId);
         this.sessionId = options.sessionId ?? "main";
-
-        const playerCount = resolvePlayerCount(
-            this.entry,
-            options.playerCount,
-            getSeedPlayerNames().length
-        );
-        const deckId = resolveDeckId(this.entry, options.deckId);
-        const deckDefinition = supportedDeckDefinitions[deckId];
-
-        this.session = createLocalGameSession({
-            id: this.sessionId,
-            entry: this.entry,
-            playerNames: getSeedPlayerNames().slice(0, playerCount),
-            options: {
-                deckDefinition,
-                cardsPerPlayer: options.cardsPerPlayer
-            }
-        });
-        this.session.start();
-        this.session.send({ type: "START" });
+        this.entry = resolveGame(options.gameId);
+        this.session = this.createSession(options);
+        this.startSession();
     }
 
     subscribe(listener: () => void): { unsubscribe(): void } {
-        return this.session.subscribe(() => {
-            listener();
-        });
+        this.listeners.add(listener);
+        return {
+            unsubscribe: () => {
+                this.listeners.delete(listener);
+            }
+        };
+    }
+
+    configure(config: RewriteSessionConfig): void {
+        this.sessionSubscription?.unsubscribe();
+        this.session.stop();
+        this.entry = resolveGame(config.gameId);
+        this.session = this.createSession(config);
+        this.startSession();
+        this.notify();
     }
 
     send(event: CardGameEvent): void {
@@ -76,6 +73,8 @@ export class RewriteGameSessionHost {
     }
 
     stop(): void {
+        this.sessionSubscription?.unsubscribe();
+        this.sessionSubscription = null;
         this.session.stop();
     }
 
@@ -84,6 +83,40 @@ export class RewriteGameSessionHost {
             id: player.id,
             name: player.nameLabel
         }));
+    }
+
+    private createSession(options: RewriteSessionHostOptions): CardGameSession<any> {
+        const playerCount = resolvePlayerCount(
+            this.entry,
+            options.playerCount,
+            getSeedPlayerNames().length
+        );
+        const deckId = resolveDeckId(this.entry, options.deckId);
+        const deckDefinition = supportedDeckDefinitions[deckId];
+
+        return createLocalGameSession({
+            id: this.sessionId,
+            entry: this.entry,
+            playerNames: getSeedPlayerNames().slice(0, playerCount),
+            options: {
+                deckDefinition,
+                cardsPerPlayer: options.cardsPerPlayer
+            }
+        });
+    }
+
+    private startSession(): void {
+        this.sessionSubscription = this.session.subscribe(() => {
+            this.notify();
+        });
+        this.session.start();
+        this.session.send({ type: "START" });
+    }
+
+    private notify(): void {
+        this.listeners.forEach((listener) => {
+            listener();
+        });
     }
 }
 

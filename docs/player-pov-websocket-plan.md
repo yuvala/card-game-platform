@@ -103,6 +103,15 @@ Initial message shapes can stay small:
 ```ts
 type ClientMessage =
   | { type: "watch-session"; sessionId: string }
+  | {
+      type: "configure-session";
+      config: {
+        gameId: string;
+        playerCount: number;
+        deckId: string;
+        cardsPerPlayer?: number;
+      };
+    }
   | { type: "set-viewer"; playerId: string | null }
   | { type: "game-event"; playerId: string; event: unknown };
 
@@ -217,6 +226,7 @@ The Vite build, server TypeScript build, and rewrite test runner all resolve thi
 ## Current Admin WebSocket Slice
 
 The admin rewrite UI can now be opened against the WebSocket server without changing the default local flow.
+In WebSocket mode, changing the game in the admin drawer sends `configure-session` to the backend. The backend replaces the authoritative session and broadcasts the new view to admin and player screens.
 
 Run the server:
 
