@@ -287,6 +287,46 @@ async function runPokerLiteViewModelTest() {
     );
 }
 
+async function runPlayerPovViewModelTest() {
+    const machine = createPokerLiteMachine(["Avi", "Dany"], {
+        deckDefinition: frenchDeckDefinition,
+        cardsPerPlayer: 2,
+        random: () => 0.5
+    });
+    const actor = createActor(machine);
+
+    actor.start();
+    actor.send({ type: "START" });
+    await waitFor(() => actor.getSnapshot().value === "dealing");
+    actor.send({ type: "ANIMATION_DONE" });
+    await waitFor(() => actor.getSnapshot().value === "playerTurn");
+
+    const snapshot = actor.getSnapshot();
+    const secondPlayerId = snapshot.context.players[1].id;
+    const viewModel = getPokerLiteViewModel(snapshot, secondPlayerId);
+
+    assert(
+        viewModel.players[0].id === secondPlayerId,
+        "Player POV should rotate the selected viewer to the bottom/player-zero seat."
+    );
+    assert(
+        viewModel.players[0].hand.length === 2 && viewModel.players[0].hand.every((card) => card.isFaceUp),
+        "Player POV should reveal the selected viewer's own hand."
+    );
+    assert(
+        viewModel.players.slice(1).every((player) => {
+            return player.hand.every((card) => !card.isFaceUp) && !player.canInteract;
+        }),
+        "Player POV should hide opponent hands and disable opponent card interaction."
+    );
+    assert(
+        viewModel.controls.canPlay === false && viewModel.primaryAction === null,
+        "Player POV should not expose a play action when it is another player's turn."
+    );
+
+    actor.stop();
+}
+
 async function runBriscaLiteViewModelTest() {
     const machine = createBriscaLiteMachine(["Avi", "Dany"], {
         deckDefinition: spanishDeckDefinition,
@@ -399,6 +439,7 @@ async function runBriscaLiteViewModelTest() {
 
 async function main() {
     await runPokerLiteViewModelTest();
+    await runPlayerPovViewModelTest();
     await runBriscaLiteViewModelTest();
     await runWarLiteViewModelTest();
     await runWarLiteWarPotViewModelTest();

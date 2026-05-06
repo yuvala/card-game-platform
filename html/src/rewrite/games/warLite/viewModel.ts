@@ -1,5 +1,6 @@
 import type { CardGameViewModel, CardGameViewTableCard } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
+import { applyPlayerPovViewModel } from "../../engine/game/playerPovViewModel";
 import { getPileCards } from "../../engine/game/piles";
 import type { WarLiteViewSnapshot } from "./types";
 import { getNextBattleActionPlayer } from "./rules";
@@ -53,7 +54,7 @@ function getWarLiteTableCards(snapshot: WarLiteViewSnapshot): CardGameViewTableC
     });
 }
 
-export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameViewModel {
+export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot, viewerId?: string | null): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const isBattleReady = snapshot.matches("battleReady");
     const isGameOver = snapshot.matches("gameOver");
@@ -69,7 +70,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id)).length
         );
     }, battleCards.length);
-    return {
+    return applyPlayerPovViewModel({
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: snapshot.context.warState
             ? "Battle " + snapshot.context.round + " | War " + snapshot.context.warState.depth
@@ -184,5 +185,5 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot): CardGameView
             : null,
         animation: null,
         effects: snapshot.context.lastEffects
-    };
+    }, viewerId);
 }

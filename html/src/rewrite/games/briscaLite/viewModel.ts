@@ -1,6 +1,7 @@
 import type { CardGameViewCard, CardGameViewModel } from "../../engine/game/viewModel";
 import { getPileCards } from "../../engine/game/piles";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
+import { applyPlayerPovViewModel } from "../../engine/game/playerPovViewModel";
 import type { BriscaLiteViewSnapshot } from "./types";
 import {
     BRISCA_LITE_STOCK_PILE_ID,
@@ -28,7 +29,7 @@ function createHiddenPreviewCards(cards: readonly CardGameViewCard[], count: num
     }));
 }
 
-export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGameViewModel {
+export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot, viewerId?: string | null): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const isPlayerTurn = snapshot.matches("playerTurn");
     const isGameOver = snapshot.matches("gameOver");
@@ -44,7 +45,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
           }
         : null;
 
-    return {
+    return applyPlayerPovViewModel({
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: "Trick " + snapshot.context.round + " / " + snapshot.context.maxRounds,
         deckId: snapshot.context.deckDefinition.id,
@@ -65,7 +66,9 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
         selectedCardId: snapshot.context.selectedCardId,
         players: snapshot.context.players.map((player) => {
             const isCurrentTurn = isPlayerTurn && player.id === currentPlayerId;
-            const revealHand = (snapshot.matches("playerTurn") || snapshot.matches("animatingPlay")) && player.id === currentPlayerId;
+            const revealHand = viewerId
+                ? player.id === viewerId
+                : (snapshot.matches("playerTurn") || snapshot.matches("animatingPlay")) && player.id === currentPlayerId;
             const faceUpCards = getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(player.id)).map((card) => ({
                 id: card.id,
                 label: card.displayLabel,
@@ -175,5 +178,5 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot): CardGa
             : null,
         animation: null,
         effects: snapshot.context.lastEffects
-    };
+    }, viewerId);
 }

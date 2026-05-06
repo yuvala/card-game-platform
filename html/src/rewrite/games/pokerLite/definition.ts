@@ -138,7 +138,7 @@ export const pokerLiteGameDefinition: GameDefinition<
 
         return { type: "advance-next-round" };
     },
-    toViewModel: (snapshot) => {
-        return getPokerLiteViewModel(snapshot);
+    toViewModel: (snapshot, viewerId) => {
+        return getPokerLiteViewModel(snapshot, viewerId);
     }
 };

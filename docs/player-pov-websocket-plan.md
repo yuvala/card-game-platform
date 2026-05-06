@@ -161,9 +161,9 @@ This is important for hidden information. The server should not send the raw gam
 The smallest useful slice:
 
 1. Backend starts one default game session. Done.
-2. Admin connects and sees the same table as today.
-3. Player page connects and shows a dropdown of the current players.
-4. Selecting a player changes only the rendered POV.
+2. Admin connects and sees the same table as today. Initial optional WebSocket path added behind `transport=ws`.
+3. Player page connects and shows a dropdown of the current players. Initial page added.
+4. Selecting a player changes only the rendered POV. Initial `set-viewer` flow added.
 5. A player action from the player page updates the backend session.
 6. Admin and player pages both update after the action.
 
@@ -180,3 +180,53 @@ Added a standalone rewrite WebSocket backend that can be run separately from the
   - `npm run serve:rewrite-ws`
 
 The backend currently owns one in-memory session and broadcasts `session-view` messages to connected clients. The existing `rewrite.html` admin UI still uses the local browser session until the next migration step.
+
+## Current Admin WebSocket Slice
+
+The admin rewrite UI can now be opened against the WebSocket server without changing the default local flow.
+
+Run the server:
+
+```bash
+npm run serve:rewrite-ws
+```
+
+Run the Vite client separately, then open:
+
+```text
+rewrite.html?transport=ws&autostart=1
+```
+
+Without `transport=ws`, `rewrite.html` keeps using the local browser-owned session.
+
+## Current Player POV Slice
+
+The player page can now connect to the same WebSocket session and choose a viewer from a dropdown.
+
+Run the server and Vite client, then open:
+
+```text
+player.html
+```
+
+Optional query params:
+
+```text
+player.html?player=p1
+player.html?wsUrl=ws://127.0.0.1:8787/
+```
+
+This first player screen reuses the current Phaser table renderer inside a mobile-proportioned frame. Dedicated player-only layout and hidden-information rules are still future work.
+
+Current POV behavior:
+
+- the selected viewer is rotated to the first/bottom player seat
+- the selected viewer's hand is face-up
+- opponent hands are face-down
+- opponent hand interaction is disabled
+
+Future work:
+
+- dedicated mobile table composition
+- player-only controls at the bottom of the phone frame
+- richer hidden-information rules per game where table/admin views need different detail levels

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>Card Game Player POV</title>
+        <link rel="stylesheet" href="css/rewrite.css" type="text/css" />
+    </head>
+    <body>
+        <div class="playerShell">
+            <header class="playerHeader">
+                <p class="rewriteEyebrow">Player POV</p>
+                <h1>Table View</h1>
+                <label class="playerSelectLabel" for="player-viewer-select">Player</label>
+                <select id="player-viewer-select" class="playerSelect"></select>
+                <p id="player-status" class="playerStatus">Connecting to table...</p>
+            </header>
+            <main class="playerDeviceFrame">
+                <div id="player-root" class="playerRoot"></div>
+            </main>
+        </div>
+
+        <script type="module" src="./src/rewrite/playerMain.ts"></script>
+    </body>
+</html>

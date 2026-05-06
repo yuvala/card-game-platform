@@ -1,6 +1,7 @@
 import type { CardGameViewModel } from "../../engine/game/viewModel";
 import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
 import { getPileCards } from "../../engine/game/piles";
+import { applyPlayerPovViewModel } from "../../engine/game/playerPovViewModel";
 import {
     POKER_LITE_DISCARD_PILE_ID,
     POKER_LITE_STOCK_PILE_ID,
@@ -19,7 +20,7 @@ function getPlayerIconLabel(playerName: string): string {
     return initials || "P";
 }
 
-export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGameViewModel {
+export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot, viewerId?: string | null): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
     const isPlayerTurn = snapshot.matches("playerTurn");
@@ -39,7 +40,7 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
                   isFaceUp: true
               };
 
-    return {
+    return applyPlayerPovViewModel({
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: "Round " + snapshot.context.round + " / " + snapshot.context.maxRounds,
         deckId: snapshot.context.deckDefinition.id,
@@ -136,5 +137,5 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot): CardGame
             : null,
         animation: null,
         effects: snapshot.context.lastEffects
-    };
+    }, viewerId);
 }

@@ -18,7 +18,8 @@ module.exports = defineConfig({
             input: {
                 index: resolve(__dirname, "html/index.html"),
                 game: resolve(__dirname, "html/game.html"),
-                rewrite: resolve(__dirname, "html/rewrite.html")
+                rewrite: resolve(__dirname, "html/rewrite.html"),
+                player: resolve(__dirname, "html/player.html")
             }
         }
     }

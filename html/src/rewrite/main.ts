@@ -2,6 +2,7 @@ import playersData from "../../data/players.json";
 import { supportedDeckDefinitions } from "./engine/cards/deckDefinitions";
 import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "./engine/game/catalog";
 import { createLocalGameSession, type CardGameSession } from "./engine/game/session";
+import { createRemoteGameSession } from "./engine/session/remoteSession";
 import {
     DEFAULT_GAME_ID,
     gameCatalogEntries,
@@ -23,6 +24,7 @@ const rewriteGameTitle = document.getElementById("rewrite-game-title");
 const requestedParams = new URLSearchParams(window.location.search);
 const requestedDebugScenario = getRewriteDebugScenarioById(requestedParams.get("scenario"));
 const shouldAutostart = requestedParams.get("autostart") === "1" || requestedDebugScenario?.autostart === true;
+const shouldUseWebSocketSession = requestedParams.get("transport") === "ws" || requestedParams.get("ws") === "1";
 
 if (!rewriteRoot || !rewriteSetupMount || !rewriteGameTitle) {
     throw new Error("Rewrite app requires #rewrite-root, #rewrite-setup, and #rewrite-game-title containers.");
@@ -47,17 +49,21 @@ const setupPanel = createGamePanel({
         setPageGameTitle(selection.gameId);
     },
     onStart: (selection) => {
-        startGame(selection);
+        startGame(selection).catch((error) => {
+            renderStartError(error);
+        });
     }
 });
 
 renderEmptyTable();
 
 if (shouldAutostart) {
-    startGame(setupPanel.getSelection());
+    startGame(setupPanel.getSelection()).catch((error) => {
+        renderStartError(error);
+    });
 }
 
-function startGame(selection: RewriteGameSelection): void {
+async function startGame(selection: RewriteGameSelection): Promise<void> {
     const selectedGame = resolveSelectedGame(selection.gameId);
     setPageGameTitle(selectedGame.id);
     const normalizedSelection = {
@@ -76,31 +82,31 @@ function startGame(selection: RewriteGameSelection): void {
     rootElement.replaceChildren();
     rootElement.classList.remove("is-empty");
 
-    const session = createLocalGameSession({
-        id: createLocalSessionId(),
-        entry: selectedGame,
+    const session = await createActiveSession({
+        selectedGame,
         playerNames,
-        options: {
-            deckDefinition,
-            cardsPerPlayer: requestedCardsPerPlayer,
-            random: requestedSeed ? createSeededRandom(requestedSeed) : undefined
-        }
+        deckDefinition,
+        requestedCardsPerPlayer,
+        requestedSeed
     });
-    session.start();
 
     const game = createRewriteGame("rewrite-root", session);
-    session.send({ type: "START" });
-    runDebugScenario(activeDebugScenario, session);
+    if (!shouldUseWebSocketSession) {
+        session.send({ type: "START" });
+        runDebugScenario(activeDebugScenario, session);
+    }
 
     activeRuntime = {
         session,
         game
     };
 
+    const viewModel = session.getViewModel(null);
+    setPageGameTitle(session.gameId);
     setupPanel.updateActiveTable({
-        gameLabel: selectedGame.label,
-        deckLabel: deckDefinition.name,
-        playerNames
+        gameLabel: shouldUseWebSocketSession ? resolveSelectedGame(session.gameId).label : selectedGame.label,
+        deckLabel: viewModel.deckLabel || deckDefinition.name,
+        playerNames: session.playerNames.length > 0 ? [...session.playerNames] : playerNames
     });
 
     syncUrl(normalizedSelection, requestedCardsPerPlayer, requestedSeed, activeDebugScenario);
@@ -119,6 +125,16 @@ function teardownActiveRuntime(): void {
 function renderEmptyTable(): void {
     rootElement.classList.add("is-empty");
     rootElement.replaceChildren(createEmptyState());
+}
+
+function renderStartError(error: unknown): void {
+    rootElement.classList.add("is-empty");
+    const emptyState = createEmptyState();
+    const errorMessage = document.createElement("p");
+    errorMessage.className = "rewriteEmptyCopy";
+    errorMessage.textContent = error instanceof Error ? error.message : "Failed to start table.";
+    emptyState.append(errorMessage);
+    rootElement.replaceChildren(emptyState);
 }
 
 function createEmptyState(): HTMLElement {
@@ -214,6 +230,48 @@ function createLocalSessionId(): string {
     return "local-" + Date.now().toString(36);
 }
 
+interface CreateActiveSessionInput {
+    selectedGame: AnyGameCatalogEntry;
+    playerNames: string[];
+    deckDefinition: typeof supportedDeckDefinitions[keyof typeof supportedDeckDefinitions];
+    requestedCardsPerPlayer?: number;
+    requestedSeed?: string;
+}
+
+async function createActiveSession(input: CreateActiveSessionInput): Promise<CardGameSession<any>> {
+    if (shouldUseWebSocketSession) {
+        const session = await createRemoteGameSession({
+            url: getRequestedWebSocketUrl(requestedParams),
+            sessionId: requestedParams.get("session") ?? undefined
+        });
+        session.start();
+        return session;
+    }
+
+    const session = createLocalGameSession({
+        id: createLocalSessionId(),
+        entry: input.selectedGame,
+        playerNames: input.playerNames,
+        options: {
+            deckDefinition: input.deckDefinition,
+            cardsPerPlayer: input.requestedCardsPerPlayer,
+            random: input.requestedSeed ? createSeededRandom(input.requestedSeed) : undefined
+        }
+    });
+    session.start();
+    return session;
+}
+
+function getRequestedWebSocketUrl(params: URLSearchParams): string {
+    const explicitUrl = params.get("wsUrl");
+    if (explicitUrl) {
+        return explicitUrl;
+    }
+
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    return protocol + "//" + window.location.hostname + ":8787/";
+}
+
 function getActiveDebugScenario(
     selection: RewriteGameSelection,
     debugScenario: RewriteDebugScenario | null
@@ -262,6 +320,13 @@ function syncUrl(
     }
     if (debugScenario) {
         nextParams.set("scenario", debugScenario.id);
+    }
+    if (shouldUseWebSocketSession) {
+        nextParams.set("transport", "ws");
+        const explicitWsUrl = requestedParams.get("wsUrl");
+        if (explicitWsUrl) {
+            nextParams.set("wsUrl", explicitWsUrl);
+        }
     }
 
     const nextUrl = window.location.pathname + "?" + nextParams.toString();

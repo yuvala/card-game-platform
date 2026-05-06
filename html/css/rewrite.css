@@ -351,6 +351,78 @@ a {
     margin: 0 auto;
 }
 
+.playerShell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: minmax(260px, 360px) minmax(320px, 1fr);
+    gap: 24px;
+    align-items: center;
+    padding: 24px;
+    box-sizing: border-box;
+    width: min(1180px, 100%);
+    margin: 0 auto;
+}
+
+.playerHeader {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+}
+
+.playerHeader h1 {
+    margin: 0;
+    font-size: 36px;
+    line-height: 1.05;
+}
+
+.playerSelectLabel {
+    color: rgba(243, 234, 213, 0.78);
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.playerSelect {
+    width: min(320px, 100%);
+    padding: 12px 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 209, 102, 0.32);
+    background: #0a1b14;
+    color: #f7efe0;
+    font-size: 16px;
+}
+
+.playerStatus {
+    margin: 0;
+    color: rgba(255, 209, 102, 0.86);
+}
+
+.playerDeviceFrame {
+    width: min(430px, 100%);
+    aspect-ratio: 9 / 16;
+    justify-self: center;
+    padding: 14px;
+    border-radius: 34px;
+    background:
+        linear-gradient(180deg, rgba(247, 239, 224, 0.1), rgba(247, 239, 224, 0.02)),
+        #050907;
+    border: 1px solid rgba(255, 209, 102, 0.2);
+    box-shadow: 0 38px 90px rgba(0, 0, 0, 0.45);
+}
+
+.playerRoot {
+    width: 100%;
+    height: 100%;
+    border-radius: 22px;
+    overflow: hidden;
+    background: #08150f;
+}
+
+.playerRoot canvas {
+    display: block;
+}
+
 @media (max-width: 940px) {
     .rewriteSetupHeader,
     .rewriteSetupRow {
@@ -394,5 +466,15 @@ a {
     .rewriteRoot {
         aspect-ratio: auto;
         height: min(72vh, 760px);
+    }
+
+    .playerShell {
+        grid-template-columns: 1fr;
+        align-items: start;
+        padding: 16px;
+    }
+
+    .playerDeviceFrame {
+        width: min(430px, 100%);
     }
 }

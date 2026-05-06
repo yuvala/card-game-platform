@@ -111,7 +111,7 @@ export const warLiteGameDefinition: GameDefinition<
 
         return { type: "advance-next-round" };
     },
-    toViewModel: (snapshot) => {
-        return getWarLiteViewModel(snapshot);
+    toViewModel: (snapshot, viewerId) => {
+        return getWarLiteViewModel(snapshot, viewerId);
     }
 };

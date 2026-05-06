@@ -35,6 +35,25 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
     return message.type === "game-event" && isCardGameEvent(message.event);
 }
 
+export function isRewriteServerMessage(value: unknown): value is RewriteServerMessage {
+    if (!value || typeof value !== "object") {
+        return false;
+    }
+
+    const message = value as { type?: unknown; viewModel?: unknown; players?: unknown };
+    if (message.type === "error") {
+        return typeof (message as { message?: unknown }).message === "string";
+    }
+
+    return (
+        message.type === "session-view" &&
+        typeof (message as { sessionId?: unknown }).sessionId === "string" &&
+        typeof (message as { gameId?: unknown }).gameId === "string" &&
+        Array.isArray(message.players) &&
+        Boolean(message.viewModel)
+    );
+}
+
 function isCardGameEvent(value: unknown): value is CardGameEvent {
     if (!value || typeof value !== "object") {
         return false;

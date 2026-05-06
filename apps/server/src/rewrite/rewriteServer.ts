@@ -94,7 +94,6 @@ function handleClientMessage(client: RewriteClient, message: RewriteClientMessag
             return;
         case "game-event":
             gameHost.send(message.event);
-            broadcastViews();
             return;
     }
 }

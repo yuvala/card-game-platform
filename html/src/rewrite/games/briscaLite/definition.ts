@@ -146,7 +146,7 @@ export const briscaLiteGameDefinition: GameDefinition<
 
         return { type: "advance-next-trick" };
     },
-    toViewModel: (snapshot) => {
-        return getBriscaLiteViewModel(snapshot);
+    toViewModel: (snapshot, viewerId) => {
+        return getBriscaLiteViewModel(snapshot, viewerId);
     }
 };
