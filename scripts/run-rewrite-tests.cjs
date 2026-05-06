@@ -12,6 +12,7 @@ const testEntries = [
     "tests/rewrite/gameConfig.test.ts",
     "tests/rewrite/gameSession.test.ts",
     "tests/rewrite/rewriteSessionHost.test.ts",
+    "tests/rewrite/rewriteWebSocketServer.test.ts",
     "tests/rewrite/machineFactory.test.ts",
     "tests/rewrite/debugScenarios.test.ts",
     "tests/rewrite/gameMachines.test.ts",

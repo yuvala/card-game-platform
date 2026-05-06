@@ -155,7 +155,7 @@ This is important for hidden information. The server should not send the raw gam
 7. Render the player page in a Phaser mobile-proportioned frame.
 8. Route player actions through the server with legal-move validation. Initial server-side validation added.
 9. Add hidden-information behavior per game where needed.
-10. Add smoke tests for session sync and player-specific views.
+10. Add smoke tests for session sync and player-specific views. Initial WebSocket E2E test added.
 
 ## Regression Risks
 
@@ -190,6 +190,8 @@ Added a standalone rewrite WebSocket backend that can be run separately from the
 
 The backend currently owns one in-memory session and broadcasts `session-view` messages to connected clients. The existing `rewrite.html` admin UI still uses the local browser session until the next migration step.
 Player-originated `game-event` messages are validated against the selected player's server-generated POV before reaching the actor. Admin/table messages use `playerId: null` and can still send table-control events such as animation completion and restart.
+
+The rewrite test suite now includes a WebSocket E2E smoke test that starts an in-process server, connects admin and player clients, configures a new session, validates viewer selection, rejects an illegal player event, and confirms a legal player selection is broadcast back to the admin client.
 
 ## Current Project Structure Direction
 
