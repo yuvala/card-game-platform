@@ -24,7 +24,8 @@ module.exports = defineConfig({
                 index: resolve(__dirname, "html/index.html"),
                 game: resolve(__dirname, "html/game.html"),
                 rewrite: resolve(__dirname, "html/rewrite.html"),
-                player: resolve(__dirname, "html/player.html")
+                player: resolve(__dirname, "html/player.html"),
+                cardSandbox: resolve(__dirname, "html/card-sandbox.html")
             }
         }
     }

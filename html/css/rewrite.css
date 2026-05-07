@@ -430,6 +430,82 @@ a {
     display: block;
 }
 
+.cardSandboxShell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    gap: 18px;
+    padding: 24px;
+    box-sizing: border-box;
+    width: min(1120px, 100%);
+    margin: 0 auto;
+}
+
+.cardSandboxHeader {
+    display: flex;
+    gap: 24px;
+    align-items: end;
+    justify-content: space-between;
+}
+
+.cardSandboxHeader h1 {
+    margin: 0;
+    font-size: 34px;
+    line-height: 1.05;
+}
+
+.cardSandboxControls {
+    display: flex;
+    gap: 12px;
+    align-items: end;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.cardSandboxTabs {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.cardSandboxTab {
+    border: 1px solid rgba(255, 209, 102, 0.18);
+    border-radius: 999px;
+    padding: 10px 14px;
+    background: rgba(247, 239, 224, 0.06);
+    color: #f7efe0;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 800;
+}
+
+.cardSandboxTab:hover {
+    border-color: rgba(255, 209, 102, 0.45);
+}
+
+.cardSandboxTab.is-active {
+    background: #ffd166;
+    color: #10251c;
+    border-color: #ffd166;
+}
+
+.cardSandboxRoot {
+    width: min(1040px, 100%);
+    aspect-ratio: 52 / 49;
+    min-height: 0;
+    margin: 0 auto;
+    border: 1px solid rgba(255, 209, 102, 0.18);
+    border-radius: 18px;
+    overflow: hidden;
+    background: #07140f;
+    box-shadow: 0 40px 120px rgba(0, 0, 0, 0.35);
+}
+
+.cardSandboxRoot canvas {
+    display: block;
+}
+
 @media (max-width: 940px) {
     .rewriteSetupHeader,
     .rewriteSetupRow {
@@ -483,5 +559,19 @@ a {
 
     .playerDeviceFrame {
         width: min(430px, 100%);
+    }
+
+    .cardSandboxHeader {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .cardSandboxControls {
+        justify-content: flex-start;
+    }
+
+    .cardSandboxRoot {
+        aspect-ratio: auto;
+        height: min(66vh, 680px);
     }
 }
