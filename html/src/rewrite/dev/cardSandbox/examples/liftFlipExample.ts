@@ -3,11 +3,8 @@ import * as Phaser from "phaser";
 import type { CardSandboxExample } from "../types";
 import { drawExamplePanel } from "../examplePanel";
 
-const CARD_WIDTH = 112;
-const CARD_HEIGHT = 164;
-
 export const liftFlipExample: CardSandboxExample = {
-    id: "perspective-flip",
+    id: "tilt-flip",
     panel: {
         x: 790,
         y: 298,
@@ -27,13 +24,11 @@ export const liftFlipExample: CardSandboxExample = {
         const liftedY = centerY - 34;
         const shadow = scene.add.ellipse(centerX + 8, centerY + 86, 102, 18, 0x000000, 0.28);
         const image = scene.add.image(centerX, centerY, context.getFaceTexture(card, "showcase"))
-            .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
+            .setDisplaySize(112, 164)
             .setInteractive({ useHandCursor: true });
         const outline = scene.add.rectangle(centerX, centerY, 122, 174, 0x000000, 0)
             .setStrokeStyle(2, colors.gold, 0.86);
-        const perspectiveCard = scene.add.graphics()
-            .setVisible(false);
-        const label = scene.add.text(centerX, centerY + 106, "perspective", {
+        const label = scene.add.text(centerX, centerY + 106, "tilt", {
             fontFamily: "Arial",
             fontSize: "13px",
             fontStyle: "700",
@@ -52,7 +47,7 @@ export const liftFlipExample: CardSandboxExample = {
             scene.tweens.killTweensOf([image, outline, shadow]);
             image.setAngle(0);
             image.setScale(1);
-            image.setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
+            image.setDisplaySize(112, 164);
 
             scene.tweens.add({
                 targets: [image, outline],
@@ -71,59 +66,24 @@ export const liftFlipExample: CardSandboxExample = {
                     });
                 },
                 onComplete: () => {
-                    image.setVisible(false);
-                    outline.setVisible(false);
-                    perspectiveCard.setVisible(true);
-                    drawPerspectiveCard(perspectiveCard, {
-                        x: centerX,
-                        y: liftedY,
-                        width: CARD_WIDTH,
-                        height: CARD_HEIGHT,
-                        farScale: 0.74,
-                        faceUp: isFaceUp,
-                        gold: colors.gold
-                    });
-                    const flipState = { t: 0 };
                     scene.tweens.add({
-                        targets: flipState,
-                        t: 1,
-                        duration: 170,
+                        targets: image,
+                        displayWidth: 2,
+                        angle: -13,
+                        duration: 140,
                         ease: "Sine.easeIn",
-                        onUpdate: () => {
-                            drawPerspectiveCard(perspectiveCard, {
-                                x: centerX,
-                                y: liftedY,
-                                width: CARD_WIDTH * (1 - flipState.t * 0.96),
-                                height: CARD_HEIGHT,
-                                farScale: 0.74 - flipState.t * 0.18,
-                                faceUp: isFaceUp,
-                                gold: colors.gold
-                            });
-                        },
                         onComplete: () => {
                             isFaceUp = !isFaceUp;
                             image.setTexture(isFaceUp ? context.getFaceTexture(card, "showcase") : context.getBackTexture());
-                            flipState.t = 0;
+                            image.displayWidth = 2;
+                            image.displayHeight = 164;
                             scene.tweens.add({
-                                targets: flipState,
-                                t: 1,
-                                duration: 170,
+                                targets: image,
+                                displayWidth: 112,
+                                angle: -7,
+                                duration: 140,
                                 ease: "Sine.easeOut",
-                                onUpdate: () => {
-                                    drawPerspectiveCard(perspectiveCard, {
-                                        x: centerX,
-                                        y: liftedY,
-                                        width: CARD_WIDTH * (0.04 + flipState.t * 0.96),
-                                        height: CARD_HEIGHT,
-                                        farScale: 0.56 + flipState.t * 0.18,
-                                        faceUp: isFaceUp,
-                                        gold: colors.gold
-                                    });
-                                },
                                 onComplete: () => {
-                                    perspectiveCard.clear().setVisible(false);
-                                    image.setVisible(true);
-                                    outline.setVisible(true);
                                     image.setY(liftedY);
                                     outline.setY(liftedY);
                                     image.setAngle(-7);
@@ -140,7 +100,7 @@ export const liftFlipExample: CardSandboxExample = {
                                             shadow.setAlpha(0.28);
                                             image.setAngle(0);
                                             image.setScale(1);
-                                            image.setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
+                                            image.setDisplaySize(112, 164);
                                             outline.setY(centerY);
                                             outline.setAngle(0);
                                             isFlipping = false;
@@ -155,43 +115,7 @@ export const liftFlipExample: CardSandboxExample = {
             });
         });
 
-        renderLayer.add([shadow, outline, image, perspectiveCard, label]);
+        renderLayer.add([shadow, outline, image, label]);
         return {};
     }
 };
-
-function drawPerspectiveCard(
-    graphics: Phaser.GameObjects.Graphics,
-    input: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-        farScale: number;
-        faceUp: boolean;
-        gold: number;
-    }
-): void {
-    const halfWidth = Math.max(2, input.width / 2);
-    const halfHeight = input.height / 2;
-    const farHalfHeight = halfHeight * input.farScale;
-    const fillColor = input.faceUp ? 0xf6ecd2 : 0x244c40;
-    const inkColor = input.faceUp ? 0xc4513f : 0xffd166;
-
-    graphics.clear();
-    graphics.fillStyle(fillColor, 1);
-    graphics.lineStyle(2, input.gold, 0.9);
-    graphics.beginPath();
-    graphics.moveTo(input.x - halfWidth, input.y - halfHeight);
-    graphics.lineTo(input.x + halfWidth, input.y - farHalfHeight);
-    graphics.lineTo(input.x + halfWidth, input.y + farHalfHeight);
-    graphics.lineTo(input.x - halfWidth, input.y + halfHeight);
-    graphics.closePath();
-    graphics.fillPath();
-    graphics.strokePath();
-
-    graphics.lineStyle(1, inkColor, 0.34);
-    graphics.strokeEllipse(input.x, input.y, Math.max(12, halfWidth * 0.78), Math.max(20, input.height * 0.46 * input.farScale));
-    graphics.fillStyle(inkColor, 0.78);
-    graphics.fillCircle(input.x, input.y, Math.max(3, halfWidth * 0.12));
-}

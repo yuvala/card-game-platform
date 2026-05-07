@@ -1,5 +1,6 @@
 import type { CardSandboxExample } from "../types";
 import { addSandboxButton, addStatusText, drawExamplePanel } from "../examplePanel";
+import { animateDealReveal } from "../../../phaser/scenes/animations/cardMotionAnimations";
 
 export const dealerRevealExample: CardSandboxExample = {
     id: "dealer-reveal",
@@ -9,7 +10,7 @@ export const dealerRevealExample: CardSandboxExample = {
         width: 260,
         height: 270,
         title: "Dealer reveal",
-        description: "Click Reveal: deal one face-down card, pause briefly, then flip it face-up in the destination slot."
+        description: ""
     },
     render: (context) => {
         const panel = context.panel ?? dealerRevealExample.panel;
@@ -28,47 +29,30 @@ export const dealerRevealExample: CardSandboxExample = {
             context.animationLayer.clear();
             status.setText("dealing face-down").setColor("#ffd166");
             const card = context.deck[18];
-            const ghost = context.animationLayer.createGhostCard({
-                textureKey: context.getBackTexture(),
-                x: sourceX,
-                y: cardY,
-                width: 88,
-                height: 130,
-                angle: -5,
-                depth: 40
-            });
-
-            scene.tweens.add({
-                targets: ghost.image,
-                x: targetX,
-                y: cardY,
-                angle: 0,
-                duration: 520,
-                ease: "Cubic.easeOut",
-                onComplete: () => {
+            animateDealReveal({
+                scene,
+                animationLayer: context.animationLayer,
+                backTextureKey: context.getBackTexture(),
+                faceTextureKey: context.getFaceTexture(card, "showcase"),
+                source: {
+                    x: sourceX,
+                    y: cardY
+                },
+                target: {
+                    x: targetX,
+                    y: cardY
+                },
+                size: {
+                    width: 88,
+                    height: 130
+                },
+                sourceAngle: -5,
+                depth: 40,
+                onLanded: () => {
                     status.setText("pause before reveal").setColor("#ffd166");
-                    scene.time.delayedCall(320, () => {
-                        scene.tweens.add({
-                            targets: ghost.image,
-                            displayWidth: 2,
-                            duration: 130,
-                            ease: "Sine.easeIn",
-                            onComplete: () => {
-                                ghost.image.setTexture(context.getFaceTexture(card, "showcase"));
-                                ghost.image.displayWidth = 2;
-                                ghost.image.displayHeight = 130;
-                                scene.tweens.add({
-                                    targets: ghost.image,
-                                    displayWidth: 88,
-                                    duration: 130,
-                                    ease: "Sine.easeOut",
-                                    onComplete: () => {
-                                        status.setText("done: revealed").setColor("#78d9a0");
-                                    }
-                                });
-                            }
-                        });
-                    });
+                },
+                onComplete: () => {
+                    status.setText("done: revealed").setColor("#78d9a0");
                 }
             });
         };

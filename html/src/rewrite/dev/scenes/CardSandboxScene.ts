@@ -22,6 +22,7 @@ import { realCardExample } from "../cardSandbox/examples/realCardExample";
 import { shuffleExample } from "../cardSandbox/examples/shuffleExample";
 import { stackExample } from "../cardSandbox/examples/stackExample";
 import { verticalFlipExample } from "../cardSandbox/examples/verticalFlipExample";
+import { warRevealHoldExample } from "../cardSandbox/examples/warRevealHoldExample";
 import { drawStateGallery } from "../cardSandbox/stateGallery";
 import type {
     CardSandboxExample,
@@ -45,6 +46,7 @@ const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
         ghostArcExample
     ],
     layer: [
+        warRevealHoldExample,
         dealerRevealExample,
         stackExample,
         collectPileExample,

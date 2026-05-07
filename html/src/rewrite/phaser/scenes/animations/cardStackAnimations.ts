@@ -3,6 +3,12 @@ import * as Phaser from "phaser";
 import type { MoveCardEffect } from "@rewrite-core/engine/game/effects";
 import type { CardGameViewCard } from "@rewrite-core/engine/game/viewModel";
 import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
+import {
+    animateCardHoldHighlight,
+    animateImageCollectMotions,
+    animateImageHorizontalFlip,
+    animateImageMove
+} from "./cardMotionAnimations";
 
 export interface CardAnimationPoint {
     x: number;
@@ -181,6 +187,26 @@ export function shouldRevealFinalCard(effect: MoveCardEffect): boolean {
     return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp;
 }
 
+function getFinalRevealDelay(effect: MoveCardEffect): number {
+    return effect.key.startsWith("war-reveal-") ? 650 : 0;
+}
+
+function getFinalRevealDurations(effect: MoveCardEffect): { revealInDuration: number; revealOutDuration: number } {
+    return effect.key.startsWith("war-reveal-")
+        ? {
+              revealInDuration: 170,
+              revealOutDuration: 230
+          }
+        : {
+              revealInDuration: 95,
+              revealOutDuration: 145
+          };
+}
+
+function isWarRevealEffect(effect: MoveCardEffect): boolean {
+    return effect.key.startsWith("war-reveal-");
+}
+
 export function prepareCardMoveGhostTexture(input: {
     ghost: Phaser.GameObjects.Image;
     effect: MoveCardEffect;
@@ -201,27 +227,25 @@ export function animateFinalCardReveal(input: {
     onComplete: () => void;
 }): void {
     const { scene, ghost, effect, textureApi, onReveal, onComplete } = input;
+    const durations = getFinalRevealDurations(effect);
 
-    scene.tweens.add({
-        targets: ghost,
-        scaleX: 0.08,
-        duration: 95,
-        ease: "Sine.easeIn",
-        onComplete: () => {
+    animateImageHorizontalFlip({
+        scene,
+        image: ghost,
+        size: {
+            width: CARD_WIDTH,
+            height: CARD_HEIGHT
+        },
+        revealInDuration: durations.revealInDuration,
+        revealOutDuration: durations.revealOutDuration,
+        onMidpoint: () => {
             onReveal?.();
             ghost.setScale(1);
             restoreCardDisplaySize(ghost);
             textureApi.applyCardTexture(ghost, effect.card, "compact");
             restoreCardDisplaySize(ghost);
-            ghost.setScale(0.08, 1);
-            scene.tweens.add({
-                targets: ghost,
-                scaleX: 1,
-                duration: 145,
-                ease: "Sine.easeOut",
-                onComplete
-            });
-        }
+        },
+        onComplete
     });
 }
 
@@ -238,11 +262,14 @@ export function animateCardToStack(input: {
 }): void {
     const { scene, ghost, effect, destination, profile, textureApi, onLanded, onReveal, onComplete } = input;
 
-    scene.tweens.add({
-        targets: ghost,
-        x: destination.x,
-        y: destination.y,
-        angle: destination.angle,
+    animateImageMove({
+        scene,
+        image: ghost,
+        target: {
+            x: destination.x,
+            y: destination.y
+        },
+        targetAngle: destination.angle,
         scaleX: profile.peakScale,
         scaleY: profile.peakScale,
         duration: profile.duration,
@@ -256,14 +283,34 @@ export function animateCardToStack(input: {
                 return;
             }
 
-            animateFinalCardReveal({
-                scene,
-                ghost,
-                effect,
-                textureApi,
-                onReveal,
-                onComplete
-            });
+            const revealDelay = getFinalRevealDelay(effect);
+            const revealHighlight = isWarRevealEffect(effect)
+                ? animateCardHoldHighlight({
+                      scene,
+                      image: ghost,
+                      width: CARD_WIDTH + 18,
+                      height: CARD_HEIGHT + 18,
+                      duration: revealDelay
+                  })
+                : null;
+            const reveal = () => {
+                revealHighlight?.destroy();
+                animateFinalCardReveal({
+                    scene,
+                    ghost,
+                    effect,
+                    textureApi,
+                    onReveal,
+                    onComplete
+                });
+            };
+
+            if (revealDelay > 0) {
+                scene.time.delayedCall(revealDelay, reveal);
+                return;
+            }
+
+            reveal();
         }
     });
 }
@@ -276,52 +323,30 @@ export function animateCollectCards(input: {
     onComplete?: () => void;
 }): void {
     const { scene, items, onCardLanded, onComplete } = input;
-    if (items.length === 0) {
-        onComplete?.();
-        return;
-    }
 
-    let landedCount = 0;
-    const landedGhosts: Phaser.GameObjects.Image[] = [];
-
-    items.forEach((item, index) => {
-        const landingY = item.destination.y;
-        scene.tweens.add({
-            targets: item.ghost,
-            x: item.destination.x,
-            y: landingY - 6,
-            angle: item.destination.angle,
-            scaleX: item.peakScale,
-            scaleY: item.peakScale,
-            duration: item.duration,
-            delay: item.delay,
-            ease: item.ease,
-            onComplete: () => {
-                scene.tweens.add({
-                    targets: item.ghost,
-                    y: landingY,
-                    scaleX: item.landingScale,
-                    scaleY: item.landingScale,
-                    duration: 80,
-                    ease: "Back.easeOut",
-                    onComplete: () => {
-                        landedGhosts.push(item.ghost);
-                        onCardLanded?.(item);
-                        landedCount += 1;
-                        if (landedCount !== items.length) {
-                            return;
-                        }
-
-                        scene.time.delayedCall(140, () => {
-                            landedGhosts.forEach((ghost) => {
-                                ghost.destroy();
-                            });
-                            onComplete?.();
-                        });
-                    }
-                });
+    animateImageCollectMotions({
+        scene,
+        items: items.map((item) => {
+            return {
+                image: item.ghost,
+                target: {
+                    x: item.destination.x,
+                    y: item.destination.y
+                },
+                targetAngle: item.destination.angle,
+                delay: item.delay,
+                duration: item.duration,
+                ease: item.ease,
+                peakScale: item.peakScale,
+                landingScale: item.landingScale
+            };
+        }),
+        onItemLanded: (motionItem) => {
+            const item = items.find((candidate) => candidate.ghost === motionItem.image);
+            if (item) {
+                onCardLanded?.(item);
             }
-        });
-        item.ghost.setDepth(142 + index);
+        },
+        onComplete
     });
 }

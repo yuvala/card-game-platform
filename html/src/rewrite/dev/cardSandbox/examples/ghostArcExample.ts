@@ -1,10 +1,6 @@
 import type { CardSandboxExample } from "../types";
 import { addSandboxButton, addStatusText, drawExamplePanel } from "../examplePanel";
-
-interface ArcPoint {
-    x: number;
-    y: number;
-}
+import { animateGhostArcMove } from "../../../phaser/scenes/animations/cardMotionAnimations";
 
 export const ghostArcExample: CardSandboxExample = {
     id: "ghost-card-arc",
@@ -24,12 +20,14 @@ export const ghostArcExample: CardSandboxExample = {
         const sourceX = panel.x + 50;
         const targetX = panel.x + 200;
         const cardY = panel.y + 172;
+        const cardWidth = 88;
+        const cardHeight = 128;
         const control = {
             x: panel.x + 125,
             y: panel.y + 78
         };
-        renderLayer.add(scene.add.rectangle(sourceX, cardY, 88, 128, 0x000000, 0).setStrokeStyle(2, 0x78d9a0, 0.28));
-        renderLayer.add(scene.add.rectangle(targetX, cardY, 88, 128, 0x000000, 0).setStrokeStyle(2, colors.gold, 0.28));
+        renderLayer.add(scene.add.rectangle(sourceX, cardY, cardWidth, cardHeight, 0x000000, 0).setStrokeStyle(2, 0x78d9a0, 0.28));
+        renderLayer.add(scene.add.rectangle(targetX, cardY, cardWidth, cardHeight, 0x000000, 0).setStrokeStyle(2, colors.gold, 0.28));
         renderLayer.add(scene.add.text(sourceX, cardY + 78, "source", {
             fontFamily: "Arial",
             fontSize: "12px",
@@ -54,45 +52,22 @@ export const ghostArcExample: CardSandboxExample = {
                 x: targetX,
                 y: cardY
             };
-            const ghost = context.animationLayer.createGhostCard({
+            animateGhostArcMove({
+                scene,
+                animationLayer: context.animationLayer,
                 textureKey: context.getFaceTexture(card, "showcase"),
-                x: start.x,
-                y: start.y,
-                width: 88,
-                height: 128,
-                angle: -12,
-                depth: 24
-            });
-            const progress = {
-                t: 0
-            };
-
-            scene.tweens.add({
-                targets: progress,
-                t: 1,
-                duration: 780,
-                ease: "Sine.easeInOut",
-                onUpdate: () => {
-                    const point = getQuadraticBezierPoint(start, control, end, progress.t);
-                    ghost.image.setPosition(point.x, point.y);
-                    ghost.image.setAngle(-12 + progress.t * 22);
+                source: start,
+                controlIn: control,
+                target: end,
+                size: {
+                    width: cardWidth,
+                    height: cardHeight
                 },
+                sourceAngle: -12,
+                targetAngle: 10,
+                depth: 24,
                 onComplete: () => {
-                    ghost.image.setPosition(end.x, end.y - 8);
-                    ghost.image.setAngle(10);
-                    scene.tweens.add({
-                        targets: ghost.image,
-                        y: end.y,
-                        scaleX: 1.02,
-                        scaleY: 0.98,
-                        duration: 120,
-                        ease: "Back.easeOut",
-                        onComplete: () => {
-                            ghost.image.setPosition(end.x, end.y);
-                            ghost.image.setScale(1);
-                            status.setText("done: arc landed").setColor("#78d9a0");
-                        }
-                    });
+                    status.setText("done: arc landed").setColor("#78d9a0");
                 }
             });
         };
@@ -107,12 +82,3 @@ export const ghostArcExample: CardSandboxExample = {
         return { run };
     }
 };
-
-function getQuadraticBezierPoint(start: ArcPoint, control: ArcPoint, end: ArcPoint, t: number): ArcPoint {
-    const inverse = 1 - t;
-
-    return {
-        x: inverse * inverse * start.x + 2 * inverse * t * control.x + t * t * end.x,
-        y: inverse * inverse * start.y + 2 * inverse * t * control.y + t * t * end.y
-    };
-}

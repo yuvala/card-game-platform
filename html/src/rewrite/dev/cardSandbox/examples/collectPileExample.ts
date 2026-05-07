@@ -1,5 +1,6 @@
 import type { CardSandboxExample } from "../types";
 import { addSandboxButton, addStatusText, drawExamplePanel } from "../examplePanel";
+import { animateCollectPile } from "../../../phaser/scenes/animations/cardMotionAnimations";
 
 export const collectPileExample: CardSandboxExample = {
     id: "collect-pile",
@@ -9,7 +10,7 @@ export const collectPileExample: CardSandboxExample = {
         width: 260,
         height: 270,
         title: "Collect pile",
-        description: "Click Collect: move several table ghosts one by one into a messy pile with staggered timing."
+        description: ""
     },
     render: (context) => {
         const panel = context.panel ?? collectPileExample.panel;
@@ -45,33 +46,33 @@ export const collectPileExample: CardSandboxExample = {
         const run = () => {
             context.animationLayer.clear();
             status.setText("collecting cards").setColor("#ffd166");
-            tablePositions.forEach((position, index) => {
-                const card = context.deck[18 + index];
-                const ghost = context.animationLayer.createGhostCard({
-                    textureKey: context.getFaceTexture(card, "showcase"),
-                    x: position.x,
-                    y: position.y,
-                    width: 76,
-                    height: 112,
-                    angle: position.angle,
-                    alpha: 1,
-                    depth: 40 + index
-                });
-
-                scene.tweens.add({
-                    targets: ghost.image,
-                    x: pileX + index * 5,
-                    y: cardY + index * 4,
-                    angle: -7 + index * 7,
-                    delay: index * 110,
-                    duration: 420,
-                    ease: "Cubic.easeInOut",
-                    onComplete: () => {
-                        if (index === tablePositions.length - 1) {
-                            status.setText("done: messy pile").setColor("#78d9a0");
-                        }
-                    }
-                });
+            animateCollectPile({
+                scene,
+                animationLayer: context.animationLayer,
+                cards: tablePositions.map((position, index) => {
+                    const card = context.deck[18 + index];
+                    return {
+                        textureKey: context.getFaceTexture(card, "showcase"),
+                        source: {
+                            x: position.x,
+                            y: position.y
+                        },
+                        target: {
+                            x: pileX + index * 5,
+                            y: cardY + index * 4
+                        },
+                        size: {
+                            width: 76,
+                            height: 112
+                        },
+                        sourceAngle: position.angle,
+                        targetAngle: -7 + index * 7,
+                        depth: 40 + index
+                    };
+                }),
+                onComplete: () => {
+                    status.setText("done: messy pile").setColor("#78d9a0");
+                }
             });
         };
 

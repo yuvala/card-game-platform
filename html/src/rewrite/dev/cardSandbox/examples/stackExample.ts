@@ -1,5 +1,6 @@
 import type { CardSandboxExample } from "../types";
 import { addSandboxButton, addStatusText, drawExamplePanel } from "../examplePanel";
+import { animateLayerStack } from "../../../phaser/scenes/animations/cardMotionAnimations";
 
 export const stackExample: CardSandboxExample = {
     id: "animation-layer-stack",
@@ -9,7 +10,7 @@ export const stackExample: CardSandboxExample = {
         width: 260,
         height: 270,
         title: "Animation-layer stack",
-        description: "Click Build stack: clear the animation layer and rebuild a temporary messy stack."
+        description: ""
     },
     render: (context) => {
         const panel = context.panel ?? stackExample.panel;
@@ -21,34 +22,23 @@ export const stackExample: CardSandboxExample = {
         const run = () => {
             context.animationLayer.clear();
             status.setText("building stack").setColor("#ffd166");
-
-            context.deck.slice(12, 17).forEach((_card, index) => {
-                const ghost = context.animationLayer.createGhostCard({
-                    textureKey: context.getBackTexture(),
+            animateLayerStack({
+                scene: context.scene,
+                animationLayer: context.animationLayer,
+                textureKey: context.getBackTexture(),
+                origin: {
                     x: stackX,
-                    y: stackY,
+                    y: stackY
+                },
+                size: {
                     width: 88,
-                    height: 130,
-                    angle: 0,
-                    alpha: 0,
-                    depth: 30 + index
-                });
-
-                context.scene.tweens.add({
-                    targets: ghost.image,
-                    x: stackX + index * 8,
-                    y: stackY + index * 5,
-                    angle: -8 + index * 4,
-                    alpha: 1,
-                    delay: index * 90,
-                    duration: 260,
-                    ease: "Back.easeOut",
-                    onComplete: () => {
-                        if (index === 4) {
-                            status.setText("done: temporary ghosts").setColor("#78d9a0");
-                        }
-                    }
-                });
+                    height: 130
+                },
+                count: 5,
+                depth: 30,
+                onComplete: () => {
+                    status.setText("done: temporary ghosts").setColor("#78d9a0");
+                }
             });
         };
         const clear = () => {

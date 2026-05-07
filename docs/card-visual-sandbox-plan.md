@@ -34,11 +34,15 @@ Current entry:
 http://127.0.0.1:8000/card-sandbox.html
 ```
 
-Suggested implementation files:
+Current implementation files:
 
 ```text
 html/src/rewrite/dev/cardSandboxMain.ts
-html/src/rewrite/dev/CardSandboxScene.ts
+html/src/rewrite/dev/createCardSandboxGame.ts
+html/src/rewrite/dev/scenes/CardSandboxScene.ts
+html/src/rewrite/dev/cardSandbox/
+html/src/rewrite/phaser/scenes/animations/cardAnimationLayer.ts
+html/src/rewrite/phaser/scenes/animations/cardMotionAnimations.ts
 ```
 
 This keeps the sandbox separate from:
@@ -128,9 +132,11 @@ const textureKey = getCardFaceTextureKey(card.id, skin.id, "showcase");
 scene.add.image(x, y, textureKey);
 ```
 
-## First Visual States
+## Current Visual States
 
-The first sandbox version should show a grid of real cards in common rendering states:
+The sandbox currently has a `Real Cards` tab with a deck-state gallery and local real-card effects.
+
+Current state gallery:
 
 - face-up card
 - face-down card
@@ -139,49 +145,72 @@ The first sandbox version should show a grid of real cards in common rendering s
 - selected card outline
 - disabled/dimmed card
 - rotated card
+
+Current real-card effect previews:
+
+- horizontal flip with hover lift
+- vertical flip
+- snap flip
+- spin flip
+- tilt flip
+
+Not yet covered here:
+
 - top/left/right/bottom player orientation
-- small stacked pile
-- messy collected pile
+- selected outline variants beyond the basic state gallery
 
-## First Animation Previews
+## Current Animation Previews
 
-Add a small animation preview area with explicit buttons:
+The sandbox uses tabs instead of one large mixed preview.
 
-- Flip face-down to face-up
-- Flip face-up to face-down
-- Spin
-- Deal/move card
-- Scatter stack
-- Collect to pile
-- War-style stack preview
-- Shuffle preview
+Current `Ghost Cards` tab:
+
+- `Ghost move + flip`
+- `Ghost arc move`
+
+Current `Animation Layers` tab:
+
+- `Dealer reveal`
+- `Animation-layer stack`
+- `Collect pile`
+- `Shuffle preview`
 
 The goal is to inspect the movement clearly, not to simulate a full game.
 
 ## Suggested UI
 
-Basic controls:
+Current controls:
 
 ```text
 Deck: French | Spanish
-Skin: Vintage European
-Variant: Compact | Showcase
-Animation: Flip | Spin | Stack | Collect | Shuffle
 Replay
+Tabs: Real Cards | Ghost Cards | Animation Layers
 ```
 
-The page should expose enough controls to test visuals quickly without editing game state.
+The current skin is fixed to `vintage-european`.
 
 ## Reuse Rules
 
-Reusable card effects should be implemented as generic functions that receive explicit visual inputs:
+Reusable card effects should be implemented as generic functions that receive explicit visual inputs.
+
+Current reusable ghost/animation-layer API:
 
 ```ts
-animateFlipCard(scene, cardImage, options)
-animateSpinCard(scene, cardImage, options)
-animateScatterStack(scene, cards, target, options)
-animateCollectCards(scene, cards, targetPile, options)
+animateGhostMoveReveal(...)
+animateGhostArcMove(...)
+animateDealReveal(...)
+animateLayerStack(...)
+animateCollectPile(...)
+animateRiffleShuffle(...)
 ```
+
+Source:
+
+```text
+html/src/rewrite/phaser/scenes/animations/cardMotionAnimations.ts
+```
+
+Current real-card effects are still implemented inside sandbox examples. They should be extracted later if they are needed by production presenters.
 
 Game logic should decide what happened.
 
@@ -256,6 +285,12 @@ animationLayer.clear()
 
 This keeps depth, lifecycle, and cleanup predictable.
 
+Current implementation:
+
+```text
+html/src/rewrite/phaser/scenes/animations/cardAnimationLayer.ts
+```
+
 ### State Rule
 
 Game state never depends on Phaser animation objects.
@@ -289,11 +324,41 @@ npm run build
 npm run test-rewrite
 ```
 
-Status: initial slice exists. It includes a deck selector, real-card flip/hover, ghost-card move, and animation-layer stack preview.
+Status: complete. The initial slice exists and now includes deck selection, real-card state gallery, real-card flip variants, ghost-card movement previews, and animation-layer previews.
+
+## Reusable API Status
+
+Implemented reusable functions:
+
+- `animateGhostMoveReveal`
+- `animateGhostArcMove`
+- `animateDealReveal`
+- `animateLayerStack`
+- `animateCollectPile`
+- `animateRiffleShuffle`
+
+Current sandbox examples consume this API for ghost and animation-layer previews.
+
+Production usage:
+
+- War Lite card movement/reveal now goes through the shared motion helpers via `cardStackAnimations.ts`.
+- War reveal cards (`war-reveal-*`) intentionally pause briefly after landing, show a gold hold highlight, then flip face-up. This matches the `Deal + reveal` pattern from the sandbox while preserving the existing War table layout and game logic.
+
+Still sandbox-local:
+
+- horizontal real-card flip
+- vertical flip
+- snap flip
+- spin flip
+- tilt flip
+
+These can be extracted to a real-card effects module when a production scene needs them.
 
 ## Later Slices
 
-- Add curated animation controls for deal, collect, shuffle, and war stack.
+- Connect reusable motion animations back into War first.
+- Decide what remains in `cardStackAnimations.ts` versus `cardMotionAnimations.ts`.
+- Extract real-card local flip effects if needed by production presenters.
 - Add visual snapshots for high-risk card states.
 - Add side-by-side French vs Spanish deck comparison.
 - Add card scale/orientation controls.

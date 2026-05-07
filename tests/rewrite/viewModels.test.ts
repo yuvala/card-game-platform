@@ -149,13 +149,25 @@ async function runWarLiteWarPotViewModelTest() {
         return snapshot.value === "battleReady" && snapshot.context.warState?.stage === "face-down";
     });
     actor.send({ type: "PLAY_CARD" });
+    let snapshot = actor.getSnapshot();
+    let viewModel = getWarLiteViewModel(snapshot);
+    const faceDownEffects = viewModel.effects.filter((effect) => {
+        return effect.type === "move-card" && effect.reason === "play" && effect.key.startsWith("war-down-");
+    });
+    assert(faceDownEffects.length === 6, "War Lite should expose six war-down move effects for the full face-down stack.");
+    assert(
+        faceDownEffects.every((effect) => {
+            return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp === false;
+        }),
+        "War Lite war-down effects should move hidden cards without triggering a reveal flip."
+    );
     await waitFor(() => {
-        const snapshot = actor.getSnapshot();
-        return snapshot.value === "battleReady" && snapshot.context.warState?.stage === "reveal";
+        const nextSnapshot = actor.getSnapshot();
+        return nextSnapshot.value === "battleReady" && nextSnapshot.context.warState?.stage === "reveal";
     });
 
-    const snapshot = actor.getSnapshot();
-    const viewModel = getWarLiteViewModel(snapshot);
+    snapshot = actor.getSnapshot();
+    viewModel = getWarLiteViewModel(snapshot);
     const firstPlayerId = snapshot.context.players[0].id;
     const secondPlayerId = snapshot.context.players[1].id;
     const firstPlayerTableCards = viewModel.tableCards.filter((card) => card.playerId === firstPlayerId);
@@ -197,6 +209,24 @@ async function runWarLiteWarPotViewModelTest() {
         viewModel.primaryAction?.label === "Reveal War Card",
         "War Lite should ask for the face-up war reveal after placing the face-down stack."
     );
+
+    actor.send({ type: "PLAY_CARD" });
+    snapshot = actor.getSnapshot();
+    viewModel = getWarLiteViewModel(snapshot);
+    const revealEffects = viewModel.effects.filter((effect) => {
+        return effect.type === "move-card" && effect.reason === "play" && effect.key.startsWith("war-reveal-");
+    });
+    assert(revealEffects.length === 1, "War Lite should expose one war-reveal move effect for the first face-up war card.");
+    assert(
+        revealEffects.every((effect) => {
+            return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp === true;
+        }),
+        "War Lite war-reveal effects should mark a hidden source moving into a face-up card for the reveal animation."
+    );
+    await waitFor(() => {
+        const nextSnapshot = actor.getSnapshot();
+        return nextSnapshot.value === "battleReady" && nextSnapshot.context.comparisonCards.length === 1;
+    });
 
     actor.stop();
 }

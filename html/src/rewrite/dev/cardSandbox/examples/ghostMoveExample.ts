@@ -1,5 +1,6 @@
 import type { CardSandboxExample } from "../types";
 import { addSandboxButton, addStatusText, drawExamplePanel } from "../examplePanel";
+import { animateGhostMoveReveal } from "../../../phaser/scenes/animations/cardMotionAnimations";
 
 export const ghostMoveExample: CardSandboxExample = {
     id: "ghost-card-move",
@@ -41,45 +42,31 @@ export const ghostMoveExample: CardSandboxExample = {
             context.animationLayer.clear();
             status.setText("face-down ghost moving").setColor("#ffd166");
             const card = context.deck[10];
-            const ghost = context.animationLayer.createGhostCard({
-                textureKey: context.getBackTexture(),
-                x: sourceX,
-                y: cardY,
-                width: 96,
-                height: 140,
-                angle: -4,
-                depth: 20
-            });
-
-            scene.tweens.add({
-                targets: ghost.image,
-                x: targetX,
-                y: cardY,
-                angle: 8,
-                duration: 760,
-                ease: "Cubic.easeInOut",
-                onComplete: () => {
+            animateGhostMoveReveal({
+                scene,
+                animationLayer: context.animationLayer,
+                backTextureKey: context.getBackTexture(),
+                faceTextureKey: context.getFaceTexture(card, "showcase"),
+                source: {
+                    x: sourceX,
+                    y: cardY
+                },
+                target: {
+                    x: targetX,
+                    y: cardY
+                },
+                size: {
+                    width: 96,
+                    height: 140
+                },
+                sourceAngle: -4,
+                targetAngle: 8,
+                depth: 20,
+                onMoveComplete: () => {
                     status.setText("reveal flip").setColor("#ffd166");
-                    scene.tweens.add({
-                        targets: ghost.image,
-                        displayWidth: 2,
-                        duration: 120,
-                        ease: "Sine.easeIn",
-                        onComplete: () => {
-                            ghost.image.setTexture(context.getFaceTexture(card, "showcase"));
-                            ghost.image.displayWidth = 2;
-                            ghost.image.displayHeight = 140;
-                            scene.tweens.add({
-                                targets: ghost.image,
-                                displayWidth: 96,
-                                duration: 120,
-                                ease: "Sine.easeOut",
-                                onComplete: () => {
-                                    status.setText("done: moved and revealed").setColor("#78d9a0");
-                                }
-                            });
-                        }
-                    });
+                },
+                onComplete: () => {
+                    status.setText("done: moved and revealed").setColor("#78d9a0");
                 }
             });
         };
