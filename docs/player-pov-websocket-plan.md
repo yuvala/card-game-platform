@@ -263,6 +263,7 @@ player.html?wsUrl=ws://127.0.0.1:8787/
 ```
 
 The player screen now uses a dedicated Phaser renderer instead of the admin table renderer.
+The WebSocket client also exposes a small connection/action status state: `connected`, `error`, or `closed`. This is for UI feedback only; it does not replace server logging. The player page shows that status both in the surrounding DOM and inside the Phaser mobile table.
 
 Current POV behavior:
 

@@ -88,10 +88,16 @@ function selectInitialViewer(session: RemoteGameSession): void {
 }
 
 function syncStatus(session: RemoteGameSession): void {
+    const status = session.getStatus();
+    if (status.type !== "connected") {
+        playerStatus.textContent = status.message;
+        return;
+    }
+
     const viewerName = session.getPlayers().find((player) => player.id === session.getViewerId())?.name;
     playerStatus.textContent = viewerName
-        ? "Viewing as " + viewerName
-        : "Connected to table.";
+        ? "Online | Viewing as " + viewerName
+        : "Online | Connected to table.";
 }
 
 function getRequestedWebSocketUrl(params: URLSearchParams): string {

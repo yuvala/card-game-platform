@@ -30,6 +30,11 @@ const GOLD = 0xffd166;
 const CREAM = "#f6ecd2";
 const DIM = "rgba(246,236,210,0.72)";
 
+type PlayerSessionStatus =
+    | { type: "connected" }
+    | { type: "error"; message: string }
+    | { type: "closed"; message: string };
+
 interface CardDisplaySize {
     width: number;
     height: number;
@@ -73,6 +78,7 @@ export class PlayerTableScene extends Phaser.Scene {
         this.drawTableCards(viewModel);
         this.drawPlayerHand(viewModel);
         this.drawBottomControls(viewModel);
+        this.drawSessionStatus();
     }
 
     private drawBackground(): void {
@@ -290,6 +296,50 @@ export class PlayerTableScene extends Phaser.Scene {
             align: "center",
             wordWrap: { width: PLAYER_GAME_WIDTH - 48 }
         }).setOrigin(0.5));
+    }
+
+    private drawSessionStatus(): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        const status = this.getSessionStatus();
+        if (!status) {
+            return;
+        }
+
+        if (status.type === "connected") {
+            this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 72, 86, 24, 12, 0x123f2c, 0.94, 0x78d9a0, 1, 0.42));
+            this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 28, 72, 4, 0x78d9a0, 1));
+            this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 6, 72, "Online", {
+                fontFamily: "Arial",
+                fontSize: "12px",
+                fontStyle: "700",
+                color: "#d7ffe5"
+            }).setOrigin(0.5));
+            return;
+        }
+
+        const isClosed = status.type === "closed";
+        const panelColor = isClosed ? 0x42231f : 0x4b3216;
+        const strokeColor = isClosed ? 0xff9b8d : GOLD;
+        const textColor = isClosed ? "#ffb6aa" : "#ffd166";
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 612, PLAYER_GAME_WIDTH - 44, 42, 12, panelColor, 0.94, strokeColor, 1, 0.6));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 612, status.message, {
+            fontFamily: "Arial",
+            fontSize: "12px",
+            fontStyle: "700",
+            color: textColor,
+            align: "center",
+            wordWrap: { width: PLAYER_GAME_WIDTH - 72 }
+        }).setOrigin(0.5));
+    }
+
+    private getSessionStatus(): PlayerSessionStatus | null {
+        const maybeStatusSession = this.session as CardGameSession<CardGameViewModel> & {
+            getStatus?: () => PlayerSessionStatus;
+        };
+        return maybeStatusSession.getStatus?.() ?? null;
     }
 
     private ensureCardTextures(viewModel: CardGameViewModel): void {

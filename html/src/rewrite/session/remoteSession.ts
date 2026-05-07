@@ -17,9 +17,15 @@ interface RemoteGameSessionInput {
 
 type RemoteSessionListener = (snapshot: CardGameViewModel) => void;
 
+export type RemoteSessionStatus =
+    | { type: "connected" }
+    | { type: "error"; message: string }
+    | { type: "closed"; message: string };
+
 export interface RemoteGameSession extends CardGameSession<CardGameViewModel> {
     getPlayers(): SessionPlayerSummary[];
     getViewerId(): string | null;
+    getStatus(): RemoteSessionStatus;
     configure(config: RewriteSessionConfig): Promise<void>;
     setViewer(playerId: string | null): void;
 }
@@ -39,8 +45,16 @@ function createConnectedRemoteGameSession(
 ): RemoteGameSession {
     let latestMessage = initialMessage;
     let activeViewerId = viewerId;
+    let status: RemoteSessionStatus = { type: "connected" };
     const listeners = new Set<RemoteSessionListener>();
     const pendingSessionViewResolvers = new Set<() => void>();
+
+    const notifyListeners = () => {
+        const viewModel = getLatestViewModel(latestMessage);
+        listeners.forEach((listener) => {
+            listener(viewModel);
+        });
+    };
 
     socket.addEventListener("message", (event) => {
         const message = parseServerMessage(event.data);
@@ -49,19 +63,38 @@ function createConnectedRemoteGameSession(
         }
 
         if (message.type === "error") {
-            console.error("Rewrite WebSocket error:", message.message);
+            status = {
+                type: "error",
+                message: message.message
+            };
+            notifyListeners();
             return;
         }
 
         latestMessage = message;
         activeViewerId = message.viewerId;
-        listeners.forEach((listener) => {
-            listener(getLatestViewModel(latestMessage));
-        });
+        status = { type: "connected" };
+        notifyListeners();
         pendingSessionViewResolvers.forEach((resolve) => {
             resolve();
         });
         pendingSessionViewResolvers.clear();
+    });
+
+    socket.addEventListener("close", () => {
+        status = {
+            type: "closed",
+            message: "Connection to the table was closed."
+        };
+        notifyListeners();
+    });
+
+    socket.addEventListener("error", () => {
+        status = {
+            type: "error",
+            message: "Connection to the table failed."
+        };
+        notifyListeners();
     });
 
     return {
@@ -98,6 +131,7 @@ function createConnectedRemoteGameSession(
         getViewModel: () => getLatestViewModel(latestMessage),
         getPlayers: () => latestMessage.players,
         getViewerId: () => activeViewerId,
+        getStatus: () => status,
         configure: (config) => {
             return waitForNextSessionView(socket, pendingSessionViewResolvers, () => {
                 sendClientMessage(socket, {
