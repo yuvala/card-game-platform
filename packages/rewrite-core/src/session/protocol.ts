@@ -23,7 +23,7 @@ export type RewriteClientMessage =
     | { type: "watch-session"; sessionId?: string }
     | { type: "configure-session"; config: RewriteSessionConfig }
     | { type: "set-viewer"; playerId: string | null }
-    | { type: "game-event"; playerId?: string | null; event: RewriteProtocolGameEvent };
+    | { type: "game-event"; event: RewriteProtocolGameEvent };
 
 export type RewriteServerMessage =
     | {
@@ -41,7 +41,7 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
         return false;
     }
 
-    const message = value as { type?: unknown; event?: unknown; config?: unknown };
+    const message = value as { type?: unknown; event?: unknown; config?: unknown; playerId?: unknown };
     if (message.type === "watch-session" || message.type === "set-viewer") {
         return true;
     }
@@ -50,7 +50,11 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
         return isRewriteSessionConfig(message.config);
     }
 
-    return message.type === "game-event" && isRewriteProtocolGameEvent(message.event);
+    return (
+        message.type === "game-event" &&
+        typeof message.playerId === "undefined" &&
+        isRewriteProtocolGameEvent(message.event)
+    );
 }
 
 export function isRewriteServerMessage(value: unknown): value is RewriteServerMessage {

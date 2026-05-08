@@ -119,7 +119,6 @@ function createConnectedRemoteGameSession(
         send: (event: CardGameEvent) => {
             sendClientMessage(socket, {
                 type: "game-event",
-                playerId: activeViewerId,
                 event
             });
         },

@@ -3,7 +3,7 @@ import { WebSocket, type RawData } from "ws";
 
 import { createRewriteWebSocketServer } from "../../apps/server/src/rewrite/RewriteWebSocketServer";
 import type { CardGameViewModel } from "@rewrite-core/engine/game/viewModel";
-import { isRewriteServerMessage, type RewriteClientMessage, type RewriteServerMessage } from "@rewrite-core/session/protocol";
+import { isRewriteClientMessage, isRewriteServerMessage, type RewriteClientMessage, type RewriteServerMessage } from "@rewrite-core/session/protocol";
 
 declare const process: { exitCode?: number };
 
@@ -68,7 +68,6 @@ async function main(): Promise<void> {
         await waitForSessionView(admin, (view) => (view.viewModel as CardGameViewModel).phaseLabel === "DEALING");
         sendClientMessage(admin, {
             type: "game-event",
-            playerId: null,
             event: { type: "ANIMATION_DONE" }
         });
 
@@ -82,15 +81,25 @@ async function main(): Promise<void> {
         const selectableCardId = actingPlayer?.hand[0]?.id;
         assert(actingPlayer && waitingPlayer && selectableCardId, "WebSocket test requires an acting player with one card.");
 
-        sendClientMessage(player, {
-            type: "set-viewer",
-            playerId: actingPlayer.id
-        });
-        await waitForSessionView(player, (view) => view.viewerId === actingPlayer.id);
+        assert(
+            !isRewriteClientMessage({
+                type: "game-event",
+                playerId: waitingPlayer.id,
+                event: {
+                    type: "SELECT_CARD",
+                    cardId: selectableCardId
+                }
+            }),
+            "Protocol guard should reject client-supplied playerId on game events."
+        );
 
         sendClientMessage(player, {
+            type: "set-viewer",
+            playerId: waitingPlayer.id
+        });
+        await waitForSessionView(player, (view) => view.viewerId === waitingPlayer.id);
+        sendClientMessage(player, {
             type: "game-event",
-            playerId: waitingPlayer.id,
             event: {
                 type: "SELECT_CARD",
                 cardId: selectableCardId
@@ -99,8 +108,12 @@ async function main(): Promise<void> {
         await waitForServerMessage(player, (message) => message.type === "error");
 
         sendClientMessage(player, {
+            type: "set-viewer",
+            playerId: actingPlayer.id
+        });
+        await waitForSessionView(player, (view) => view.viewerId === actingPlayer.id);
+        sendClientMessage(player, {
             type: "game-event",
-            playerId: actingPlayer.id,
             event: {
                 type: "SELECT_CARD",
                 cardId: selectableCardId
