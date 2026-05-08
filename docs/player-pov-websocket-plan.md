@@ -282,3 +282,14 @@ Future work:
 
 - player-only controls at the bottom of the phone frame
 - richer hidden-information rules per game where table/admin views need different detail levels
+
+## Hidden Information Status
+
+Player POV view models now sanitize hidden cards at the payload level:
+
+- opponent hand cards are sent with synthetic hidden ids and `"Hidden card"` labels
+- face-down table cards are sent with synthetic hidden ids and labels
+- hidden move-card effects are sent with synthetic hidden ids, labels, and effect keys
+- selected card id is cleared when the selected viewer cannot act
+
+This means player clients no longer receive real ids or labels for cards that should remain hidden. Admin/table views can still receive the full view model.

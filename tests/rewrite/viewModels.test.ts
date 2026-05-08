@@ -2,8 +2,11 @@ import { createActor } from "xstate";
 
 import { frenchDeckDefinition, spanishDeckDefinition } from "@rewrite-core/engine/cards/deckDefinitions";
 import { createBriscaLiteMachine } from "@rewrite-core/games/briscaLite/machine";
+import { getBriscaLiteHandPileId } from "@rewrite-core/games/briscaLite/types";
 import { getBriscaLiteViewModel } from "@rewrite-core/games/briscaLite/viewModel";
+import { getPileCards } from "@rewrite-core/engine/game/piles";
 import { createPokerLiteMachine } from "@rewrite-core/games/pokerLite/machine";
+import { getPokerLiteHandPileId } from "@rewrite-core/games/pokerLite/types";
 import { getPokerLiteViewModel } from "@rewrite-core/games/pokerLite/viewModel";
 import { createWarLiteMachine } from "@rewrite-core/games/warLite/machine";
 import { getWarLiteViewModel } from "@rewrite-core/games/warLite/viewModel";
@@ -151,8 +154,12 @@ async function runWarLiteWarPotViewModelTest() {
     actor.send({ type: "PLAY_CARD" });
     let snapshot = actor.getSnapshot();
     let viewModel = getWarLiteViewModel(snapshot);
+    let playerPovViewModel = getWarLiteViewModel(snapshot, snapshot.context.players[0].id);
     const faceDownEffects = viewModel.effects.filter((effect) => {
         return effect.type === "move-card" && effect.reason === "play" && effect.key.startsWith("war-down-");
+    });
+    const faceDownPovEffects = playerPovViewModel.effects.filter((effect) => {
+        return effect.type === "move-card" && effect.reason === "play";
     });
     assert(faceDownEffects.length === 6, "War Lite should expose six war-down move effects for the full face-down stack.");
     assert(
@@ -160,6 +167,16 @@ async function runWarLiteWarPotViewModelTest() {
             return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp === false;
         }),
         "War Lite war-down effects should move hidden cards without triggering a reveal flip."
+    );
+    assert(
+        faceDownPovEffects.length === 6 &&
+            faceDownPovEffects.every((effect) => {
+                return effect.type === "move-card" &&
+                    effect.key.startsWith("hidden-effect:") &&
+                    effect.card.label === "Hidden card" &&
+                    effect.card.id.startsWith("hidden:effect:");
+            }),
+        "War Lite player POV should not leak face-down war card ids or labels through hidden move effects."
     );
     await waitFor(() => {
         const nextSnapshot = actor.getSnapshot();
@@ -170,6 +187,7 @@ async function runWarLiteWarPotViewModelTest() {
     viewModel = getWarLiteViewModel(snapshot);
     const firstPlayerId = snapshot.context.players[0].id;
     const secondPlayerId = snapshot.context.players[1].id;
+    playerPovViewModel = getWarLiteViewModel(snapshot, firstPlayerId);
     const firstPlayerTableCards = viewModel.tableCards.filter((card) => card.playerId === firstPlayerId);
     const secondPlayerTableCards = viewModel.tableCards.filter((card) => card.playerId === secondPlayerId);
     const firstPlayerOpenCardIndex = viewModel.tableCards.findIndex((card) => {
@@ -192,6 +210,12 @@ async function runWarLiteWarPotViewModelTest() {
     assert(
         viewModel.tableCards.filter((card) => card.isFaceUp).length === 2,
         "War Lite view model should keep the tied comparison cards visible under each player's war stack."
+    );
+    assert(
+        playerPovViewModel.tableCards.filter((card) => !card.isFaceUp).every((card) => {
+            return card.label === "Hidden card" && card.id.startsWith("hidden:table:");
+        }),
+        "War Lite player POV should not leak face-down war table card ids or labels."
     );
     assert(
         firstPlayerTableCards.filter((card) => !card.isFaceUp).length === 3 &&
@@ -333,6 +357,10 @@ async function runPlayerPovViewModelTest() {
 
     const snapshot = actor.getSnapshot();
     const secondPlayerId = snapshot.context.players[1].id;
+    const firstPlayerId = snapshot.context.players[0].id;
+    const firstPlayerRawCardIds = new Set(
+        getPileCards(snapshot.context.piles, getPokerLiteHandPileId(firstPlayerId)).map((card) => card.id)
+    );
     const viewModel = getPokerLiteViewModel(snapshot, secondPlayerId);
 
     assert(
@@ -348,6 +376,12 @@ async function runPlayerPovViewModelTest() {
             return player.hand.every((card) => !card.isFaceUp) && !player.canInteract;
         }),
         "Player POV should hide opponent hands and disable opponent card interaction."
+    );
+    assert(
+        viewModel.players.slice(1).every((player) => {
+            return player.hand.every((card) => card.label === "Hidden card" && !firstPlayerRawCardIds.has(card.id));
+        }),
+        "Player POV should not leak opponent card ids or labels in hidden hand payloads."
     );
     assert(
         viewModel.controls.canPlay === false && viewModel.primaryAction === null,
@@ -405,6 +439,18 @@ async function runBriscaLiteViewModelTest() {
         }),
         "Brisca-lite should keep non-current player hands hidden."
     );
+    if (currentPlayer) {
+        const povViewModel = getBriscaLiteViewModel(actor.getSnapshot(), currentPlayer.id);
+        assert(
+            povViewModel.players.slice(1).every((player) => {
+                const rawIds = new Set(
+                    getPileCards(actor.getSnapshot().context.piles, getBriscaLiteHandPileId(player.id)).map((card) => card.id)
+                );
+                return player.hand.every((card) => card.label === "Hidden card" && !rawIds.has(card.id));
+            }),
+            "Brisca-lite player POV should not leak opponent card ids or labels in hidden hand payloads."
+        );
+    }
     assert(
         viewModel.piles.find((pile) => pile.role === "trump")?.topCard?.isFaceUp === true,
         "Brisca-lite should expose the trump card face-up while trump exists."
