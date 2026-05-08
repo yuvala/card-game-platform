@@ -26,7 +26,8 @@ const rewriteGameTitle = document.getElementById("rewrite-game-title");
 const requestedParams = new URLSearchParams(window.location.search);
 const requestedDebugScenario = getRewriteDebugScenarioById(requestedParams.get("scenario"));
 const shouldAutostart = requestedParams.get("autostart") === "1" || requestedDebugScenario?.autostart === true;
-const shouldUseWebSocketSession = requestedParams.get("transport") === "ws" || requestedParams.get("ws") === "1";
+const shouldUseLocalSession = requestedParams.get("transport") === "local" || requestedParams.get("local") === "1";
+const shouldUseWebSocketSession = !shouldUseLocalSession;
 
 if (!rewriteRoot || !rewriteSetupMount || !rewriteGameTitle) {
     throw new Error("Rewrite app requires #rewrite-root, #rewrite-setup, and #rewrite-game-title containers.");
@@ -339,8 +340,10 @@ function syncUrl(
     if (debugScenario) {
         nextParams.set("scenario", debugScenario.id);
     }
+    if (shouldUseLocalSession) {
+        nextParams.set("transport", "local");
+    }
     if (shouldUseWebSocketSession) {
-        nextParams.set("transport", "ws");
         const explicitWsUrl = requestedParams.get("wsUrl");
         if (explicitWsUrl) {
             nextParams.set("wsUrl", explicitWsUrl);

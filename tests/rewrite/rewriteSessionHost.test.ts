@@ -41,7 +41,9 @@ async function main(): Promise<void> {
         const adminView = host.getSessionView(null);
         assert(adminView.type === "session-view", "Host should produce session-view messages.");
         assert(adminView.sessionId === "smoke-session", "Host should expose its session id.");
+        assert(Number.isFinite(adminView.sequence), "Host should include a finite session-view sequence.");
         assert(adminView.players.length === 2, "Host should expose current players.");
+        const initialSequence = adminView.sequence;
 
         const playerView = host.getSessionView(adminView.players[0].id);
         assert(playerView.type === "session-view", "Host should return a player session-view message.");
@@ -64,6 +66,7 @@ async function main(): Promise<void> {
         const configuredView = host.getSessionView(null);
         assert(configuredView.type === "session-view", "Host should produce a configured session-view message.");
         assert(configuredView.gameId === "brisca-lite", "Host should switch to the configured game.");
+        assert(configuredView.sequence > initialSequence, "Host should advance session-view sequence after configuration.");
         assert(configuredView.players.length === 4, "Host should switch to the configured player count.");
         assert(updateCount > 0, "Host should notify subscribers after replacing the session.");
 
@@ -121,14 +124,29 @@ async function main(): Promise<void> {
             (afterInvalidSelectView.viewModel as CardGameViewModel).selectedCardId === null,
             "Rejected player events should not mutate the game session."
         );
+        const staleSelect = host.sendClientEvent(actingPlayer.id, {
+            type: "SELECT_CARD",
+            cardId: selectableCardId
+        }, Math.max(0, afterInvalidSelectView.sequence - 1));
+        assert(!staleSelect.ok, "Host should reject stale player events.");
+        const afterStaleSelectView = host.getSessionView(null);
+        assert(afterStaleSelectView.type === "session-view", "Host should expose a view after rejecting stale selection.");
+        assert(
+            afterStaleSelectView.sequence === afterInvalidSelectView.sequence,
+            "Rejected stale events should not advance session-view sequence."
+        );
 
         const validSelect = host.sendClientEvent(actingPlayer.id, {
             type: "SELECT_CARD",
             cardId: selectableCardId
-        });
+        }, afterInvalidSelectView.sequence);
         assert(validSelect.ok, "Host should accept a legal player card selection.");
         const afterValidSelectView = host.getSessionView(null);
         assert(afterValidSelectView.type === "session-view", "Host should expose a view after accepting player selection.");
+        assert(
+            afterValidSelectView.sequence > afterInvalidSelectView.sequence,
+            "Host should advance session-view sequence after an accepted player event."
+        );
         assert(
             (afterValidSelectView.viewModel as CardGameViewModel).selectedCardId === selectableCardId,
             "Accepted player selection should update the server-owned session."

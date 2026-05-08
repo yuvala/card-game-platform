@@ -26,8 +26,12 @@ async function main(): Promise<void> {
         const admin = await connect(url);
         const player = await connect(url);
 
-        await waitForServerMessage(admin, (message) => message.type === "session-view");
+        const initialAdminView = await waitForServerMessage(admin, (message) => message.type === "session-view");
         await waitForServerMessage(player, (message) => message.type === "session-view");
+        assert(
+            initialAdminView.type === "session-view" && Number.isFinite(initialAdminView.sequence),
+            "WebSocket server should include a finite sequence in session views."
+        );
 
         sendClientMessage(admin, {
             type: "configure-session",
@@ -63,6 +67,10 @@ async function main(): Promise<void> {
 
         const configuredAdminView = await waitForSessionView(admin, (view) => view.gameId === "brisca-lite" && view.players.length === 4);
         const configuredPlayerView = await waitForSessionView(player, (view) => view.gameId === "brisca-lite" && view.players.length === 4);
+        assert(
+            configuredAdminView.sequence > initialAdminView.sequence,
+            "WebSocket server should advance sequence after configuring the session."
+        );
         assert(configuredPlayerView.players.length === configuredAdminView.players.length, "Player client should receive configured session broadcasts.");
 
         await waitForSessionView(admin, (view) => (view.viewModel as CardGameViewModel).phaseLabel === "DEALING");
@@ -114,6 +122,18 @@ async function main(): Promise<void> {
         await waitForSessionView(player, (view) => view.viewerId === actingPlayer.id);
         sendClientMessage(player, {
             type: "game-event",
+            expectedSequence: Math.max(0, readyAdminView.sequence - 1),
+            event: {
+                type: "SELECT_CARD",
+                cardId: selectableCardId
+            }
+        });
+        await waitForServerMessage(player, (message) => {
+            return message.type === "error" && message.message.includes("stale");
+        });
+        sendClientMessage(player, {
+            type: "game-event",
+            expectedSequence: readyAdminView.sequence,
             event: {
                 type: "SELECT_CARD",
                 cardId: selectableCardId
@@ -122,6 +142,10 @@ async function main(): Promise<void> {
         const selectedAdminView = await waitForSessionView(admin, (view) => {
             return (view.viewModel as CardGameViewModel).selectedCardId === selectableCardId;
         });
+        assert(
+            selectedAdminView.sequence > readyAdminView.sequence,
+            "WebSocket server should advance sequence after an accepted player event."
+        );
         assert(
             (selectedAdminView.viewModel as CardGameViewModel).selectedCardId === selectableCardId,
             "Legal player selection should broadcast the updated session to admin clients."

@@ -245,7 +245,7 @@ function getSectionPanel(
             x: columns[column],
             y: row === 0 ? 176 : 528,
             width: 250,
-I.             height: 300
+            height: 300
         };
     }
 

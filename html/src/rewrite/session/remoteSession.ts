@@ -71,6 +71,10 @@ function createConnectedRemoteGameSession(
             return;
         }
 
+        if (message.sequence < latestMessage.sequence) {
+            return;
+        }
+
         latestMessage = message;
         activeViewerId = message.viewerId;
         status = { type: "connected" };
@@ -119,6 +123,7 @@ function createConnectedRemoteGameSession(
         send: (event: CardGameEvent) => {
             sendClientMessage(socket, {
                 type: "game-event",
+                expectedSequence: latestMessage.sequence,
                 event
             });
         },

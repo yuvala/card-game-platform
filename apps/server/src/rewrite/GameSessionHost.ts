@@ -40,6 +40,7 @@ export class RewriteGameSessionHost {
     private session: CardGameSession<any>;
     private sessionSubscription: { unsubscribe(): void } | null = null;
     private readonly listeners = new Set<() => void>();
+    private sequence = 0;
 
     constructor(options: RewriteSessionHostOptions = {}) {
         this.sessionId = options.sessionId ?? "main";
@@ -72,7 +73,21 @@ export class RewriteGameSessionHost {
         this.session.send(event);
     }
 
-    sendClientEvent(playerId: string | null | undefined, event: CardGameEvent): RewriteClientEventResult {
+    sendClientEvent(
+        playerId: string | null | undefined,
+        event: CardGameEvent,
+        expectedSequence?: number
+    ): RewriteClientEventResult {
+        if (
+            typeof expectedSequence === "number" &&
+            expectedSequence < this.sequence
+        ) {
+            return {
+                ok: false,
+                message: "Client action is stale. Refreshing table state."
+            };
+        }
+
         if (!playerId) {
             this.session.send(event);
             return { ok: true };
@@ -92,6 +107,7 @@ export class RewriteGameSessionHost {
             type: "session-view",
             sessionId: this.sessionId,
             gameId: this.entry.id,
+            sequence: this.sequence,
             players: this.getPlayers(),
             viewerId,
             viewModel: this.session.getViewModel(viewerId)
@@ -141,6 +157,7 @@ export class RewriteGameSessionHost {
     }
 
     private notify(): void {
+        this.sequence += 1;
         this.listeners.forEach((listener) => {
             listener();
         });

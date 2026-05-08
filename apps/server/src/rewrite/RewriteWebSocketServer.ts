@@ -103,7 +103,7 @@ function handleClientMessage(
             return;
         case "game-event":
             {
-                const result = gameHost.sendClientEvent(client.viewerId, message.event);
+                const result = gameHost.sendClientEvent(client.viewerId, message.event, message.expectedSequence);
                 if (!result.ok) {
                     sendError(client, result.message ?? "Illegal player event.");
                 }

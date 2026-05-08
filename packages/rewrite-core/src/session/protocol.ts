@@ -23,13 +23,14 @@ export type RewriteClientMessage =
     | { type: "watch-session"; sessionId?: string }
     | { type: "configure-session"; config: RewriteSessionConfig }
     | { type: "set-viewer"; playerId: string | null }
-    | { type: "game-event"; event: RewriteProtocolGameEvent };
+    | { type: "game-event"; expectedSequence?: number; event: RewriteProtocolGameEvent };
 
 export type RewriteServerMessage =
     | {
         type: "session-view";
         sessionId: string;
         gameId: string;
+        sequence: number;
         players: SessionPlayerSummary[];
         viewerId: string | null;
         viewModel: unknown;
@@ -41,7 +42,13 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
         return false;
     }
 
-    const message = value as { type?: unknown; event?: unknown; config?: unknown; playerId?: unknown };
+    const message = value as {
+        type?: unknown;
+        event?: unknown;
+        config?: unknown;
+        playerId?: unknown;
+        expectedSequence?: unknown;
+    };
     if (message.type === "watch-session" || message.type === "set-viewer") {
         return true;
     }
@@ -53,6 +60,13 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
     return (
         message.type === "game-event" &&
         typeof message.playerId === "undefined" &&
+        (
+            typeof message.expectedSequence === "undefined" ||
+            (
+                typeof message.expectedSequence === "number" &&
+                Number.isFinite(message.expectedSequence)
+            )
+        ) &&
         isRewriteProtocolGameEvent(message.event)
     );
 }
@@ -68,11 +82,13 @@ export function isRewriteServerMessage(value: unknown): value is RewriteServerMe
     }
 
     return (
-        message.type === "session-view" &&
-        typeof (message as { sessionId?: unknown }).sessionId === "string" &&
-        typeof (message as { gameId?: unknown }).gameId === "string" &&
-        Array.isArray(message.players) &&
-        Boolean(message.viewModel)
+            message.type === "session-view" &&
+            typeof (message as { sessionId?: unknown }).sessionId === "string" &&
+            typeof (message as { gameId?: unknown }).gameId === "string" &&
+            typeof (message as { sequence?: unknown }).sequence === "number" &&
+            Number.isFinite((message as { sequence?: number }).sequence) &&
+            Array.isArray(message.players) &&
+            Boolean(message.viewModel)
     );
 }
 
