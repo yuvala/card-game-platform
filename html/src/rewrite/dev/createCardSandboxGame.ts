@@ -2,8 +2,8 @@ import * as Phaser from "phaser";
 
 import { CardSandboxScene } from "./scenes/CardSandboxScene";
 
-const CARD_SANDBOX_WIDTH = 1040;
-const CARD_SANDBOX_HEIGHT = 980;
+const CARD_SANDBOX_WIDTH = 1280;
+const CARD_SANDBOX_HEIGHT = 1080;
 
 export interface CardSandboxGame {
     game: Phaser.Game;

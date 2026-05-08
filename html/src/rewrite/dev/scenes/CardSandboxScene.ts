@@ -18,10 +18,12 @@ import { dealerRevealExample } from "../cardSandbox/examples/dealerRevealExample
 import { ghostArcExample } from "../cardSandbox/examples/ghostArcExample";
 import { ghostMoveExample } from "../cardSandbox/examples/ghostMoveExample";
 import { liftFlipExample } from "../cardSandbox/examples/liftFlipExample";
+import { productionStackAdapterExample } from "../cardSandbox/examples/productionStackAdapterExample";
 import { realCardExample } from "../cardSandbox/examples/realCardExample";
 import { shuffleExample } from "../cardSandbox/examples/shuffleExample";
 import { stackExample } from "../cardSandbox/examples/stackExample";
 import { verticalFlipExample } from "../cardSandbox/examples/verticalFlipExample";
+import { warCollectPileExample } from "../cardSandbox/examples/warCollectPileExample";
 import { warRevealHoldExample } from "../cardSandbox/examples/warRevealHoldExample";
 import { drawStateGallery } from "../cardSandbox/stateGallery";
 import type {
@@ -34,6 +36,8 @@ const GOLD = 0xffd166;
 const CREAM = "#f6ecd2";
 const DIM = "rgba(246,236,210,0.72)";
 const SKIN_ID = "vintage-european";
+const SANDBOX_WIDTH = 1280;
+const SANDBOX_HEIGHT = 1080;
 
 const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
     real: [
@@ -47,6 +51,8 @@ const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
     ],
     layer: [
         warRevealHoldExample,
+        warCollectPileExample,
+        productionStackAdapterExample,
         dealerRevealExample,
         stackExample,
         collectPileExample,
@@ -129,8 +135,22 @@ export class CardSandboxScene extends Phaser.Scene {
             return;
         }
 
-        this.renderLayer.add(this.add.rectangle(520, 490, 1040, 980, 0x07140f, 1));
-        this.renderLayer.add(this.add.rectangle(520, 490, 984, 912, 0x0d261d, 0.88).setStrokeStyle(2, GOLD, 0.16));
+        this.renderLayer.add(this.add.rectangle(
+            SANDBOX_WIDTH / 2,
+            SANDBOX_HEIGHT / 2,
+            SANDBOX_WIDTH,
+            SANDBOX_HEIGHT,
+            0x07140f,
+            1
+        ));
+        this.renderLayer.add(this.add.rectangle(
+            SANDBOX_WIDTH / 2,
+            SANDBOX_HEIGHT / 2,
+            SANDBOX_WIDTH - 56,
+            SANDBOX_HEIGHT - 68,
+            0x0d261d,
+            0.88
+        ).setStrokeStyle(2, GOLD, 0.16));
     }
 
     private drawSectionHeading(section: CardSandboxSection): void {
@@ -213,6 +233,20 @@ function getSectionPanel(
 ) {
     if (section === "real") {
         return example.panel;
+    }
+
+    if (section === "layer") {
+        const columns = [70, 380, 690, 1000];
+        const row = Math.floor(index / columns.length);
+        const column = index % columns.length;
+
+        return {
+            ...example.panel,
+            x: columns[column],
+            y: row === 0 ? 176 : 528,
+            width: 250,
+            height: 300
+        };
     }
 
     const topRowY = 176;

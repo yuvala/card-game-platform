@@ -105,6 +105,16 @@ export interface AnimateRiffleShuffleInput {
     onComplete?: () => void;
 }
 
+export interface AnimateTransientShuffleDeckInput {
+    scene: Phaser.Scene;
+    textureKey: string;
+    center: CardMotionPoint;
+    size: CardMotionSize;
+    count?: number;
+    depth?: number;
+    onComplete?: () => void;
+}
+
 export interface AnimateImageMoveInput {
     scene: Phaser.Scene;
     image: Phaser.GameObjects.Image;
@@ -116,6 +126,17 @@ export interface AnimateImageMoveInput {
     delay?: number;
     ease: string;
     onComplete?: () => void;
+}
+
+export interface CreateCardMotionImageInput {
+    scene: Phaser.Scene;
+    textureKey: string;
+    center: CardMotionPoint;
+    size: CardMotionSize;
+    angle?: number;
+    depth?: number;
+    alpha?: number;
+    storeDisplaySize?: boolean;
 }
 
 export interface AnimateImageHorizontalFlipInput {
@@ -210,6 +231,33 @@ export function animateGhostMoveReveal(input: AnimateGhostMoveRevealInput): Phas
     });
 
     return ghost.image;
+}
+
+export function createCardMotionImage(input: CreateCardMotionImageInput): Phaser.GameObjects.Image {
+    const {
+        scene,
+        textureKey,
+        center,
+        size,
+        angle = 0,
+        depth = 0,
+        alpha = 1,
+        storeDisplaySize = true
+    } = input;
+    const image = scene.add.image(center.x, center.y, textureKey)
+        .setDisplaySize(size.width, size.height)
+        .setAngle(angle)
+        .setDepth(depth)
+        .setAlpha(alpha);
+
+    if (storeDisplaySize) {
+        image.setData("cardDisplaySize", {
+            width: size.width,
+            height: size.height
+        } satisfies CardMotionSize);
+    }
+
+    return image;
 }
 
 export function animateImageMove(input: AnimateImageMoveInput): void {
@@ -630,6 +678,79 @@ export function animateRiffleShuffle(input: AnimateRiffleShuffleInput): Phaser.G
     });
 
     return ghosts;
+}
+
+export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckInput): Phaser.GameObjects.Image[] {
+    const {
+        scene,
+        textureKey,
+        center,
+        size,
+        count = 8,
+        depth = 132,
+        onComplete
+    } = input;
+    const cards = Array.from({ length: count }, (_, index) => {
+        return createCardMotionImage({
+            scene,
+            textureKey,
+            center,
+            size,
+            depth: depth + index,
+            angle: index % 2 === 0 ? -2 : 2
+        });
+    });
+    let completedCount = 0;
+
+    cards.forEach((card, index) => {
+        const side = index % 2 === 0 ? -1 : 1;
+        const cutX = center.x + side * (34 + (index % 4) * 5);
+        const cutY = center.y + (index - cards.length / 2) * 2;
+        const bridgeX = center.x - side * (10 + (index % 3) * 4);
+        const bridgeY = center.y - 8 + (index % 4) * 4;
+        const delay = index * 42;
+
+        scene.tweens.add({
+            targets: card,
+            x: cutX,
+            y: cutY,
+            angle: side * (10 + (index % 3) * 2),
+            duration: 170,
+            delay,
+            ease: "Cubic.easeOut",
+            onComplete: () => {
+                scene.tweens.add({
+                    targets: card,
+                    x: bridgeX,
+                    y: bridgeY,
+                    angle: -side * (5 + (index % 2) * 3),
+                    duration: 210,
+                    ease: "Sine.easeInOut",
+                    onComplete: () => {
+                        scene.tweens.add({
+                            targets: card,
+                            x: center.x,
+                            y: center.y,
+                            angle: 0,
+                            scaleX: 0.94,
+                            scaleY: 1.04,
+                            duration: 140,
+                            ease: "Back.easeOut",
+                            onComplete: () => {
+                                completedCount += 1;
+                                card.destroy();
+                                if (completedCount === cards.length) {
+                                    onComplete?.();
+                                }
+                            }
+                        });
+                    }
+                });
+            }
+        });
+    });
+
+    return cards;
 }
 
 function getCubicBezierPoint(

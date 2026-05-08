@@ -170,6 +170,9 @@ Current `Ghost Cards` tab:
 
 Current `Animation Layers` tab:
 
+- `War reveal hold`
+- `War collect pile`
+- `Production stack adapter`
 - `Dealer reveal`
 - `Animation-layer stack`
 - `Collect pile`
@@ -342,7 +345,9 @@ Current sandbox examples consume this API for ghost and animation-layer previews
 Production usage:
 
 - War Lite card movement/reveal now goes through the shared motion helpers via `cardStackAnimations.ts`.
+- `card-sandbox.html` includes a `Production stack adapter` example that calls the production `cardStackAnimations.ts` API directly. This gives us a visual development surface for the adapter, not only for the lower-level motion primitives.
 - War reveal cards (`war-reveal-*`) intentionally pause briefly after landing, show a gold hold highlight, then flip face-up. This matches the `Deal + reveal` pattern from the sandbox while preserving the existing War table layout and game logic.
+- War collect effects (`battle-collect-*`, `battle-tie-discard-*`) use a clearer collect profile: slower staggered card movement and a gold destination-pile highlight after collection.
 
 Still sandbox-local:
 

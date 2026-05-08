@@ -350,6 +350,63 @@ function restoreOwnedPileCardLayersAlpha(visual: OwnedPileVisual): void {
     visual.outline.setAlpha(1);
 }
 
+function isWarCollectEffect(effect: MoveCardEffect): boolean {
+    return effect.key.startsWith("battle-collect-") || effect.key.startsWith("battle-tie-discard-");
+}
+
+function getCollectAnimationProfile(effect: MoveCardEffect, index: number): {
+    delay: number;
+    duration: number;
+    ease: string;
+    peakScale: number;
+    landingScale: number;
+} {
+    if (isWarCollectEffect(effect)) {
+        return {
+            delay: index * 92,
+            duration: 460,
+            ease: "Cubic.easeInOut",
+            peakScale: 1.04,
+            landingScale: 0.82
+        };
+    }
+
+    return {
+        delay: getCollectedCardMoveDelay(index),
+        duration: 330,
+        ease: "Cubic.easeInOut",
+        peakScale: 0.9,
+        landingScale: 0.78
+    };
+}
+
+function flashOwnedPileCollectTarget(scene: Phaser.Scene, visual: OwnedPileVisual): void {
+    const ring = scene.add.rectangle(
+        visual.container.x,
+        visual.container.y,
+        CARD_WIDTH + 30,
+        CARD_HEIGHT + 30,
+        0x000000,
+        0
+    )
+        .setAngle(visual.container.angle)
+        .setStrokeStyle(3, 0xffd166, 0.8)
+        .setDepth(151)
+        .setScale(0.86);
+
+    scene.tweens.add({
+        targets: ring,
+        alpha: 0,
+        scaleX: 1.28,
+        scaleY: 1.28,
+        duration: 520,
+        ease: "Sine.easeOut",
+        onComplete: () => {
+            ring.destroy();
+        }
+    });
+}
+
 function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveCardEffect[]): string {
     const {
         scene,
@@ -363,6 +420,7 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
     } = input;
     const effectBatchKey = getEffectBatchKey(collectEffects);
     const destinationPileVisuals = new Set<OwnedPileVisual>();
+    const warDestinationPileVisuals = new Set<OwnedPileVisual>();
     const collectItems = collectEffects.flatMap((effect, index) => {
         const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots });
         const destinationPoint = getDestinationPoint({
@@ -384,6 +442,9 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
         })?.container.setAlpha(0);
         if (ownedPileVisual) {
             destinationPileVisuals.add(ownedPileVisual);
+            if (isWarCollectEffect(effect)) {
+                warDestinationPileVisuals.add(ownedPileVisual);
+            }
             setOwnedPileCardLayersAlpha(ownedPileVisual, 0);
         }
 
@@ -396,16 +457,17 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
             ghost,
             textureApi
         });
+        const profile = getCollectAnimationProfile(effect, index);
 
         return [{
             ghost,
             effect,
             destination: getCollectedPileCardPoint(destinationPoint, index),
-            delay: getCollectedCardMoveDelay(index),
-            duration: 330,
-            ease: "Cubic.easeInOut",
-            peakScale: 0.9,
-            landingScale: 0.78
+            delay: profile.delay,
+            duration: profile.duration,
+            ease: profile.ease,
+            peakScale: profile.peakScale,
+            landingScale: profile.landingScale
         }];
     });
 
@@ -424,6 +486,9 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
             playCardMoveSound(scene, item.effect.reason);
         },
         onComplete: () => {
+            warDestinationPileVisuals.forEach((visual) => {
+                flashOwnedPileCollectTarget(scene, visual);
+            });
             destinationPileVisuals.forEach((visual) => {
                 restoreOwnedPileCardLayersAlpha(visual);
             });

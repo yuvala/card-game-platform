@@ -15,10 +15,19 @@ export function drawExamplePanel(
     panel: CardSandboxExamplePanel
 ): void {
     const { scene, renderLayer, colors } = context;
+    renderLayer.add(scene.add.rectangle(
+        panel.x + panel.width / 2,
+        panel.y + 162,
+        panel.width + 28,
+        350,
+        0x07140f,
+        0.42
+    ).setStrokeStyle(1, colors.gold, 0.14));
+
     if (panel.title.length > 0) {
         renderLayer.add(scene.add.text(panel.x, panel.y, panel.title, {
             fontFamily: "Arial",
-            fontSize: "18px",
+            fontSize: "17px",
             fontStyle: "700",
             color: colors.cream
         }));
