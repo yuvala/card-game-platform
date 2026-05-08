@@ -27,6 +27,7 @@ startPlayerPov().catch((error) => {
 async function startPlayerPov(): Promise<void> {
     const session = await createRemoteGameSession({
         url: getRequestedWebSocketUrl(requestedParams),
+        role: "player",
         sessionId: requestedParams.get("session") ?? undefined
     });
 

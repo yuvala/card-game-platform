@@ -102,7 +102,7 @@ Initial message shapes can stay small:
 
 ```ts
 type ClientMessage =
-  | { type: "watch-session"; sessionId: string }
+  | { type: "watch-session"; sessionId: string; role?: "admin" | "player" }
   | {
       type: "configure-session";
       config: {
@@ -194,6 +194,12 @@ Added a standalone rewrite WebSocket backend that can be run separately from the
 The backend currently owns one in-memory session and broadcasts `session-view` messages to connected clients. The existing `rewrite.html` admin UI uses the WebSocket session by default. The local browser session remains available as a development fallback.
 Player-originated `game-event` messages are validated against the selected player's server-generated POV before reaching the actor. Admin/table messages use `playerId: null` and can still send table-control events such as animation completion and restart.
 `game-event` messages no longer carry a client-supplied `playerId`. The WebSocket server derives the acting player from the socket's current `viewerId`; an admin connection has `viewerId: null`. This prevents a player client from spoofing another player id in the event payload.
+Clients now declare a role when watching a session:
+
+- `admin` can configure the session and send table-level game events.
+- `player` can select a viewer and send only viewer-scoped player events.
+
+The server rejects player attempts to configure the session and admin attempts to select a player viewer.
 
 The rewrite test suite now includes a WebSocket E2E smoke test that starts an in-process server, connects admin and player clients, configures a new session, validates viewer selection, rejects an illegal player event, and confirms a legal player selection is broadcast back to the admin client.
 

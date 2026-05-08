@@ -254,6 +254,7 @@ async function createActiveSession(input: CreateActiveSessionInput): Promise<Car
     if (shouldUseWebSocketSession) {
         const session = await createRemoteGameSession({
             url: getRequestedWebSocketUrl(requestedParams),
+            role: "admin",
             sessionId: requestedParams.get("session") ?? undefined
         });
         await session.configure({

@@ -4,6 +4,7 @@ import type { CardGameViewModel } from "@rewrite-core/engine/game/viewModel";
 import {
     isRewriteServerMessage,
     type SessionPlayerSummary,
+    type RewriteClientRole,
     type RewriteClientMessage,
     type RewriteSessionConfig,
     type RewriteServerMessage
@@ -11,6 +12,7 @@ import {
 
 interface RemoteGameSessionInput {
     url: string;
+    role?: RewriteClientRole;
     viewerId?: string | null;
     sessionId?: string;
 }
@@ -34,7 +36,10 @@ export async function createRemoteGameSession(
     input: RemoteGameSessionInput
 ): Promise<RemoteGameSession> {
     const socket = new WebSocket(input.url);
-    const initialMessage = await waitForInitialSessionView(socket, input.sessionId);
+    const initialMessage = await waitForInitialSessionView(socket, {
+        sessionId: input.sessionId,
+        role: input.role
+    });
     return createConnectedRemoteGameSession(socket, initialMessage, input.viewerId ?? null);
 }
 
@@ -204,7 +209,10 @@ function getLatestViewModel(
 
 function waitForInitialSessionView(
     socket: WebSocket,
-    sessionId?: string
+    input: {
+        sessionId?: string;
+        role?: RewriteClientRole;
+    }
 ): Promise<Extract<RewriteServerMessage, { type: "session-view" }>> {
     return new Promise((resolve, reject) => {
         const cleanup = () => {
@@ -217,7 +225,8 @@ function waitForInitialSessionView(
         const handleOpen = () => {
             sendClientMessage(socket, {
                 type: "watch-session",
-                sessionId
+                sessionId: input.sessionId,
+                role: input.role
             });
         };
 

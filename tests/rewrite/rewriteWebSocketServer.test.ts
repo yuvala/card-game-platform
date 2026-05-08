@@ -26,6 +26,14 @@ async function main(): Promise<void> {
         const admin = await connect(url);
         const player = await connect(url);
 
+        sendClientMessage(admin, {
+            type: "watch-session",
+            role: "admin"
+        });
+        sendClientMessage(player, {
+            type: "watch-session",
+            role: "player"
+        });
         const initialAdminView = await waitForServerMessage(admin, (message) => message.type === "session-view");
         await waitForServerMessage(player, (message) => message.type === "session-view");
         assert(
@@ -53,6 +61,18 @@ async function main(): Promise<void> {
                 viewModel.statusText.includes("tied")
             );
         }, 10000);
+
+        sendClientMessage(player, {
+            type: "configure-session",
+            config: {
+                gameId: "poker-lite",
+                playerCount: 2,
+                deckId: "french"
+            }
+        });
+        await waitForServerMessage(player, (message) => {
+            return message.type === "error" && message.message.includes("admin");
+        });
 
         sendClientMessage(admin, {
             type: "configure-session",
@@ -114,6 +134,14 @@ async function main(): Promise<void> {
             }
         });
         await waitForServerMessage(player, (message) => message.type === "error");
+
+        sendClientMessage(admin, {
+            type: "set-viewer",
+            playerId: actingPlayer.id
+        });
+        await waitForServerMessage(admin, (message) => {
+            return message.type === "error" && message.message.includes("player");
+        });
 
         sendClientMessage(player, {
             type: "set-viewer",

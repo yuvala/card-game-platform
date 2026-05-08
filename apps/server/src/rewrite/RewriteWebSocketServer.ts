@@ -3,6 +3,7 @@ import { WebSocket, WebSocketServer } from "ws";
 
 import {
     isRewriteClientMessage,
+    type RewriteClientRole,
     type RewriteClientMessage,
     type RewriteServerMessage
 } from "@rewrite-core/session/protocol";
@@ -10,6 +11,7 @@ import { RewriteGameSessionHost, type RewriteSessionHostOptions } from "./GameSe
 
 interface RewriteClient {
     socket: WebSocket;
+    role: RewriteClientRole;
     viewerId: string | null;
 }
 
@@ -42,6 +44,7 @@ export function createRewriteWebSocketServer(options: RewriteSessionHostOptions 
     wss.on("connection", (socket) => {
         const client: RewriteClient = {
             socket,
+            role: "admin",
             viewerId: null
         };
         clients.add(client);
@@ -92,17 +95,35 @@ function handleClientMessage(
 ): void {
     switch (message.type) {
         case "watch-session":
+            if (message.role) {
+                client.role = message.role;
+                if (client.role === "admin") {
+                    client.viewerId = null;
+                }
+            }
             sendView(gameHost, client);
             return;
         case "set-viewer":
+            if (client.role !== "player") {
+                sendError(client, "Only player clients can select a viewer.");
+                return;
+            }
             client.viewerId = message.playerId;
             sendView(gameHost, client);
             return;
         case "configure-session":
+            if (client.role !== "admin") {
+                sendError(client, "Only admin clients can configure the session.");
+                return;
+            }
             gameHost.configure(message.config);
             return;
         case "game-event":
             {
+                if (client.role === "player" && !client.viewerId) {
+                    sendError(client, "Player clients must select a viewer before sending game events.");
+                    return;
+                }
                 const result = gameHost.sendClientEvent(client.viewerId, message.event, message.expectedSequence);
                 if (!result.ok) {
                     sendError(client, result.message ?? "Illegal player event.");

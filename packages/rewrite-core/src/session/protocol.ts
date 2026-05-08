@@ -19,8 +19,10 @@ export interface RewriteSessionConfig {
     debugScenarioId?: string;
 }
 
+export type RewriteClientRole = "admin" | "player";
+
 export type RewriteClientMessage =
-    | { type: "watch-session"; sessionId?: string }
+    | { type: "watch-session"; sessionId?: string; role?: RewriteClientRole }
     | { type: "configure-session"; config: RewriteSessionConfig }
     | { type: "set-viewer"; playerId: string | null }
     | { type: "game-event"; expectedSequence?: number; event: RewriteProtocolGameEvent };
@@ -44,12 +46,21 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
 
     const message = value as {
         type?: unknown;
+        role?: unknown;
         event?: unknown;
         config?: unknown;
         playerId?: unknown;
         expectedSequence?: unknown;
     };
-    if (message.type === "watch-session" || message.type === "set-viewer") {
+    if (message.type === "watch-session") {
+        return (
+            typeof message.role === "undefined" ||
+            message.role === "admin" ||
+            message.role === "player"
+        );
+    }
+
+    if (message.type === "set-viewer") {
         return true;
     }
 
