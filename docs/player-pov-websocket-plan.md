@@ -200,6 +200,7 @@ Clients now declare a role when watching a session:
 - `player` can select a viewer and send only viewer-scoped player events.
 
 The server rejects player attempts to configure the session and admin attempts to select a player viewer.
+The server now waits for the client `watch-session` handshake before sending the first session view, so player clients do not briefly receive an admin-role view before declaring their role.
 
 The rewrite test suite now includes a WebSocket E2E smoke test that starts an in-process server, connects admin and player clients, configures a new session, validates viewer selection, rejects an illegal player event, and confirms a legal player selection is broadcast back to the admin client.
 

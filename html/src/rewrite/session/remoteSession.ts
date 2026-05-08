@@ -40,16 +40,18 @@ export async function createRemoteGameSession(
         sessionId: input.sessionId,
         role: input.role
     });
-    return createConnectedRemoteGameSession(socket, initialMessage, input.viewerId ?? null);
+    return createConnectedRemoteGameSession(socket, initialMessage, input.viewerId ?? null, input.role ?? "admin");
 }
 
 function createConnectedRemoteGameSession(
     socket: WebSocket,
     initialMessage: Extract<RewriteServerMessage, { type: "session-view" }>,
-    viewerId: string | null
+    viewerId: string | null,
+    role: RewriteClientRole
 ): RemoteGameSession {
     let latestMessage = initialMessage;
     let activeViewerId = viewerId;
+    const activeRole = role;
     let status: RemoteSessionStatus = { type: "connected" };
     const listeners = new Set<RemoteSessionListener>();
     const pendingSessionViewResolvers = new Set<() => void>();
@@ -135,7 +137,8 @@ function createConnectedRemoteGameSession(
         start: () => {
             sendClientMessage(socket, {
                 type: "watch-session",
-                sessionId: latestMessage.sessionId
+                sessionId: latestMessage.sessionId,
+                role: activeRole
             });
         },
         stop: () => {
@@ -223,10 +226,11 @@ function waitForInitialSessionView(
         };
 
         const handleOpen = () => {
+            const role = input.role ?? "admin";
             sendClientMessage(socket, {
                 type: "watch-session",
                 sessionId: input.sessionId,
-                role: input.role
+                role
             });
         };
 

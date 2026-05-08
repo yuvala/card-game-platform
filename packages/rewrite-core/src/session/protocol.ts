@@ -61,7 +61,10 @@ export function isRewriteClientMessage(value: unknown): value is RewriteClientMe
     }
 
     if (message.type === "set-viewer") {
-        return true;
+        return (
+            typeof message.playerId === "string" ||
+            message.playerId === null
+        );
     }
 
     if (message.type === "configure-session") {

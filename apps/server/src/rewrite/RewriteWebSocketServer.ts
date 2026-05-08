@@ -48,7 +48,6 @@ export function createRewriteWebSocketServer(options: RewriteSessionHostOptions 
             viewerId: null
         };
         clients.add(client);
-        sendView(gameHost, client);
 
         socket.on("message", (payload) => {
             handleSocketMessage(gameHost, client, payload.toString());
