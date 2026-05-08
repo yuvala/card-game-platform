@@ -1,6 +1,7 @@
 import playersData from "../../data/players.json";
 import { supportedDeckDefinitions } from "@rewrite-core/engine/cards/deckDefinitions";
 import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "@rewrite-core/engine/game/catalog";
+import { createSeededRandom } from "@rewrite-core/engine/game/random";
 import { createLocalGameSession, type CardGameSession } from "@rewrite-core/engine/game/session";
 import { createRemoteGameSession } from "./session/remoteSession";
 import {
@@ -15,6 +16,7 @@ import { createRewriteGame } from "./phaser/createRewriteGame";
 interface ActiveRewriteRuntime {
     session: CardGameSession<any>;
     game: ReturnType<typeof createRewriteGame>;
+    appSubscription: { unsubscribe(): void };
 }
 
 const seedPlayerNames = playersData.players.map((player) => player.playerName);
@@ -88,7 +90,8 @@ async function startGame(selection: RewriteGameSelection): Promise<void> {
         playerNames,
         deckDefinition,
         requestedCardsPerPlayer,
-        requestedSeed
+        requestedSeed,
+        debugScenarioId: activeDebugScenario?.id
     });
 
     const game = createRewriteGame("rewrite-root", session);
@@ -97,18 +100,20 @@ async function startGame(selection: RewriteGameSelection): Promise<void> {
         runDebugScenario(activeDebugScenario, session);
     }
 
+    const syncActiveTable = () => {
+        syncActiveTableFromSession(session, {
+            fallbackDeckLabel: deckDefinition.name,
+            fallbackPlayerNames: playerNames
+        });
+    };
+    const appSubscription = session.subscribe(syncActiveTable);
+    syncActiveTable();
+
     activeRuntime = {
         session,
-        game
+        game,
+        appSubscription
     };
-
-    const viewModel = session.getViewModel(null);
-    setPageGameTitle(session.gameId);
-    setupPanel.updateActiveTable({
-        gameLabel: shouldUseWebSocketSession ? resolveSelectedGame(session.gameId).label : selectedGame.label,
-        deckLabel: viewModel.deckLabel || deckDefinition.name,
-        playerNames: session.playerNames.length > 0 ? [...session.playerNames] : playerNames
-    });
 
     syncUrl(normalizedSelection, requestedCardsPerPlayer, requestedSeed, activeDebugScenario);
 }
@@ -118,6 +123,7 @@ function teardownActiveRuntime(): void {
         return;
     }
 
+    activeRuntime.appSubscription.unsubscribe();
     activeRuntime.session.stop();
     activeRuntime.game.destroy(true);
     activeRuntime = null;
@@ -191,6 +197,24 @@ function buildPlayerNames(playerCount: number): string[] {
     });
 }
 
+function syncActiveTableFromSession(
+    session: CardGameSession<any>,
+    fallback: {
+        fallbackDeckLabel: string;
+        fallbackPlayerNames: string[];
+    }
+): void {
+    const viewModel = session.getViewModel(null);
+    const gameEntry = resolveSelectedGame(session.gameId);
+
+    setPageGameTitle(session.gameId);
+    setupPanel.updateActiveTable({
+        gameLabel: gameEntry.label,
+        deckLabel: viewModel.deckLabel || fallback.fallbackDeckLabel,
+        playerNames: session.playerNames.length > 0 ? [...session.playerNames] : fallback.fallbackPlayerNames
+    });
+}
+
 function getRequestedCardsPerPlayer(
     params: URLSearchParams,
     debugScenario: RewriteDebugScenario | null
@@ -211,22 +235,6 @@ function getRequestedSeed(
     return seed || debugScenario?.seed;
 }
 
-function createSeededRandom(seed: string): () => number {
-    let state = 2166136261;
-    for (let index = 0; index < seed.length; index += 1) {
-        state ^= seed.charCodeAt(index);
-        state = Math.imul(state, 16777619);
-    }
-
-    return () => {
-        state += 0x6d2b79f5;
-        let value = state;
-        value = Math.imul(value ^ (value >>> 15), value | 1);
-        value ^= value + Math.imul(value ^ (value >>> 7), value | 61);
-        return ((value ^ (value >>> 14)) >>> 0) / 4294967296;
-    };
-}
-
 function createLocalSessionId(): string {
     return "local-" + Date.now().toString(36);
 }
@@ -238,6 +246,7 @@ interface CreateActiveSessionInput {
     deckDefinition: typeof supportedDeckDefinitions[keyof typeof supportedDeckDefinitions];
     requestedCardsPerPlayer?: number;
     requestedSeed?: string;
+    debugScenarioId?: string;
 }
 
 async function createActiveSession(input: CreateActiveSessionInput): Promise<CardGameSession<any>> {
@@ -250,7 +259,9 @@ async function createActiveSession(input: CreateActiveSessionInput): Promise<Car
             gameId: input.selection.gameId,
             playerCount: input.selection.playerCount,
             deckId: input.selection.deckId,
-            cardsPerPlayer: input.requestedCardsPerPlayer
+            cardsPerPlayer: input.requestedCardsPerPlayer,
+            seed: input.requestedSeed,
+            debugScenarioId: input.debugScenarioId
         });
         return session;
     }

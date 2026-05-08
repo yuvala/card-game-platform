@@ -98,8 +98,12 @@ function createConnectedRemoteGameSession(
     });
 
     return {
-        id: latestMessage.sessionId,
-        gameId: latestMessage.gameId,
+        get id() {
+            return latestMessage.sessionId;
+        },
+        get gameId() {
+            return latestMessage.gameId;
+        },
         get playerNames() {
             return latestMessage.players.map((player) => player.name);
         },

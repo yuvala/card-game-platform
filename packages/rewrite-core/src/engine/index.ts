@@ -10,6 +10,7 @@ export * from "./game/machineFactory";
 export * from "./game/piles";
 export * from "./game/playerPovViewModel";
 export * from "./game/session";
+export * from "./game/random";
 export type {
     CardGameDefinition,
     CardPileRole,

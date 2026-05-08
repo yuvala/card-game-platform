@@ -67,6 +67,35 @@ async function main(): Promise<void> {
         assert(configuredView.players.length === 4, "Host should switch to the configured player count.");
         assert(updateCount > 0, "Host should notify subscribers after replacing the session.");
 
+        host.configure({
+            gameId: "war-lite",
+            playerCount: 2,
+            deckId: "french",
+            cardsPerPlayer: 5,
+            seed: "war-manual-0",
+            debugScenarioId: "war-animation"
+        });
+        await waitFor(() => {
+            const view = host.getSessionView(null);
+            if (view.type !== "session-view") {
+                return false;
+            }
+
+            const viewModel = view.viewModel as CardGameViewModel;
+            return (
+                view.gameId === "war-lite" &&
+                viewModel.phaseLabel === "BATTLEREADY" &&
+                viewModel.roundLabel.includes("War 1") &&
+                viewModel.statusText.includes("tied")
+            );
+        }, 10000);
+
+        host.configure({
+            gameId: "brisca-lite",
+            playerCount: 4,
+            deckId: "spanish",
+            cardsPerPlayer: 3
+        });
         await waitFor(() => {
             const view = host.getSessionView(null);
             return view.type === "session-view" && (view.viewModel as CardGameViewModel).phaseLabel === "DEALING";
@@ -113,7 +142,9 @@ async function main(): Promise<void> {
                 config: {
                     gameId: "war-lite",
                     playerCount: 2,
-                    deckId: "french"
+                    deckId: "french",
+                    seed: "server-seed-smoke",
+                    debugScenarioId: "war-animation"
                 }
             }),
             "Protocol guard should accept configure-session messages."

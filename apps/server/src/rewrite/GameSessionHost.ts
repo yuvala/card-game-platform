@@ -1,6 +1,7 @@
 import playersData from "../../../../html/data/players.json";
 import { supportedDeckDefinitions } from "@rewrite-core/engine/cards/deckDefinitions";
 import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "@rewrite-core/engine/game/catalog";
+import { createSeededRandom } from "@rewrite-core/engine/game/random";
 import { createLocalGameSession, type CardGameSession } from "@rewrite-core/engine/game/session";
 import type { CardGameEvent } from "@rewrite-core/engine/game/types";
 import type {
@@ -12,6 +13,7 @@ import {
     DEFAULT_GAME_ID,
     getGameCatalogEntryById
 } from "@rewrite-core/games/catalog";
+import { runRewriteDebugScenario } from "./debugScenarios";
 
 interface PlayerSeedRecord {
     playerName?: string;
@@ -23,6 +25,8 @@ export interface RewriteSessionHostOptions {
     playerCount?: number;
     deckId?: string;
     cardsPerPlayer?: number;
+    seed?: string;
+    debugScenarioId?: string;
 }
 
 export interface RewriteClientEventResult {
@@ -42,6 +46,7 @@ export class RewriteGameSessionHost {
         this.entry = resolveGame(options.gameId);
         this.session = this.createSession(options);
         this.startSession();
+        runRewriteDebugScenario(options.debugScenarioId, this.session);
     }
 
     subscribe(listener: () => void): { unsubscribe(): void } {
@@ -59,6 +64,7 @@ export class RewriteGameSessionHost {
         this.entry = resolveGame(config.gameId);
         this.session = this.createSession(config);
         this.startSession();
+        runRewriteDebugScenario(config.debugScenarioId, this.session);
         this.notify();
     }
 
@@ -120,7 +126,8 @@ export class RewriteGameSessionHost {
             playerNames: getSeedPlayerNames().slice(0, playerCount),
             options: {
                 deckDefinition,
-                cardsPerPlayer: options.cardsPerPlayer
+                cardsPerPlayer: options.cardsPerPlayer,
+                random: options.seed ? createSeededRandom(options.seed) : undefined
             }
         });
     }

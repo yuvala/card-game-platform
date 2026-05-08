@@ -110,6 +110,8 @@ type ClientMessage =
         playerCount: number;
         deckId: string;
         cardsPerPlayer?: number;
+        seed?: string;
+        debugScenarioId?: string;
       };
     }
   | { type: "set-viewer"; playerId: string | null }
@@ -230,6 +232,9 @@ The Vite build, server TypeScript build, and rewrite test runner all resolve thi
 
 The admin rewrite UI can now be opened against the WebSocket server without changing the default local flow.
 In WebSocket mode, changing the game in the admin drawer sends `configure-session` to the backend. The backend replaces the authoritative session and broadcasts the new view to admin and player screens.
+The admin page chrome now reads active table metadata from the latest session view, so page title, game label, deck label, and player names stay aligned with server-owned configuration changes.
+Session configuration now carries an optional deterministic `seed`. In WebSocket mode the backend uses that seed to create the authoritative shuffled session, so debug URLs and repeatable table setups no longer depend on browser-local random setup.
+Session configuration also carries an optional `debugScenarioId`. The backend currently supports `war-animation`, runs it on the server-owned session, and broadcasts the resulting state to admin/player clients. This keeps debug scenarios synchronized across screens in WebSocket mode.
 
 Run the server:
 

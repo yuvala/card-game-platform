@@ -6,7 +6,9 @@ const rewriteServer = createRewriteWebSocketServer({
     gameId: process.env.GAME_ID,
     playerCount: Number(process.env.PLAYERS || 2),
     deckId: process.env.DECK_ID,
-    cardsPerPlayer: process.env.CARDS ? Number(process.env.CARDS) : undefined
+    cardsPerPlayer: process.env.CARDS ? Number(process.env.CARDS) : undefined,
+    seed: process.env.SEED,
+    debugScenarioId: process.env.SCENARIO
 });
 
 rewriteServer.server.listen(port, host, () => {

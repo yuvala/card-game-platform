@@ -32,10 +32,32 @@ async function main(): Promise<void> {
         sendClientMessage(admin, {
             type: "configure-session",
             config: {
+                gameId: "war-lite",
+                playerCount: 2,
+                deckId: "french",
+                cardsPerPlayer: 5,
+                seed: "war-manual-0",
+                debugScenarioId: "war-animation"
+            }
+        });
+        await waitForSessionView(admin, (view) => {
+            const viewModel = view.viewModel as CardGameViewModel;
+            return (
+                view.gameId === "war-lite" &&
+                viewModel.phaseLabel === "BATTLEREADY" &&
+                viewModel.roundLabel.includes("War 1") &&
+                viewModel.statusText.includes("tied")
+            );
+        }, 10000);
+
+        sendClientMessage(admin, {
+            type: "configure-session",
+            config: {
                 gameId: "brisca-lite",
                 playerCount: 4,
                 deckId: "spanish",
-                cardsPerPlayer: 3
+                cardsPerPlayer: 3,
+                seed: "server-ws-smoke"
             }
         });
 

@@ -15,6 +15,8 @@ export interface RewriteSessionConfig {
     playerCount: number;
     deckId: string;
     cardsPerPlayer?: number;
+    seed?: string;
+    debugScenarioId?: string;
 }
 
 export type RewriteClientMessage =
@@ -99,6 +101,8 @@ function isRewriteSessionConfig(value: unknown): value is RewriteSessionConfig {
         playerCount?: unknown;
         deckId?: unknown;
         cardsPerPlayer?: unknown;
+        seed?: unknown;
+        debugScenarioId?: unknown;
     };
 
     return (
@@ -112,6 +116,14 @@ function isRewriteSessionConfig(value: unknown): value is RewriteSessionConfig {
                 typeof config.cardsPerPlayer === "number" &&
                 Number.isFinite(config.cardsPerPlayer)
             )
+        ) &&
+        (
+            typeof config.seed === "undefined" ||
+            typeof config.seed === "string"
+        ) &&
+        (
+            typeof config.debugScenarioId === "undefined" ||
+            typeof config.debugScenarioId === "string"
         )
     );
 }
