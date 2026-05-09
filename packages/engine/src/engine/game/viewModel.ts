@@ -19,6 +19,11 @@ export type CardGameViewHandPresentation =
     | "hand-fan"
     | "hidden-stack";
 
+export interface CardGameViewPlayerDeckPile {
+    cardCount: number;
+    topCard: CardGameViewCard | null;
+}
+
 export interface CardGameViewPlayer {
     id: string;
     iconLabel: string;
@@ -26,6 +31,7 @@ export interface CardGameViewPlayer {
     metaLabel: string;
     hand: CardGameViewCard[];
     handPresentation?: CardGameViewHandPresentation;
+    deckPile?: CardGameViewPlayerDeckPile;
     isCurrentTurn: boolean;
     isRoundWinner: boolean;
     canInteract: boolean;

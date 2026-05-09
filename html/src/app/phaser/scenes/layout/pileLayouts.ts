@@ -10,7 +10,7 @@ import {
     PRIMARY_PILE_TARGET_CENTER_Y,
     PRIMARY_PILE_VERTICAL_SHIFT
 } from "./constants";
-import type { HandSlotOrigin, PrimaryPileLayout, ScenePoint } from "./types";
+import type { PrimaryPileLayout, ScenePoint, SeatLayout } from "./types";
 
 interface PrimaryPileTemplate {
     drawY: number;
@@ -124,73 +124,36 @@ export function getPrimaryPileLayout(playerCount: number): PrimaryPileLayout {
 
 export function getOwnedPilePosition(
     ownerPileIndex: number,
-    slots: readonly HandSlotOrigin[],
-    badgePosition: ScenePoint
+    layout: SeatLayout
 ): ScenePoint {
     const horizontalOffset = ownerPileIndex * 58;
+    const { handCenterX, handCenterY, angle } = layout;
 
-    if (slots.length > 0) {
-        const minX = Math.min(...slots.map((slot) => slot.originX));
-        const maxX = Math.max(...slots.map((slot) => slot.originX));
-        const minY = Math.min(...slots.map((slot) => slot.originY));
-        const maxY = Math.max(...slots.map((slot) => slot.originY));
-        const anchorAngle = slots[0].originAngle;
-        const centerY = (minY + maxY) / 2;
-
-        if (anchorAngle === 0) {
-            const isUpperSeat = centerY < TABLE_CENTER_Y;
-            if (isUpperSeat) {
-                return {
-                    x: PLAYER_ZONE_LEFT_X + horizontalOffset,
-                    y: centerY + 6
-                };
-            }
-
+    if (angle === 0) {
+        const isUpperSeat = handCenterY < TABLE_CENTER_Y;
+        if (isUpperSeat) {
             return {
-                x: PLAYER_ZONE_RIGHT_X + horizontalOffset,
-                y: centerY - 6
-            };
-        }
-
-        if (anchorAngle > 0) {
-            return {
-                x: minX - 84 - horizontalOffset,
-                y: centerY
+                x: PLAYER_ZONE_LEFT_X + horizontalOffset,
+                y: handCenterY + 6
             };
         }
 
         return {
-            x: maxX + 84 + horizontalOffset,
-            y: centerY
+            x: PLAYER_ZONE_RIGHT_X + horizontalOffset,
+            y: handCenterY - 6
         };
     }
 
-    const { x, y } = badgePosition;
-
-    if (x > TABLE_CENTER_X + 110) {
+    if (angle > 0) {
         return {
-            x: x - 96 - horizontalOffset,
-            y: y + 16
-        };
-    }
-
-    if (x < TABLE_CENTER_X - 110) {
-        return {
-            x: x + 96 + horizontalOffset,
-            y: y + 16
-        };
-    }
-
-    if (y < TABLE_CENTER_Y) {
-        return {
-            x: x + 92 + horizontalOffset,
-            y: y + 18
+            x: handCenterX - 84 - horizontalOffset,
+            y: handCenterY
         };
     }
 
     return {
-        x: x + 110 + horizontalOffset,
-        y: y - 8
+        x: handCenterX + 84 + horizontalOffset,
+        y: handCenterY
     };
 }
 

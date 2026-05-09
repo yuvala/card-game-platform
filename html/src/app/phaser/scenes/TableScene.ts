@@ -47,6 +47,11 @@ import {
 } from "./presenters/pilePresenter";
 import { runViewEffects } from "./presenters/effectPresenter";
 import { runPlayedCardAnimation, syncTableCardPresentation } from "./presenters/tableCardPresenter";
+import {
+    createPlayerDeckVisual,
+    syncPlayerDeckPresentation,
+    type PlayerDeckVisual
+} from "./presenters/playerDeckPresenter";
 import { drawDebugZoneOverlay } from "./debug/debugZoneOverlay";
 import type { DebugOverlay } from "./debug/debugZoneOverlay";
 
@@ -63,6 +68,8 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private readonly seatBadges = new Map<string, SeatBadge>();
     private readonly handSlots = new Map<string, HandSlotVisual[]>();
     private readonly ownedPileVisuals = new Map<string, OwnedPileVisual>();
+    private readonly playerDeckVisuals = new Map<string, PlayerDeckVisual>();
+    private readonly seatLayouts = new Map<string, SeatLayout>();
     private readonly supplementalPileVisuals = new Map<string, SupplementalPileVisual>();
     private readonly tableCardVisuals: TableCardVisual[] = [];
     private activeAnimationKey = "";
@@ -157,6 +164,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             seatBadges: this.seatBadges,
             handSlots: this.handSlots,
             ownedPileVisuals: this.ownedPileVisuals,
+            playerDeckVisuals: this.playerDeckVisuals,
             supplementalPileVisuals: this.supplementalPileVisuals,
             tableCardVisuals: this.tableCardVisuals,
             layers: {
@@ -292,7 +300,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         syncOwnedPilePresentation({
             viewModel,
             seatBadges: this.seatBadges,
-            handSlots: this.handSlots,
+            seatLayouts: this.seatLayouts,
             ownedPileVisuals: this.ownedPileVisuals,
             createOwnedPileVisual: (pileId) => {
                 const visual = createOwnedPileVisual(this, pileId, () => this.getActiveBackTextureKey());
@@ -328,6 +336,24 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 applyCardBackTexture: (image) => this.applyCardBackTexture(image)
             }
         });
+        syncPlayerDeckPresentation({
+            viewModel,
+            playerDeckVisuals: this.playerDeckVisuals,
+            seatLayouts: this.seatLayouts,
+            createVisual: (playerId) => {
+                const layout = this.seatLayouts.get(playerId)!;
+                return createPlayerDeckVisual(this, layout, {
+                    applyCardBackTexture: (image) => this.applyCardBackTexture(image),
+                    getActiveBackTextureKey: () => this.getActiveBackTextureKey()
+                }, () => {
+                    this.session.send({ type: "PLAY_CARD" });
+                });
+            },
+            textureApi: {
+                applyCardBackTexture: (image) => this.applyCardBackTexture(image),
+                getActiveBackTextureKey: () => this.getActiveBackTextureKey()
+            }
+        });
         this.activeEffectBatchKey = runViewEffects({
             scene: this,
             viewModel,
@@ -335,6 +361,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             tableCardVisuals: this.tableCardVisuals,
             handSlots: this.handSlots,
             ownedPileVisuals: this.ownedPileVisuals,
+            playerDeckVisuals: this.playerDeckVisuals,
             activeEffectBatchKey: this.activeEffectBatchKey,
             textureApi: {
                 getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
@@ -386,14 +413,14 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private ensureSeatVisuals(viewModel: CardGameViewModel): void {
-        const handSlotCount = Math.max(
-            DEFAULT_HAND_SLOT_COUNT,
-            ...viewModel.players.map((player) => player.hand.length)
-        );
-        const layoutKey =
-            viewModel.players.map((player) => player.id).join("|") +
-            "::" +
-            String(handSlotCount);
+        const layoutKey = viewModel.players
+            .map((player) => {
+                const slotCount = player.deckPile && player.hand.length === 0
+                    ? 0
+                    : Math.max(DEFAULT_HAND_SLOT_COUNT, player.hand.length);
+                return player.id + ":" + String(slotCount);
+            })
+            .join("|");
         if (this.seatLayoutKey === layoutKey) {
             return;
         }
@@ -404,9 +431,13 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         viewModel.players.forEach((player, index) => {
             const layout = seatLayouts[index];
             const badge = createSeatBadge(this, layout);
+            const slotCount = player.deckPile && player.hand.length === 0
+                ? 0
+                : Math.max(DEFAULT_HAND_SLOT_COUNT, player.hand.length);
 
             this.seatBadges.set(player.id, badge);
-            this.handSlots.set(player.id, this.createHandSlots(player.id, layout, handSlotCount));
+            this.seatLayouts.set(player.id, layout);
+            this.handSlots.set(player.id, this.createHandSlots(player.id, layout, slotCount));
         });
 
         this.seatLayoutKey = layoutKey;
@@ -425,6 +456,14 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             });
         });
         this.handSlots.clear();
+
+        this.playerDeckVisuals.forEach((visual) => {
+            visual.container.destroy(true);
+            visual.hitTarget.destroy();
+        });
+        this.playerDeckVisuals.clear();
+        this.seatLayouts.clear();
+
         this.seatLayoutKey = "";
     }
 

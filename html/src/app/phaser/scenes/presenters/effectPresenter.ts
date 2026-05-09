@@ -19,6 +19,7 @@ import { playCardFlipSound, playCardMoveSound } from "../audio/cardSoundEffects"
 import type { PrimaryPileVisuals } from "./pilePresenter";
 import type { OwnedPileVisual } from "./pilePresenter";
 import type { HandSlotVisual } from "./handPresenter";
+import type { PlayerDeckVisual } from "./playerDeckPresenter";
 import type { TableCardVisual } from "../factories/createTableCardVisual";
 
 interface EffectTextureApi {
@@ -37,6 +38,7 @@ interface EffectPresentationInput {
     tableCardVisuals: TableCardVisual[];
     handSlots: Map<string, HandSlotVisual[]>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
+    playerDeckVisuals: Map<string, PlayerDeckVisual>;
     activeEffectBatchKey: string;
     textureApi: EffectTextureApi;
     onEffectsDone?: () => void;
@@ -266,14 +268,26 @@ function getDestinationPoint(input: {
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
+    playerDeckVisuals: Map<string, PlayerDeckVisual>;
 }): { x: number; y: number; angle: number } | null {
-    const { effect, viewModel, primaryPileVisuals, handSlots, ownedPileVisuals } = input;
+    const { effect, viewModel, primaryPileVisuals, handSlots, ownedPileVisuals, playerDeckVisuals } = input;
     const ownedPileVisual = ownedPileVisuals.get(effect.toPileId);
     if (ownedPileVisual) {
         return {
             x: ownedPileVisual.container.x,
             y: ownedPileVisual.container.y,
             angle: ownedPileVisual.container.angle
+        };
+    }
+
+    const playerDeckVisual = effect.toOwnerId
+        ? playerDeckVisuals.get(effect.toOwnerId)
+        : null;
+    if (playerDeckVisual) {
+        return {
+            x: playerDeckVisual.container.x,
+            y: playerDeckVisual.container.y,
+            angle: 0
         };
     }
 
@@ -430,6 +444,7 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
         tableCardVisuals,
         handSlots,
         ownedPileVisuals,
+        playerDeckVisuals,
         textureApi,
         onEffectsDone
     } = input;
@@ -443,7 +458,8 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
             viewModel,
             primaryPileVisuals,
             handSlots,
-            ownedPileVisuals
+            ownedPileVisuals,
+            playerDeckVisuals
         });
         const ownedPileVisual = ownedPileVisuals.get(effect.toPileId);
         if (!sourcePoint || !destinationPoint) {
@@ -522,6 +538,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
         tableCardVisuals,
         handSlots,
         ownedPileVisuals,
+        playerDeckVisuals,
         activeEffectBatchKey,
         textureApi,
         onEffectsDone
@@ -559,7 +576,8 @@ export function runViewEffects(input: EffectPresentationInput): string {
             viewModel,
             primaryPileVisuals,
             handSlots,
-            ownedPileVisuals
+            ownedPileVisuals,
+            playerDeckVisuals
         });
         if (!sourcePoint || !destinationPoint) {
             return;

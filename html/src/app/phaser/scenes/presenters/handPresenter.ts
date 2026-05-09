@@ -142,13 +142,14 @@ function getHiddenStackPosition(input: {
     };
 }
 
+
 export function syncHandPresentation(input: HandPresentationInput): void {
     const { viewModel, handSlots, textureApi } = input;
 
     viewModel.players.forEach((player) => {
         const slots = handSlots.get(player.id) || [];
         const handPresentation = player.handPresentation ?? "hand-fan";
-        const displayCards: Array<CardGameViewCard | null> = handPresentation === "hidden-stack" && player.hand[0]
+        const displayCards: Array<CardGameViewCard | null> = handPresentation === "hidden-stack" && player.hand[0] !== undefined
             ? slots.map((_, slotIndex) => getCardForSlot({
                   handPresentation,
                   cards: player.hand,
@@ -177,11 +178,7 @@ export function syncHandPresentation(input: HandPresentationInput): void {
             const slotState = slotStates[slotIndex];
 
             if (slotState.position) {
-                const hiddenStackPosition = getHiddenStackPosition({
-                    handPresentation,
-                    card,
-                    slot
-                });
+                const hiddenStackPosition = getHiddenStackPosition({ handPresentation, card, slot });
                 const nextPosition = hiddenStackPosition ?? slotState.position;
                 slot.container.setPosition(nextPosition.x, nextPosition.y);
                 slot.hitTarget.setPosition(nextPosition.x, nextPosition.y);
@@ -198,7 +195,6 @@ export function syncHandPresentation(input: HandPresentationInput): void {
             if (!card || !slotState.interactiveEnabled) {
                 slot.container.setData("isHovered", false);
             }
-            const isHovered = slotState.interactiveEnabled && slotState.isHovered;
             slot.container.setScale(slotState.scale);
             slot.hitTarget.setScale(1);
             slot.container.setDepth(slotState.depth);
@@ -209,7 +205,7 @@ export function syncHandPresentation(input: HandPresentationInput): void {
 
             const outlineInput = {
                 isSelected: slotState.isSelected,
-                isHovered,
+                isHovered: slotState.interactiveEnabled && slotState.isHovered,
                 isFaceUp: card?.isFaceUp ?? false,
                 isCurrentTurn: player.isCurrentTurn
             };

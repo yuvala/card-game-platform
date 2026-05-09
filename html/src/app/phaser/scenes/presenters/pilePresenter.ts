@@ -28,7 +28,7 @@ import {
     getPrimaryPileLayout,
     getSupplementalPilePosition
 } from "../layout/pileLayouts";
-import type { HandSlotOrigin } from "../layout/types";
+import type { SeatLayout } from "../layout/types";
 
 interface CardDisplaySize {
     width: number;
@@ -98,7 +98,7 @@ interface PrimaryPilePresentationInput {
 interface OwnedPilePresentationInput {
     viewModel: CardGameViewModel;
     seatBadges: Map<string, SeatBadgeLike>;
-    handSlots: Map<string, HandSlotOrigin[]>;
+    seatLayouts: Map<string, SeatLayout>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
     createOwnedPileVisual: (pileId: string) => OwnedPileVisual;
     textureApi: Pick<CardTextureApi, "applyCardTexture" | "applyCardBackTexture">;
@@ -458,7 +458,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
     const {
         viewModel,
         seatBadges,
-        handSlots,
+        seatLayouts,
         ownedPileVisuals,
         createOwnedPileVisual,
         textureApi
@@ -496,10 +496,9 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         const ownerPileIndex = ownerCounts.get(ownerId) ?? 0;
         ownerCounts.set(ownerId, ownerPileIndex + 1);
 
-        const position = getOwnedPilePosition(ownerPileIndex, handSlots.get(ownerId) ?? [], {
-            x: badge.container.x,
-            y: badge.container.y
-        });
+        const layout = seatLayouts.get(ownerId);
+        if (!layout) { return; }
+        const position = getOwnedPilePosition(ownerPileIndex, layout);
         visual.container.setPosition(position.x, position.y);
         visual.labelText.setText("");
         visual.countText.setText(pile.countLabel);

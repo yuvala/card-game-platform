@@ -8,6 +8,7 @@ import type {
     PrimaryPileVisuals,
     SupplementalPileVisual
 } from "../presenters/pilePresenter";
+import type { PlayerDeckVisual } from "../presenters/playerDeckPresenter";
 
 interface ZoneEntry {
     label: string;
@@ -31,6 +32,7 @@ interface DebugZoneOverlayInput {
     seatBadges: Map<string, SeatBadge>;
     handSlots: Map<string, HandSlotVisual[]>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
+    playerDeckVisuals: Map<string, PlayerDeckVisual>;
     supplementalPileVisuals: Map<string, SupplementalPileVisual>;
     tableCardVisuals: TableCardVisual[];
     layers: DebugLayerFlags;
@@ -83,6 +85,7 @@ function collectZones(input: DebugZoneOverlayInput): ZoneEntry[] {
         seatBadges,
         handSlots,
         ownedPileVisuals,
+        playerDeckVisuals,
         supplementalPileVisuals,
         tableCardVisuals,
         layers
@@ -125,6 +128,15 @@ function collectZones(input: DebugZoneOverlayInput): ZoneEntry[] {
             });
         });
 
+
+        // Player decks — solid blue
+        playerDeckVisuals.forEach((visual, playerId) => {
+            zones.push({
+                label: `deck:${playerId} ${fmt(visual.container.x, visual.container.y)}`,
+                x: visual.container.x, y: visual.container.y,
+                color: 0x4488ff, width: 60, height: 88
+            });
+        });
 
         // Supplemental piles — solid cyan
         supplementalPileVisuals.forEach((visual, pileId) => {

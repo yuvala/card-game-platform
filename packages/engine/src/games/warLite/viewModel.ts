@@ -94,13 +94,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot, viewerId?: st
         selectedCardId: null,
         players: snapshot.context.players.map((player) => {
             const stackCards = getPileCards(snapshot.context.piles, getWarLiteHandPileId(player.id));
-            const hiddenCards = stackCards.map((card) => ({
-                id: card.id,
-                label: card.displayLabel,
-                isFaceUp: false,
-                stackCount: stackCards.length
-            }));
-            const stackPreviewCards = hiddenCards[0] ? [hiddenCards[0]] : [];
+            const topStackCard = stackCards[0] ?? null;
 
             return {
                 id: player.id,
@@ -111,8 +105,13 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot, viewerId?: st
                     " stack | " +
                     String(player.score) +
                     " wins",
-                hand: stackPreviewCards,
-                handPresentation: "hidden-stack",
+                hand: [],
+                deckPile: {
+                    cardCount: stackCards.length,
+                    topCard: topStackCard
+                        ? { id: topStackCard.id, label: topStackCard.displayLabel, isFaceUp: false }
+                        : null
+                },
                 isCurrentTurn: isBattleReady && player.id === nextRevealPlayerId,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),
                 canInteract:
