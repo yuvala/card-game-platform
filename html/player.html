@@ -9,11 +9,18 @@
     <body>
         <div class="playerShell">
             <header class="playerHeader">
-                <p class="rewriteEyebrow">Player POV</p>
-                <h1>Table View</h1>
-                <label class="playerSelectLabel" for="player-viewer-select">Player</label>
-                <select id="player-viewer-select" class="playerSelect"></select>
-                <p id="player-status" class="playerStatus">Connecting to table...</p>
+                <div class="playerIntro">
+                    <p class="rewriteEyebrow">Player POV</p>
+                    <h1>Private Table View</h1>
+                    <p class="playerLead">
+                        One seat, one hand, one decision surface. The table stays shared, the information stays personal.
+                    </p>
+                </div>
+                <section class="playerControlCard" aria-label="Player controls">
+                    <label class="playerSelectLabel" for="player-viewer-select">Viewing Seat</label>
+                    <select id="player-viewer-select" class="playerSelect"></select>
+                    <p id="player-status" class="playerStatus">Connecting to table...</p>
+                </section>
             </header>
             <main class="playerDeviceFrame">
                 <div id="player-root" class="playerRoot"></div>

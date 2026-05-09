@@ -735,12 +735,25 @@ export class PlayerTableScene extends Phaser.Scene {
             this.renderLayer.add(hitTarget);
         }
 
+        this.renderLayer.add(createRoundedPanel(
+            this,
+            PLAYER_GAME_WIDTH / 2,
+            playerPovZones.actionStatusY,
+            PLAYER_GAME_WIDTH - 60,
+            30,
+            14,
+            0x071a13,
+            0.54,
+            0x5ea65d,
+            1,
+            0.12
+        ));
         this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, playerPovZones.actionStatusY, viewModel.statusText, {
             fontFamily: "Arial",
-            fontSize: "11px",
+            fontSize: "10px",
             color: DIM,
             align: "center",
-            wordWrap: { width: PLAYER_GAME_WIDTH - 48 }
+            wordWrap: { width: PLAYER_GAME_WIDTH - 82 }
         }).setOrigin(0.5));
     }
 

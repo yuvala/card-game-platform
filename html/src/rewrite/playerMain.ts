@@ -97,8 +97,8 @@ function syncStatus(session: RemoteGameSession): void {
 
     const viewerName = session.getPlayers().find((player) => player.id === session.getViewerId())?.name;
     playerStatus.textContent = viewerName
-        ? "Online | Viewing as " + viewerName
-        : "Online | Connected to table.";
+        ? "Live seat: " + viewerName
+        : "Live table connection";
 }
 
 function getRequestedWebSocketUrl(params: URLSearchParams): string {
