@@ -6,6 +6,7 @@ import type { WarLiteViewSnapshot } from "./types";
 import { getNextBattleActionPlayer } from "./rules";
 import {
     WAR_LITE_BATTLE_PILE_ID,
+    WAR_LITE_STOCK_PILE_ID,
     getWarLiteCapturePileId,
     getWarLiteHandPileId
 } from "./types";
@@ -63,6 +64,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot, viewerId?: st
     const isWarFaceDown = snapshot.context.warState?.stage === "face-down";
     const isWarReveal = snapshot.context.warState?.stage === "reveal";
     const battleCards = getPileCards(snapshot.context.piles, WAR_LITE_BATTLE_PILE_ID);
+    const stockCards = getPileCards(snapshot.context.piles, WAR_LITE_STOCK_PILE_ID);
     const totalAvailableCards = snapshot.context.players.reduce((count, player) => {
         return (
             count +
@@ -125,6 +127,15 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot, viewerId?: st
         tablePresentation: "table-row",
         tablePileIds: [WAR_LITE_BATTLE_PILE_ID],
         piles: [
+            ...(stockCards.length > 0 ? [{
+                id: WAR_LITE_STOCK_PILE_ID,
+                role: "stock" as const,
+                ownerId: undefined,
+                label: "",
+                cardCount: stockCards.length,
+                countLabel: "",
+                topCard: null
+            }] : []),
             ...snapshot.context.players.map((player) => {
                 const capturedCards = getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id));
                 const topCapturedCard = capturedCards[capturedCards.length - 1] ?? null;

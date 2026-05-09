@@ -135,14 +135,27 @@ function getLayeredBattleStackOffset(input: {
 
 export function getTableCardDisplayState(
     cards: readonly CardGameViewTableCard[],
-    index: number
+    index: number,
+    players?: readonly CardGameViewPlayer[]
 ): TableCardDisplayState {
-    const groupIds = getTableCardGroupIds(cards);
-    const groupId = getTableCardGroupId(cards[index], index);
-    const groupIndex = Math.max(groupIds.indexOf(groupId), 0);
+    const card = cards[index];
+    const groupId = getTableCardGroupId(card, index);
+
+    let groupIndex: number;
+    let groupCount: number;
+    if (players && players.length > 0 && card.playerId) {
+        const playerIndex = players.findIndex((p) => p.id === card.playerId);
+        groupIndex = Math.max(playerIndex, 0);
+        groupCount = players.length;
+    } else {
+        const groupIds = getTableCardGroupIds(cards);
+        groupIndex = Math.max(groupIds.indexOf(groupId), 0);
+        groupCount = groupIds.length;
+    }
+
     const stackIndex = getStackIndex(cards, index);
-    const basePosition = getTableCardPosition(groupIndex, groupIds.length);
-    const side = getStackSide(groupIndex, groupIds.length);
+    const basePosition = getTableCardPosition(groupIndex, groupCount);
+    const side = getStackSide(groupIndex, groupCount);
     const layeredBattleOffset = getLayeredBattleStackOffset({
         card: cards[index],
         groupCards: getGroupCards(cards, groupId),

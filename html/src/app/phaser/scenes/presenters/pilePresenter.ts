@@ -409,7 +409,7 @@ export function syncPrimaryPilePresentation(input: PrimaryPilePresentationInput)
     const layout = getPrimaryPileLayout(playerCount);
     const secondaryPile = getSecondaryPile(viewModel);
     const showTrumpWithDrawPile = secondaryPile?.role === "trump";
-    const drawCenterY = showTrumpWithDrawPile
+    const drawCenterY = showTrumpWithDrawPile || !secondaryPile
         ? TABLE_CENTER_Y
         : layout.drawCenterY;
 

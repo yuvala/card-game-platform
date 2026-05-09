@@ -102,13 +102,15 @@ function collectZones(input: DebugZoneOverlayInput): ZoneEntry[] {
             color: 0xffd166,
             width: drawFrame.width, height: drawFrame.height
         });
-        const discardFrame = primaryPileVisuals.discardPileFrame;
-        zones.push({
-            label: `discard ${fmt(discardFrame.x, discardFrame.y)}`,
-            x: discardFrame.x, y: discardFrame.y,
-            color: 0xffa040,
-            width: discardFrame.width, height: discardFrame.height
-        });
+        if (primaryPileVisuals.discardPileFrame.visible) {
+            const discardFrame = primaryPileVisuals.discardPileFrame;
+            zones.push({
+                label: `discard ${fmt(discardFrame.x, discardFrame.y)}`,
+                x: discardFrame.x, y: discardFrame.y,
+                color: 0xffa040,
+                width: discardFrame.width, height: discardFrame.height
+            });
+        }
 
         // Seat badges — solid green
         seatBadges.forEach((badge, playerId) => {

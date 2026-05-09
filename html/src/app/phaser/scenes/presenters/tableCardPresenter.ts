@@ -129,7 +129,7 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
                   players: viewModel.players,
                   index
               })
-            : getTableCardDisplayState(tableCards, index);
+            : getTableCardDisplayState(tableCards, index, viewModel.players);
         visual.container.setPosition(position.x, position.y);
         visual.container.setAngle(position.angle);
         visual.container.setDepth(80 + position.stackIndex);

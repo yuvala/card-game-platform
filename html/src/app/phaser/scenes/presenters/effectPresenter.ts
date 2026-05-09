@@ -194,7 +194,7 @@ function getEffectTableCardPoint(input: {
         return null;
     }
 
-    const displayState = getTableCardDisplayState(input.viewModel.tableCards, tableCardIndex);
+    const displayState = getTableCardDisplayState(input.viewModel.tableCards, tableCardIndex, input.viewModel.players);
     return {
         x: displayState.x,
         y: displayState.y,
@@ -207,8 +207,9 @@ function getSourcePoint(input: {
     viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
+    playerDeckVisuals: Map<string, PlayerDeckVisual>;
 }): { x: number; y: number } | null {
-    const { effect, viewModel, primaryPileVisuals, handSlots } = input;
+    const { effect, viewModel, primaryPileVisuals, handSlots, playerDeckVisuals } = input;
     if (effect.fromOwnerId) {
         const slots = handSlots.get(effect.fromOwnerId);
         const sourceSlot = slots?.[effect.fromIndex ?? 0];
@@ -216,6 +217,14 @@ function getSourcePoint(input: {
             return {
                 x: sourceSlot.container.x,
                 y: sourceSlot.container.y
+            };
+        }
+
+        const deckVisual = playerDeckVisuals.get(effect.fromOwnerId);
+        if (deckVisual) {
+            return {
+                x: deckVisual.container.x,
+                y: deckVisual.container.y
             };
         }
     }
@@ -241,6 +250,10 @@ function getSourcePoint(input: {
             x: position.x,
             y: position.y
         };
+    }
+
+    if (!primaryPileVisuals.discardPileFrame.visible) {
+        return null;
     }
 
     return {
@@ -452,7 +465,7 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
     const destinationPileVisuals = new Set<OwnedPileVisual>();
     const warDestinationPileVisuals = new Set<OwnedPileVisual>();
     const collectItems = collectEffects.flatMap((effect, index) => {
-        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots });
+        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots, playerDeckVisuals });
         const destinationPoint = getDestinationPoint({
             effect,
             viewModel,
@@ -570,7 +583,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
 
     effects.forEach((effect, index) => {
         const profile = getEffectProfile(effect.reason);
-        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots });
+        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots, playerDeckVisuals });
         const destinationPoint = getDestinationPoint({
             effect,
             viewModel,
