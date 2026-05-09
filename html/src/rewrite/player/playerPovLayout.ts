@@ -35,14 +35,14 @@ export const playerPovCardSizes = {
 } as const;
 
 export const playerPovZones = {
-    topBarY: 34,
-    connectionStatusY: 72,
-    gameInfoY: 112,
-    tableCardY: 322,
-    stockTrumpY: 634,
+    topBarY: 36,
+    connectionStatusY: 74,
+    gameInfoY: 118,
+    tableCardY: 334,
+    stockTrumpY: 638,
     playerHudY: 488,
-    handY: 564,
-    actionStatusY: 622,
+    handY: 566,
+    actionStatusY: 624,
     actionButtonY: 660
 } as const;
 
@@ -51,18 +51,18 @@ export function getOpponentSeatLayouts(count: number): PlayerPovSeatLayout[] {
         case 0:
             return [];
         case 1:
-            return [{ side: "top", x: PLAYER_GAME_WIDTH / 2, y: 178, angle: 0 }];
+            return [{ side: "top", x: PLAYER_GAME_WIDTH / 2, y: 188, angle: 0 }];
         case 2:
             return [
-                { side: "left", x: 64, y: 292, angle: -90 },
-                { side: "right", x: PLAYER_GAME_WIDTH - 64, y: 292, angle: 90 }
+                { side: "left", x: 44, y: 326, angle: -90 },
+                { side: "right", x: PLAYER_GAME_WIDTH - 44, y: 326, angle: 90 }
             ];
         default: {
             const layouts: PlayerPovSeatLayout[] = [
-                { side: "top", x: PLAYER_GAME_WIDTH / 2, y: 178, angle: 0 },
-                { side: "right", x: PLAYER_GAME_WIDTH - 64, y: 304, angle: 90 },
-                { side: "left", x: 64, y: 304, angle: -90 },
-                { side: "top", x: PLAYER_GAME_WIDTH / 2, y: 224, angle: 0 }
+                { side: "top", x: PLAYER_GAME_WIDTH / 2, y: 188, angle: 0 },
+                { side: "right", x: PLAYER_GAME_WIDTH - 44, y: 326, angle: 90 },
+                { side: "left", x: 44, y: 326, angle: -90 },
+                { side: "top", x: PLAYER_GAME_WIDTH / 2, y: 232, angle: 0 }
             ];
             return layouts.slice(0, count);
         }
@@ -110,25 +110,25 @@ export function getTrickCardPoint(side: PlayerPovSeatSide): PlayerPovOrientedPoi
         case "top":
             return {
                 x: PLAYER_GAME_WIDTH / 2,
-                y: 276,
+                y: 282,
                 angle: 0
             };
         case "left":
             return {
-                x: PLAYER_GAME_WIDTH / 2 - 64,
-                y: 350,
+                x: PLAYER_GAME_WIDTH / 2 - 66,
+                y: 352,
                 angle: -7
             };
         case "right":
             return {
-                x: PLAYER_GAME_WIDTH / 2 + 64,
-                y: 350,
+                x: PLAYER_GAME_WIDTH / 2 + 66,
+                y: 352,
                 angle: 7
             };
         case "bottom":
             return {
                 x: PLAYER_GAME_WIDTH / 2,
-                y: 408,
+                y: 420,
                 angle: 0
             };
     }

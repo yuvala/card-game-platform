@@ -14,6 +14,11 @@ export interface PlayerPovPresentation {
     bottomDock: PlayerPovBottomDockKind;
     actionStyle: PlayerPovActionStyle;
     trumpLabel: string | null;
+    infoPrimaryLabel: string;
+    infoPrimaryValue: string;
+    infoSecondaryLabel: string;
+    infoSecondaryValue: string;
+    centerLabel: string;
 }
 
 export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPovPresentation {
@@ -26,7 +31,12 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             centerArea: "trick",
             bottomDock: "stock-trump",
             actionStyle: "play-card",
-            trumpLabel: getTrumpLabel(viewModel, trumpPile)
+            trumpLabel: getTrumpLabel(viewModel, trumpPile),
+            infoPrimaryLabel: "Trump",
+            infoPrimaryValue: getTrumpLabel(viewModel, trumpPile),
+            infoSecondaryLabel: "Round",
+            infoSecondaryValue: viewModel.roundLabel,
+            centerLabel: "Current trick"
         };
     }
 
@@ -38,11 +48,16 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             centerArea: "battle",
             bottomDock: "none",
             actionStyle: "battle",
-            trumpLabel: null
+            trumpLabel: null,
+            infoPrimaryLabel: "Battle",
+            infoPrimaryValue: viewModel.roundLabel,
+            infoSecondaryLabel: "In play",
+            infoSecondaryValue: getDeckDetail(viewModel),
+            centerLabel: "Battle area"
         };
     }
 
-    if (viewModel.deckLabel.toLowerCase().includes("poker")) {
+    if (viewModel.piles.some((pile) => pile.role === "discard") || viewModel.deckLabel.toLowerCase().includes("poker")) {
         return {
             gameKind: "poker",
             gameTitle: "POKER",
@@ -50,7 +65,12 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             centerArea: "showdown",
             bottomDock: "deck",
             actionStyle: "play-card",
-            trumpLabel: null
+            trumpLabel: null,
+            infoPrimaryLabel: "Draw",
+            infoPrimaryValue: getPileByRole(viewModel, "draw")?.countLabel ?? viewModel.drawPileLabel,
+            infoSecondaryLabel: "Discard",
+            infoSecondaryValue: getPileByRole(viewModel, "discard")?.countLabel ?? viewModel.discardPileLabel,
+            centerLabel: "Table"
         };
     }
 
@@ -61,7 +81,12 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
         centerArea: "row",
         bottomDock: "none",
         actionStyle: "play-card",
-        trumpLabel: null
+        trumpLabel: null,
+        infoPrimaryLabel: "Round",
+        infoPrimaryValue: viewModel.roundLabel,
+        infoSecondaryLabel: "Deck",
+        infoSecondaryValue: getDeckDetail(viewModel),
+        centerLabel: "Table"
     };
 }
 
@@ -77,4 +102,9 @@ function getTrumpLabel(viewModel: CardGameViewModel, trumpPile: CardGameViewPile
 
     const match = /\|\s*Trump:\s*(.+)$/i.exec(viewModel.deckLabel);
     return match?.[1] ?? "spent";
+}
+
+function getDeckDetail(viewModel: CardGameViewModel): string {
+    const parts = viewModel.deckLabel.split("|").map((part) => part.trim()).filter(Boolean);
+    return parts[1] ?? parts[0] ?? viewModel.deckLabel;
 }

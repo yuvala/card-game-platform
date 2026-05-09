@@ -158,30 +158,89 @@ export class PlayerTableScene extends Phaser.Scene {
     }
 
     private drawGameInfo(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
-        if (!this.renderLayer || presentation.infoPanel !== "trump") {
+        if (!this.renderLayer || presentation.infoPanel === "none") {
+            return;
+        }
+
+        if (presentation.infoPanel !== "trump") {
+            this.drawCompactGameInfo(presentation);
             return;
         }
 
         const trumpLabel = presentation.trumpLabel ?? "spent";
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 262, 54, 24, 0x082417, 0.88, 0x5ea65d, 2, 0.3));
-        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 104, playerPovZones.gameInfoY, 20, 0xd3a22e, 1)
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 276, 62, 26, 0x082417, 0.9, 0x5ea65d, 2, 0.3));
+        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, 21, 0xd3a22e, 1)
             .setStrokeStyle(2, 0xffd166, 0.72));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 104, playerPovZones.gameInfoY, "T", {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, "T", {
             fontFamily: "Arial",
             fontSize: "14px",
             fontStyle: "700",
             color: "#10251c"
         }).setOrigin(0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 76, playerPovZones.gameInfoY - 8, "Trump: " + trumpLabel, {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY - 9, presentation.infoPrimaryLabel + ": " + trumpLabel, {
             fontFamily: "Arial",
             fontSize: "13px",
             fontStyle: "700",
             color: CREAM
         }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 76, playerPovZones.gameInfoY + 10, viewModel.roundLabel, {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY + 11, presentation.infoSecondaryValue, {
             fontFamily: "Arial",
             fontSize: "11px",
             color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2 + 58, playerPovZones.gameInfoY, 0, -21, 0, 21, 0x5ea65d, 0.35));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 78, playerPovZones.gameInfoY - 9, presentation.infoSecondaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 78, playerPovZones.gameInfoY + 11, String(viewModel.tableCards.length) + " cards", {
+            fontFamily: "Arial",
+            fontSize: "13px",
+            fontStyle: "700",
+            color: CREAM
+        }).setOrigin(0, 0.5));
+    }
+
+    private drawCompactGameInfo(presentation: PlayerPovPresentation): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        const accentColor = presentation.infoPanel === "battle" ? GOLD : 0x83d0ae;
+        const iconLabel = presentation.infoPanel === "battle" ? "B" : "D";
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 276, 56, 24, 0x082417, 0.88, accentColor, 2, 0.28));
+        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, 19, accentColor, 0.94)
+            .setStrokeStyle(2, 0xf6ecd2, 0.4));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, iconLabel, {
+            fontFamily: "Arial",
+            fontSize: "13px",
+            fontStyle: "700",
+            color: "#10251c"
+        }).setOrigin(0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY - 9, presentation.infoPrimaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY + 10, presentation.infoPrimaryValue, {
+            fontFamily: "Arial",
+            fontSize: "12px",
+            fontStyle: "700",
+            color: CREAM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2 + 42, playerPovZones.gameInfoY, 0, -18, 0, 18, 0x5ea65d, 0.3));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 60, playerPovZones.gameInfoY - 9, presentation.infoSecondaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 60, playerPovZones.gameInfoY + 10, presentation.infoSecondaryValue, {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            fontStyle: "700",
+            color: CREAM,
+            wordWrap: { width: 78 }
         }).setOrigin(0, 0.5));
     }
 
@@ -218,8 +277,8 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const { x, y } = layout;
-        const seatWidth = 126;
-        const seatHeight = 40;
+        const seatWidth = 116;
+        const seatHeight = 36;
         const seatY = y + 6;
 
         this.renderLayer.add(createRoundedPanel(
@@ -236,26 +295,26 @@ export class PlayerTableScene extends Phaser.Scene {
             player.isCurrentTurn ? 0.58 : 0.22
         ));
 
-        const avatarX = x - seatWidth / 2 + 18;
+        const avatarX = x - seatWidth / 2 + 16;
         const textX = avatarX + 24;
-        this.renderLayer.add(this.add.circle(avatarX, seatY, 16, player.isCurrentTurn ? GOLD : 0x1d7f54, 0.96)
+        this.renderLayer.add(this.add.circle(avatarX, seatY, 14, player.isCurrentTurn ? GOLD : 0x1d7f54, 0.96)
             .setStrokeStyle(2, player.isCurrentTurn ? 0xfff1bf : 0x83d0ae, 0.85));
-        this.renderLayer.add(this.add.circle(avatarX - 13, seatY - 14, 4, player.isCurrentTurn ? GOLD : 0x68d184, 0.96));
+        this.renderLayer.add(this.add.circle(avatarX - 12, seatY - 12, 4, player.isCurrentTurn ? GOLD : 0x68d184, 0.96));
         this.renderLayer.add(this.add.text(avatarX, seatY, player.iconLabel, {
             fontFamily: "Arial",
-            fontSize: "10px",
+            fontSize: "9px",
             fontStyle: "700",
             color: player.isCurrentTurn ? "#10251c" : CREAM
         }).setOrigin(0.5));
         this.renderLayer.add(this.add.text(textX, seatY - 7, player.nameLabel, {
             fontFamily: "Arial",
-            fontSize: "11px",
+            fontSize: "10px",
             fontStyle: "700",
             color: CREAM
         }).setOrigin(0, 0.5));
         this.renderLayer.add(this.add.text(textX, seatY + 8, "W " + counters.score + "   C " + counters.cards, {
             fontFamily: "Arial",
-            fontSize: "9px",
+            fontSize: "8px",
             color: DIM
         }).setOrigin(0, 0.5));
     }
@@ -270,19 +329,19 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const isLeft = layout.side === "left";
-        const panelX = layout.x + (isLeft ? -4 : 4);
-        const panelY = layout.y + 52;
-        const avatarY = layout.y - 8;
+        const panelX = layout.x + (isLeft ? 8 : -8);
+        const panelY = layout.y + 34;
+        const avatarY = layout.y - 22;
         const textOriginX = isLeft ? 0 : 1;
-        const textX = panelX + (isLeft ? -28 : 28);
+        const textX = panelX + (isLeft ? -18 : 18);
 
         this.renderLayer.add(createRoundedPanel(
             this,
             panelX,
             panelY,
-            70,
-            92,
-            18,
+            58,
+            78,
+            15,
             0x071a13,
             0.72,
             player.isCurrentTurn ? GOLD : 0x7fb896,
@@ -290,34 +349,34 @@ export class PlayerTableScene extends Phaser.Scene {
             player.isCurrentTurn ? 0.58 : 0.2
         ));
 
-        this.renderLayer.add(this.add.circle(layout.x, avatarY, 21, player.isCurrentTurn ? GOLD : 0x1d7f54, 0.96)
+        this.renderLayer.add(this.add.circle(layout.x, avatarY, 17, player.isCurrentTurn ? GOLD : 0x1d7f54, 0.96)
             .setStrokeStyle(2, player.isCurrentTurn ? 0xfff1bf : 0x83d0ae, 0.85));
-        this.renderLayer.add(this.add.circle(layout.x + (isLeft ? -17 : 17), avatarY - 18, 5, player.isCurrentTurn ? GOLD : 0x68d184, 0.96));
+        this.renderLayer.add(this.add.circle(layout.x + (isLeft ? -14 : 14), avatarY - 14, 4, player.isCurrentTurn ? GOLD : 0x68d184, 0.96));
         this.renderLayer.add(this.add.text(layout.x, avatarY, player.iconLabel, {
             fontFamily: "Arial",
-            fontSize: "12px",
+            fontSize: "10px",
             fontStyle: "700",
             color: player.isCurrentTurn ? "#10251c" : CREAM
         }).setOrigin(0.5));
 
         this.renderLayer.add(this.add.text(textX, panelY - 16, player.nameLabel, {
             fontFamily: "Arial",
-            fontSize: "11px",
+            fontSize: "10px",
             fontStyle: "700",
             color: CREAM,
             align: isLeft ? "left" : "right",
-            wordWrap: { width: 58 }
+            wordWrap: { width: 50 }
         }).setOrigin(textOriginX, 0.5));
 
-        this.renderLayer.add(this.add.text(textX, panelY + 8, "W " + counters.score, {
+        this.renderLayer.add(this.add.text(textX, panelY + 6, "W " + counters.score, {
             fontFamily: "Arial",
-            fontSize: "12px",
+            fontSize: "10px",
             color: "rgba(255,209,102,0.96)",
             align: isLeft ? "left" : "right"
         }).setOrigin(textOriginX, 0.5));
-        this.renderLayer.add(this.add.text(textX, panelY + 28, "C " + counters.cards, {
+        this.renderLayer.add(this.add.text(textX, panelY + 22, "C " + counters.cards, {
             fontFamily: "Arial",
-            fontSize: "12px",
+            fontSize: "10px",
             color: DIM,
             align: isLeft ? "left" : "right"
         }).setOrigin(textOriginX, 0.5));
@@ -330,7 +389,12 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         if (presentation.centerArea === "trick") {
+            this.drawTrickSurface();
             this.drawCurrentTrickLabel(viewModel);
+        } else if (presentation.centerArea === "battle") {
+            this.drawBattleSurface(presentation);
+        } else if (presentation.centerArea === "showdown") {
+            this.drawShowdownSurface(presentation);
         }
 
         const cards = viewModel.tableCards;
@@ -350,6 +414,8 @@ export class PlayerTableScene extends Phaser.Scene {
 
         if (presentation.bottomDock === "stock-trump") {
             this.drawStockTrumpWidget(viewModel, presentation);
+        } else if (presentation.bottomDock === "deck") {
+            this.drawDeckWidget(viewModel, presentation);
         }
 
         const pileText = getPrimaryPileText(viewModel);
@@ -375,6 +441,43 @@ export class PlayerTableScene extends Phaser.Scene {
             fontFamily: "Arial",
             fontSize: "12px",
             color: CREAM
+        }).setOrigin(0.5));
+    }
+
+    private drawTrickSurface(): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 158, 176, 34, 0x1b6b31, 0.18, 0x7fc46c, 1, 0.18));
+        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2, 352, -58, 0, 58, 0, 0x9ad27f, 0.1));
+        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2, 352, 0, -66, 0, 66, 0x9ad27f, 0.1));
+    }
+
+    private drawBattleSurface(presentation: PlayerPovPresentation): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 216, 146, 28, 0x092018, 0.36, GOLD, 1, 0.22));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 286, presentation.centerLabel, {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            fontStyle: "700",
+            color: "rgba(255,209,102,0.86)"
+        }).setOrigin(0.5));
+    }
+
+    private drawShowdownSurface(presentation: PlayerPovPresentation): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 198, 126, 26, 0x0a2a18, 0.28, 0x83d0ae, 1, 0.2));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 302, presentation.centerLabel, {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            color: DIM
         }).setOrigin(0.5));
     }
 
@@ -439,6 +542,62 @@ export class PlayerTableScene extends Phaser.Scene {
             fontFamily: "Arial",
             fontSize: "9px",
             color: DIM
+        }).setOrigin(0, 0.5));
+
+        return true;
+    }
+
+    private drawDeckWidget(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): boolean {
+        if (!this.renderLayer) {
+            return false;
+        }
+
+        const drawPile = getPileByRole(viewModel, "draw");
+        const discardPile = getPileByRole(viewModel, "discard");
+        if (!drawPile && !discardPile) {
+            return false;
+        }
+
+        const centerY = playerPovZones.stockTrumpY;
+        const centerX = 118;
+        this.renderLayer.add(createRoundedPanel(this, centerX, centerY, 206, 78, 18, 0x082417, 0.82, 0x5ea65d, 1, 0.22));
+
+        if (drawPile) {
+            for (let index = 0; index < 3; index += 1) {
+                const stockBack = this.add.image(centerX - 64 + index * 3, centerY - index, this.getActiveBackTextureKey())
+                    .setDisplaySize(STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H)
+                    .setAngle(-2 + index * 2)
+                    .setAlpha(drawPile.cardCount > 0 ? 0.82 : 0.25);
+                this.setCardDisplaySize(stockBack, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
+                this.renderLayer.add(stockBack);
+            }
+        }
+
+        if (discardPile?.topCard) {
+            const discardCard = this.add.image(centerX - 10, centerY, this.getTextureForCard(discardPile.topCard, "compact"))
+                .setDisplaySize(STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H)
+                .setAngle(3);
+            this.setCardDisplaySize(discardCard, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
+            this.renderLayer.add(discardCard);
+        } else {
+            this.renderLayer.add(createRoundedPanel(this, centerX - 10, centerY, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H, 5, 0x0b2118, 0.35, 0x7fb896, 1, 0.22));
+        }
+
+        this.renderLayer.add(this.add.text(centerX + 36, centerY - 15, presentation.infoPrimaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            fontStyle: "700",
+            color: CREAM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(centerX + 36, centerY + 3, presentation.infoPrimaryValue, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(centerX + 36, centerY + 20, presentation.infoSecondaryValue, {
+            fontFamily: "Arial",
+            fontSize: "9px",
+            color: "rgba(255,209,102,0.86)"
         }).setOrigin(0, 0.5));
 
         return true;

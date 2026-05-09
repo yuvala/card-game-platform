@@ -23,6 +23,7 @@
     "tests/rewrite/rewriteWebSocketServer.test.ts",
     "tests/rewrite/machineFactory.test.ts",
     "tests/rewrite/debugScenarios.test.ts",
+    "tests/rewrite/playerPovPresentation.test.ts",
     "tests/rewrite/gameMachines.test.ts",
     "tests/rewrite/viewModels.test.ts"
   ]
