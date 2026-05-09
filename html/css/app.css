@@ -587,14 +587,52 @@ a {
         height: auto;
         grid-template-columns: 1fr;
         align-items: start;
-        padding: 16px;
+        padding: 12px;
+        gap: 10px;
     }
 
-    .playerHeader h1,
-    .playerLead,
+    .playerHeader {
+        gap: 10px;
+    }
+
+    .playerIntro {
+        gap: 4px;
+    }
+
+    .playerHeader h1 {
+        font-size: 22px;
+        max-width: none;
+    }
+
+    .playerLead {
+        display: none;
+    }
+
     .playerControlCard {
+        display: flex;
+        flex-direction: row;
+        align-items: center;
         max-width: none;
         width: 100%;
+        padding: 10px 12px;
+        gap: 10px;
+    }
+
+    .playerSelectLabel {
+        display: none;
+    }
+
+    .playerSelect {
+        flex: 1;
+        min-width: 0;
+        padding: 8px 10px;
+    }
+
+    .playerStatus {
+        flex-shrink: 0;
+        width: auto;
+        white-space: nowrap;
+        padding: 8px 12px;
     }
 
     .playerDeviceFrame {
