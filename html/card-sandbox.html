@@ -4,19 +4,19 @@
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <title>Card Visual Sandbox</title>
-        <link rel="stylesheet" href="css/rewrite.css" type="text/css" />
+        <link rel="stylesheet" href="css/app.css" type="text/css" />
     </head>
     <body>
         <div class="cardSandboxShell">
             <header class="cardSandboxHeader">
                 <div>
-                    <p class="rewriteEyebrow">Rewrite Dev Tool</p>
+                    <p class="appEyebrow">Dev Tool</p>
                     <h1>Card Visual Sandbox</h1>
                 </div>
                 <div class="cardSandboxControls">
                     <label class="playerSelectLabel" for="card-sandbox-deck">Deck</label>
                     <select id="card-sandbox-deck" class="playerSelect"></select>
-                    <button id="card-sandbox-replay" class="rewritePrimaryButton" type="button">Replay</button>
+                    <button id="card-sandbox-replay" class="appPrimaryButton" type="button">Replay</button>
                 </div>
             </header>
             <nav class="cardSandboxTabs" aria-label="Card sandbox sections">
@@ -27,6 +27,6 @@
             <main id="card-sandbox-root" class="cardSandboxRoot"></main>
         </div>
 
-        <script type="module" src="./src/rewrite/dev/cardSandboxMain.ts"></script>
+        <script type="module" src="./src/app/dev/cardSandboxMain.ts"></script>
     </body>
 </html>

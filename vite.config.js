@@ -5,7 +5,7 @@ module.exports = defineConfig({
     root: "html",
     resolve: {
         alias: {
-            "@rewrite-core": resolve(__dirname, "packages/rewrite-core/src")
+            "@engine": resolve(__dirname, "packages/engine/src")
         }
     },
     server: {
@@ -23,7 +23,7 @@ module.exports = defineConfig({
             input: {
                 index: resolve(__dirname, "html/index.html"),
                 game: resolve(__dirname, "html/game.html"),
-                rewrite: resolve(__dirname, "html/rewrite.html"),
+                table: resolve(__dirname, "html/rewrite.html"),
                 player: resolve(__dirname, "html/player.html"),
                 cardSandbox: resolve(__dirname, "html/card-sandbox.html")
             }

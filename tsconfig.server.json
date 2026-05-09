@@ -10,12 +10,12 @@
     "esModuleInterop": true,
     "skipLibCheck": true,
     "types": ["node"],
-    "outDir": ".tmp-rewrite-server",
+    "outDir": ".tmp-server",
     "rootDir": ".",
     "baseUrl": ".",
     "paths": {
-      "@rewrite-core": ["packages/rewrite-core/src/index.ts"],
-      "@rewrite-core/*": ["packages/rewrite-core/src/*"]
+      "@engine": ["packages/engine/src/index.ts"],
+      "@engine/*": ["packages/engine/src/*"]
     }
   },
   "include": [

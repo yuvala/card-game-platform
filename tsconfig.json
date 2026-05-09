@@ -13,8 +13,8 @@
     "types": ["vite/client"],
     "baseUrl": ".",
     "paths": {
-      "@rewrite-core": ["packages/rewrite-core/src/index.ts"],
-      "@rewrite-core/*": ["packages/rewrite-core/src/*"]
+      "@engine": ["packages/engine/src/index.ts"],
+      "@engine/*": ["packages/engine/src/*"]
     }
   },
   "include": ["html/src/**/*.ts", "packages/**/*.ts"]

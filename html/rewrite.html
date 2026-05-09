@@ -3,14 +3,14 @@
     <head>
         <meta charset="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Card Game Rewrite</title>
-        <link rel="stylesheet" href="css/rewrite.css" type="text/css" />
+        <title>Card Game Table</title>
+        <link rel="stylesheet" href="css/app.css" type="text/css" />
     </head>
     <body>
-        <div class="rewriteShell">
-            <div class="rewriteIntro">
-                <p class="rewriteEyebrow">Rewrite Sandbox</p>
-                <h1 id="rewrite-game-title">Card Game</h1>
+        <div class="appShell">
+            <div class="appIntro">
+                <p class="appEyebrow">Card Game</p>
+                <h1 id="game-title">Card Game</h1>
                 <p>
                     The legacy DOM version is frozen and kept only
                     for reference at
@@ -21,10 +21,10 @@
                     table.
                 </p>
             </div>
-            <div id="rewrite-setup" class="rewriteSetupMount"></div>
-            <div id="rewrite-root" class="rewriteRoot"></div>
+            <div id="game-setup" class="appSetupMount"></div>
+            <div id="game-root" class="appRoot"></div>
         </div>
 
-        <script type="module" src="./src/rewrite/main.ts"></script>
+        <script type="module" src="./src/app/main.ts"></script>
     </body>
 </html>

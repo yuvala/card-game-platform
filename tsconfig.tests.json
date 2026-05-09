@@ -1,0 +1,30 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "ignoreDeprecations": "6.0",
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "outDir": ".tmp-tests",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "paths": {
+      "@engine": ["packages/engine/src/index.ts"],
+      "@engine/*": ["packages/engine/src/*"]
+    }
+  },
+  "files": [
+    "tests/engine/piles.test.ts",
+    "tests/engine/gameConfig.test.ts",
+    "tests/engine/gameSession.test.ts",
+    "tests/engine/gameSessionHost.test.ts",
+    "tests/engine/gameWebSocketServer.test.ts",
+    "tests/engine/machineFactory.test.ts",
+    "tests/engine/debugScenarios.test.ts",
+    "tests/engine/playerPovPresentation.test.ts",
+    "tests/engine/gameMachines.test.ts",
+    "tests/engine/viewModels.test.ts"
+  ]
+}
