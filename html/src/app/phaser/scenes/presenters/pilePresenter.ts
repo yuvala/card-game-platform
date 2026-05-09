@@ -160,7 +160,7 @@ function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisua
     const secondaryPile = getSecondaryPile(viewModel);
     const showTrumpWithDrawPile = secondaryPile?.role === "trump";
     const showSecondaryTitle = !(viewModel.tableCards.length > 0 && secondaryPile?.role === "discard");
-    const showPrimaryPile = Boolean(primaryPile) || viewModel.drawPileLabel.length > 0;
+    const showPrimaryPile = Boolean(primaryPile && primaryPile.cardCount > 0) || viewModel.drawPileLabel.length > 0;
     const showSecondaryPile = !showTrumpWithDrawPile && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
 
     visuals.drawPileTitle.setText(primaryPile?.label ?? "Draw Pile");

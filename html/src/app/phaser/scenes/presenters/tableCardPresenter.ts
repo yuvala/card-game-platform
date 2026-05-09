@@ -156,7 +156,7 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
             textureApi
         });
 
-        if (!shouldAnimateFlip) {
+        if (!shouldAnimateFlip || visual.container.alpha === 0) {
             visual.container.setScale(1);
             textureApi.applyCardTexture(visual.image, card, "showcase");
             return;
@@ -228,6 +228,8 @@ export function runPlayedCardAnimation(input: PlayedCardAnimationInput): string 
 
     discardCard.setVisible(false);
 
+    slot.image.setAlpha(0);
+
     scene.tweens.add({
         targets: slot.container,
         x: TABLE_CENTER_X,
@@ -236,6 +238,7 @@ export function runPlayedCardAnimation(input: PlayedCardAnimationInput): string 
         duration: 420,
         ease: "Cubic.easeInOut",
         onComplete: () => {
+            slot.image.setAlpha(1);
             onAnimationDone();
         }
     });

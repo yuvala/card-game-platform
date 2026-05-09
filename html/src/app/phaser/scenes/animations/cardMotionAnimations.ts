@@ -340,14 +340,16 @@ export function animateImageCollectMotions(input: AnimateImageCollectMotionsInpu
     const landedImages: Phaser.GameObjects.Image[] = [];
 
     items.forEach((item, index) => {
+        const baseScaleX = item.image.scaleX;
+        const baseScaleY = item.image.scaleY;
         const landingY = item.target.y;
         scene.tweens.add({
             targets: item.image,
             x: item.target.x,
             y: landingY - 6,
             angle: item.targetAngle ?? item.image.angle,
-            scaleX: item.peakScale ?? item.image.scaleX,
-            scaleY: item.peakScale ?? item.image.scaleY,
+            scaleX: (item.peakScale ?? 1) * baseScaleX,
+            scaleY: (item.peakScale ?? 1) * baseScaleY,
             duration: item.duration ?? 330,
             delay: item.delay ?? 0,
             ease: item.ease ?? "Cubic.easeInOut",
@@ -355,8 +357,8 @@ export function animateImageCollectMotions(input: AnimateImageCollectMotionsInpu
                 scene.tweens.add({
                     targets: item.image,
                     y: landingY,
-                    scaleX: item.landingScale ?? item.image.scaleX,
-                    scaleY: item.landingScale ?? item.image.scaleY,
+                    scaleX: (item.landingScale ?? 1) * baseScaleX,
+                    scaleY: (item.landingScale ?? 1) * baseScaleY,
                     duration: landingDuration,
                     ease: "Back.easeOut",
                     onComplete: () => {
@@ -732,8 +734,8 @@ export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckIn
                             x: center.x,
                             y: center.y,
                             angle: 0,
-                            scaleX: 0.94,
-                            scaleY: 1.04,
+                            scaleX: card.scaleX * 0.94,
+                            scaleY: card.scaleY * 1.04,
                             duration: 140,
                             ease: "Back.easeOut",
                             onComplete: () => {

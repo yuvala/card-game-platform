@@ -5,7 +5,6 @@ import { getCardSkinById } from "@engine/engine/cards/skinPacks";
 import type { CardGameSession } from "@engine/engine/game/session";
 import type {
     CardGameViewCard,
-    CardGameViewPile,
     CardGameViewTableCard,
     CardGameViewModel
 } from "@engine/engine/game/viewModel";
@@ -14,7 +13,7 @@ import {
     getCardBackTextureKey,
     getCardFaceTextureKey
 } from "../cards/CardTextureFactory";
-import { TABLE_CENTER_X, TABLE_WIDTH } from "../layout";
+import { TABLE_WIDTH } from "../layout";
 import {
     CARD_HEIGHT,
     CARD_WIDTH,
@@ -29,7 +28,8 @@ import {
 } from "./layout/constants";
 import { createSeatBadge, type SeatBadge } from "./factories/createSeatBadge";
 import { createTableCardVisual, type TableCardVisual } from "./factories/createTableCardVisual";
-import { animateShuffleDeck } from "./animations/cardStackAnimations";
+import { createCardAnimationLayer, type CardAnimationLayer } from "./animations/cardAnimationLayer";
+import { animateRiffleShuffle } from "./animations/cardMotionAnimations";
 import { playShuffleSound } from "./audio/cardSoundEffects";
 import { getSeatLayouts } from "./layout/seatLayouts";
 import type { SeatLayout } from "./layout/types";
@@ -47,6 +47,8 @@ import {
 } from "./presenters/pilePresenter";
 import { runViewEffects } from "./presenters/effectPresenter";
 import { runPlayedCardAnimation, syncTableCardPresentation } from "./presenters/tableCardPresenter";
+import { drawDebugZoneOverlay } from "./debug/debugZoneOverlay";
+import type { DebugOverlay } from "./debug/debugZoneOverlay";
 
 interface CardDisplaySize {
     width: number;
@@ -58,18 +60,20 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private readonly viewerId: string | null;
     private subscription?: { unsubscribe(): void };
     private primaryPileVisuals!: PrimaryPileVisuals;
-    private seatBadges = new Map<string, SeatBadge>();
-    private handSlots = new Map<string, HandSlotVisual[]>();
-    private ownedPileVisuals = new Map<string, OwnedPileVisual>();
-    private supplementalPileVisuals = new Map<string, SupplementalPileVisual>();
-    private tableCardVisuals: TableCardVisual[] = [];
+    private readonly seatBadges = new Map<string, SeatBadge>();
+    private readonly handSlots = new Map<string, HandSlotVisual[]>();
+    private readonly ownedPileVisuals = new Map<string, OwnedPileVisual>();
+    private readonly supplementalPileVisuals = new Map<string, SupplementalPileVisual>();
+    private readonly tableCardVisuals: TableCardVisual[] = [];
     private activeAnimationKey = "";
     private activeTableCardFlipKey = "";
     private activeEffectBatchKey = "";
     private activeShuffleAnimationKey = "";
+    private shuffleAnimationLayer!: CardAnimationLayer;
     private seatLayoutKey = "";
     private activeDeckId = "";
     private activeCardSkinId = "";
+    private debugOverlay?: DebugOverlay;
 
     constructor(session: CardGameSession<TSnapshot>, viewerId?: string | null) {
         super("rewrite-table");
@@ -94,6 +98,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             .setStrokeStyle(1, TABLE_GOLD, 0.08);
 
         this.createPiles();
+        this.shuffleAnimationLayer = createCardAnimationLayer(this, 135);
 
         this.subscription = this.session.subscribe(() => {
             const viewModel = this.session.getViewModel(this.viewerId);
@@ -110,7 +115,56 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             this.subscription = undefined;
         });
 
+        this.input.keyboard?.addKey("D").on("down", () => {
+            this.toggleDebugOverlay();
+        });
+
+        if (localStorage.getItem("debug-zones") === "on") {
+            this.toggleDebugOverlay();
+        }
+
+        globalThis.addEventListener("debug-layer-change", () => {
+            if (this.debugOverlay) {
+                this.redrawDebugOverlay();
+            }
+        });
+
+        this.add.text(TABLE_WIDTH / 2, height - 6, "[D] zones", {
+            fontFamily: "monospace",
+            fontSize: "10px",
+            color: "rgba(255,255,255,0.18)"
+        }).setOrigin(0.5, 1).setDepth(5000);
+
         this.syncViewModel(this.session.getViewModel(this.viewerId));
+    }
+
+    private toggleDebugOverlay(): void {
+        if (this.debugOverlay) {
+            this.debugOverlay.destroy();
+            this.debugOverlay = undefined;
+            localStorage.removeItem("debug-zones");
+            return;
+        }
+        this.redrawDebugOverlay();
+        localStorage.setItem("debug-zones", "on");
+    }
+
+    private redrawDebugOverlay(): void {
+        this.debugOverlay?.destroy();
+        this.debugOverlay = drawDebugZoneOverlay({
+            scene: this,
+            primaryPileVisuals: this.primaryPileVisuals,
+            seatBadges: this.seatBadges,
+            handSlots: this.handSlots,
+            ownedPileVisuals: this.ownedPileVisuals,
+            supplementalPileVisuals: this.supplementalPileVisuals,
+            tableCardVisuals: this.tableCardVisuals,
+            layers: {
+                origins: localStorage.getItem("debug-layer-origins") === "on",
+                slots: localStorage.getItem("debug-layer-slots") === "on",
+                piles: localStorage.getItem("debug-layer-piles") === "on"
+            }
+        });
     }
 
     private createPiles(): void {
@@ -118,7 +172,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private createHandSlots(
-        playerId: string,
+        _playerId: string,
         layout: SeatLayout,
         slotCount: number
     ): HandSlotVisual[] {
@@ -291,6 +345,9 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             }
         });
         this.runShuffleAnimation(viewModel);
+        if (this.debugOverlay) {
+            this.redrawDebugOverlay();
+        }
     }
 
     private runShuffleAnimation(viewModel: CardGameViewModel): void {
@@ -309,14 +366,21 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         }
 
         this.activeShuffleAnimationKey = shuffleAnimationKey;
+        this.shuffleAnimationLayer.clear();
         playShuffleSound(this);
-        animateShuffleDeck({
+        animateRiffleShuffle({
             scene: this,
-            x: this.primaryPileVisuals.drawPileFrame.x,
-            y: this.primaryPileVisuals.drawPileFrame.y,
-            textureApi: {
-                getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant)
+            animationLayer: this.shuffleAnimationLayer,
+            textureKey: this.getActiveBackTextureKey(),
+            center: {
+                x: this.primaryPileVisuals.drawPileFrame.x,
+                y: this.primaryPileVisuals.drawPileFrame.y
+            },
+            size: { width: CARD_WIDTH, height: CARD_HEIGHT },
+            count: 10,
+            depth: 135,
+            onComplete: () => {
+                this.shuffleAnimationLayer.clear();
             }
         });
     }

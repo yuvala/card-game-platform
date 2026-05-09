@@ -1,4 +1,4 @@
-import { TABLE_CENTER_X, TABLE_CENTER_Y, TABLE_WIDTH } from "../../layout";
+import { TABLE_CENTER_X, TABLE_CENTER_Y } from "../../layout";
 
 import {
     DISCARD_CARD_HEIGHT,
@@ -31,6 +31,20 @@ function getPrimaryPileTemplate(playerCount: number): PrimaryPileTemplate {
     switch (playerCount) {
         case 1:
         case 2:
+            return {
+                frameWidth: PRIMARY_PILE_FRAME_WIDTH,
+                frameHeight: PRIMARY_PILE_FRAME_HEIGHT,
+                drawY: 500,
+                discardY: 300,
+                drawTitleOffsetY: 56,
+                discardTitleOffsetY: 66,
+                discardTextOffsetY: 74,
+                discardCardWidth: DISCARD_CARD_WIDTH,
+                discardCardHeight: DISCARD_CARD_HEIGHT,
+                titleFontSize: 18,
+                countFontSize: 18,
+                deckCountFontSize: 24
+            };
         case 3:
         case 4:
             return {

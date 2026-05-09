@@ -218,6 +218,8 @@ export function animateCardToStack(input: {
     onComplete: () => void;
 }): void {
     const { scene, ghost, effect, destination, profile, textureApi, onLanded, onReveal, onComplete } = input;
+    const baseScaleX = ghost.scaleX;
+    const baseScaleY = ghost.scaleY;
 
     animateImageMove({
         scene,
@@ -227,14 +229,14 @@ export function animateCardToStack(input: {
             y: destination.y
         },
         targetAngle: destination.angle,
-        scaleX: profile.peakScale,
-        scaleY: profile.peakScale,
+        scaleX: baseScaleX * profile.peakScale,
+        scaleY: baseScaleY * profile.peakScale,
         duration: profile.duration,
         delay: profile.delay,
         ease: profile.ease,
         onComplete: () => {
             onLanded?.();
-            ghost.setScale(1);
+            restoreCardDisplaySize(ghost);
             if (!shouldRevealFinalCard(effect)) {
                 onComplete();
                 return;

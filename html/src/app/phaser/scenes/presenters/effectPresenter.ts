@@ -69,28 +69,29 @@ function getEffectProfile(reason: CardGameEffectReason, dealDelayStep = DEAL_MAX
                 duration: 310,
                 delayStep: dealDelayStep,
                 ease: "Quart.easeOut",
-                peakScale: 1
+                peakScale: 2.5
             };
         case "draw":
             return {
                 duration: 220,
                 delayStep: 42,
                 ease: "Cubic.easeOut",
-                peakScale: 1.02
+                peakScale: 10
             };
         case "play":
             return {
                 duration: 260,
                 delayStep: getStackedCardMoveDelay(1),
                 ease: "Back.easeOut",
-                peakScale: 1.08
+                peakScale: 1
             };
         case "collect":
             return {
                 duration: 300,
                 delayStep: 48,
                 ease: "Cubic.easeIn",
-                peakScale: 0.96
+                peakScale: 1
+
             };
     }
 }

@@ -351,6 +351,42 @@ a {
     margin: 0 auto;
 }
 
+.appDevHints {
+    text-align: center;
+    margin-top: 10px;
+    font-family: monospace;
+    font-size: 11px;
+    color: rgba(243, 234, 213, 0.25);
+    letter-spacing: 0.03em;
+}
+
+.appDevHints kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid rgba(243, 234, 213, 0.2);
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.appDevSep {
+    margin: 0 8px;
+    opacity: 0.3;
+}
+
+.appDevCheck {
+    margin: 0 6px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.appDevCheck input {
+    accent-color: #66aaff;
+    cursor: pointer;
+    margin-right: 3px;
+}
+
 .playerShell {
     height: 100vh;
     display: grid;
