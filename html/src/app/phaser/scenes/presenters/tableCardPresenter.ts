@@ -111,15 +111,16 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
         return "";
     }
 
-    const flipKey = tableCards.map((card) => {
+    const perCardKeys = tableCards.map((card) => {
         return [
             card.id,
             card.isFaceUp ? "up" : "down",
             String(card.stackCount ?? 1),
             card.stackBadgeLabel ?? ""
         ].join(":");
-    }).join("|");
-    const shouldAnimateFlip = flipKey !== activeTableCardFlipKey;
+    });
+    const flipKey = perCardKeys.join("|");
+    const prevPerCardKeys = activeTableCardFlipKey.split("|");
 
     tableCards.forEach((card, index) => {
         const visual = tableCardVisuals[index];
@@ -156,7 +157,8 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
             textureApi
         });
 
-        if (!shouldAnimateFlip || visual.container.alpha === 0) {
+        const cardKeyChanged = perCardKeys[index] !== prevPerCardKeys[index];
+        if (!cardKeyChanged || visual.container.alpha === 0) {
             visual.container.setScale(1);
             textureApi.applyCardTexture(visual.image, card, "showcase");
             return;
@@ -170,7 +172,7 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
             targets: visual.container,
             scaleX: 0.08,
             duration: 110,
-            delay: index * 90,
+            delay: 0,
             ease: "Sine.easeIn",
             onComplete: () => {
                 textureApi.applyCardTexture(visual.image, card, "showcase");

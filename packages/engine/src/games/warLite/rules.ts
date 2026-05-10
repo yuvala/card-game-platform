@@ -10,6 +10,7 @@ import {
 } from "../../engine/game/piles";
 import {
     createCollectCardEffect,
+    createDealCardEffect,
     createPlayCardEffect,
     type CardGameEffect
 } from "../../engine/game/effects";
@@ -261,9 +262,10 @@ export function canRevealBattle(context: WarLiteContext): boolean {
     );
 }
 
-export function recycleEmptyPlayerStacks(context: WarLiteContext): WarLiteContext {
+export function recycleEmptyPlayerStacks(context: WarLiteContext): { context: WarLiteContext; effects: CardGameEffect[] } {
     let piles = context.piles;
     const recycledPlayerNames: string[] = [];
+    const effects: CardGameEffect[] = [];
 
     context.players.forEach((player) => {
         const stackPileId = getWarLiteHandPileId(player.id);
@@ -275,19 +277,38 @@ export function recycleEmptyPlayerStacks(context: WarLiteContext): WarLiteContex
             return;
         }
 
+        wonCards.forEach((card, index) => {
+            effects.push(createDealCardEffect({
+                card,
+                fromPileId: wonPileId,
+                fromOwnerId: player.id,
+                fromIndex: index,
+                fromPileCardCount: wonCards.length,
+                fromFaceUp: false,
+                toPileId: stackPileId,
+                toOwnerId: player.id,
+                toIndex: index,
+                isFaceUp: false,
+                keyPrefix: "recycle-" + player.id + "-" + String(context.round)
+            }));
+        });
+
         piles = setPileCards(piles, stackPileId, shuffleDeck(wonCards));
         piles = clearPile(piles, wonPileId);
         recycledPlayerNames.push(player.name);
     });
 
     if (recycledPlayerNames.length === 0) {
-        return context;
+        return { context, effects: [] };
     }
 
     return {
-        ...context,
-        piles,
-        statusText: recycledPlayerNames.join(", ") + " shuffled won cards back into their stack."
+        context: {
+            ...context,
+            piles,
+            statusText: recycledPlayerNames.join(", ") + " shuffled won cards back into their stack."
+        },
+        effects
     };
 }
 

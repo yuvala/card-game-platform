@@ -3,8 +3,8 @@ import { REWRITE_HEIGHT, TABLE_CENTER_Y } from "../../layout";
 // --- Card display sizes (px) ---
 export const CARD_WIDTH = 60;           // hand slot cards (the cards in a player's hand)
 export const CARD_HEIGHT = 88;          // hand slot cards
-export const PRIMARY_PILE_FRAME_WIDTH = 120;   // hit-target / slot frame for the primary draw pile
-export const PRIMARY_PILE_FRAME_HEIGHT = 156;  // hit-target / slot frame for the primary draw pile
+export const PRIMARY_PILE_FRAME_WIDTH = 60;    // hit-target / slot frame for the primary draw pile
+export const PRIMARY_PILE_FRAME_HEIGHT = 88;   // hit-target / slot frame for the primary draw pile
 export const DISCARD_CARD_WIDTH = 70;   // discard pile face-up card
 export const DISCARD_CARD_HEIGHT = 98;  // discard pile face-up card
 export const TABLE_CARD_WIDTH = 74;     // cards played to the center of the table (e.g. war battle cards)

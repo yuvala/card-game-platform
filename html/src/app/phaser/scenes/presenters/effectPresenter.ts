@@ -207,9 +207,19 @@ function getSourcePoint(input: {
     viewModel: CardGameViewModel;
     primaryPileVisuals: PrimaryPileVisuals;
     handSlots: Map<string, HandSlotVisual[]>;
+    ownedPileVisuals: Map<string, OwnedPileVisual>;
     playerDeckVisuals: Map<string, PlayerDeckVisual>;
 }): { x: number; y: number } | null {
-    const { effect, viewModel, primaryPileVisuals, handSlots, playerDeckVisuals } = input;
+    const { effect, viewModel, primaryPileVisuals, handSlots, ownedPileVisuals, playerDeckVisuals } = input;
+
+    const sourceOwnedPile = ownedPileVisuals.get(effect.fromPileId);
+    if (sourceOwnedPile) {
+        return {
+            x: sourceOwnedPile.container.x,
+            y: sourceOwnedPile.container.y
+        };
+    }
+
     if (effect.fromOwnerId) {
         const slots = handSlots.get(effect.fromOwnerId);
         const sourceSlot = slots?.[effect.fromIndex ?? 0];
@@ -465,7 +475,7 @@ function runCollectEffects(input: EffectPresentationInput, collectEffects: MoveC
     const destinationPileVisuals = new Set<OwnedPileVisual>();
     const warDestinationPileVisuals = new Set<OwnedPileVisual>();
     const collectItems = collectEffects.flatMap((effect, index) => {
-        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots, playerDeckVisuals });
+        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots, ownedPileVisuals, playerDeckVisuals });
         const destinationPoint = getDestinationPoint({
             effect,
             viewModel,
@@ -583,7 +593,7 @@ export function runViewEffects(input: EffectPresentationInput): string {
 
     effects.forEach((effect, index) => {
         const profile = getEffectProfile(effect.reason);
-        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots, playerDeckVisuals });
+        const sourcePoint = getSourcePoint({ effect, viewModel, primaryPileVisuals, handSlots, ownedPileVisuals, playerDeckVisuals });
         const destinationPoint = getDestinationPoint({
             effect,
             viewModel,

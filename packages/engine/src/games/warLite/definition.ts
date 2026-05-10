@@ -79,18 +79,24 @@ export const warLiteGameDefinition: GameDefinition<
                 };
             case "deal-opening-hands":
                 return dealOpeningHands(state);
-            case "prepare-battle":
+            case "prepare-battle": {
+                const recycled = recycleEmptyPlayerStacks(state);
                 return {
-                    state: setBattleStatus(recycleEmptyPlayerStacks(state))
+                    state: setBattleStatus(recycled.context),
+                    effects: recycled.effects.length > 0 ? recycled.effects : undefined
                 };
+            }
             case "reveal-battle":
                 return revealBattleWithEffects(state);
             case "finalize-battle":
                 return finalizeBattleWithEffects(state);
-            case "advance-next-round":
+            case "advance-next-round": {
+                const recycled = recycleEmptyPlayerStacks(advanceToNextRound(state));
                 return {
-                    state: setBattleStatus(recycleEmptyPlayerStacks(advanceToNextRound(state)))
+                    state: setBattleStatus(recycled.context),
+                    effects: recycled.effects.length > 0 ? recycled.effects : undefined
                 };
+            }
             case "finish-game":
                 return {
                     state: finishGame(state)

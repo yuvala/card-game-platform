@@ -11,7 +11,7 @@ export interface TableCardDisplayState extends ScenePoint {
 
 export function getTableCardPosition(index: number, cardCount: number): ScenePoint {
     if (cardCount <= 1) {
-        return { x: TABLE_CENTER_X, y: 392 };
+        return { x: TABLE_CENTER_X, y: TABLE_CENTER_Y };
     }
 
     const maxSpread = 650;
@@ -20,7 +20,7 @@ export function getTableCardPosition(index: number, cardCount: number): ScenePoi
 
     return {
         x: startX + spacing * index,
-        y: 392
+        y: TABLE_CENTER_Y
     };
 }
 
