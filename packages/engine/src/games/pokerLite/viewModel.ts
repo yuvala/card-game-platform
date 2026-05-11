@@ -41,6 +41,7 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot, viewerId?
               };
 
     return applyPlayerPovViewModel({
+        themeId: "poker",
         phaseLabel: currentPhase.toUpperCase(),
         roundLabel: "Round " + snapshot.context.round + " / " + snapshot.context.maxRounds,
         deckId: snapshot.context.deckDefinition.id,

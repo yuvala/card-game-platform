@@ -4,6 +4,7 @@ export type PlayerPovGameKind = "brisca" | "war" | "poker" | "generic";
 export type PlayerPovInfoPanelKind = "none" | "trump" | "battle" | "pot";
 export type PlayerPovCenterAreaKind = "trick" | "battle" | "showdown" | "row";
 export type PlayerPovBottomDockKind = "none" | "stock-trump" | "deck";
+export type PlayerPovCenterDockKind = "none" | "stock" | "deck";
 export type PlayerPovActionStyle = "play-card" | "draw-card" | "battle";
 
 export interface PlayerPovPresentation {
@@ -12,6 +13,7 @@ export interface PlayerPovPresentation {
     infoPanel: PlayerPovInfoPanelKind;
     centerArea: PlayerPovCenterAreaKind;
     bottomDock: PlayerPovBottomDockKind;
+    centerDock: PlayerPovCenterDockKind;
     actionStyle: PlayerPovActionStyle;
     trumpLabel: string | null;
     infoPrimaryLabel: string;
@@ -22,6 +24,24 @@ export interface PlayerPovPresentation {
 }
 
 export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPovPresentation {
+    if (viewModel.themeId === "war") {
+        return {
+            gameKind: "war",
+            gameTitle: "WAR",
+            infoPanel: "battle",
+            centerArea: "battle",
+            bottomDock: "none",
+            centerDock: "stock",
+            actionStyle: "battle",
+            trumpLabel: null,
+            infoPrimaryLabel: "Battle",
+            infoPrimaryValue: viewModel.roundLabel,
+            infoSecondaryLabel: "In play",
+            infoSecondaryValue: getDeckDetail(viewModel),
+            centerLabel: "Battle area"
+        };
+    }
+
     const trumpPile = getPileByRole(viewModel, "trump");
     if (trumpPile) {
         return {
@@ -30,6 +50,7 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             infoPanel: "trump",
             centerArea: "trick",
             bottomDock: "stock-trump",
+            centerDock: "none",
             actionStyle: "play-card",
             trumpLabel: getTrumpLabel(viewModel, trumpPile),
             infoPrimaryLabel: "Trump",
@@ -47,6 +68,7 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             infoPanel: "battle",
             centerArea: "battle",
             bottomDock: "none",
+            centerDock: "stock",
             actionStyle: "battle",
             trumpLabel: null,
             infoPrimaryLabel: "Battle",
@@ -63,7 +85,8 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             gameTitle: "POKER",
             infoPanel: "pot",
             centerArea: "showdown",
-            bottomDock: "deck",
+            bottomDock: "none",
+            centerDock: "deck",
             actionStyle: "play-card",
             trumpLabel: null,
             infoPrimaryLabel: "Draw",
@@ -80,6 +103,7 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
         infoPanel: "none",
         centerArea: "row",
         bottomDock: "none",
+        centerDock: "none",
         actionStyle: "play-card",
         trumpLabel: null,
         infoPrimaryLabel: "Round",

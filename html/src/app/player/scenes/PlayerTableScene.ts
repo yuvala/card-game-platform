@@ -1,6 +1,9 @@
 ﻿import * as Phaser from "phaser";
 
-import { isMoveCardEffect, type MoveCardEffect } from "@engine/engine/game/effects";
+import { drawPlayerDebugOverlay } from "../debug/playerDebugOverlay";
+import type { PlayerDebugOverlay, PlayerDebugLayerFlags } from "../debug/playerDebugOverlay";
+import { createCardAnimationLayer, type CardAnimationLayer } from "../../phaser/scenes/animations/cardAnimationLayer";
+import { isMoveCardEffect, type MoveCardEffect, type CardGameEffectReason } from "@engine/engine/game/effects";
 import { supportedDeckDefinitions } from "@engine/engine/cards/deckDefinitions";
 import { getCardSkinById } from "@engine/engine/cards/skinPacks";
 import type { CardGameSession } from "@engine/engine/game/session";
@@ -40,16 +43,120 @@ import {
     type PlayerPovPlayerCounters
 } from "../playerPovUiModel";
 
-const CARD_W = 72;
-const CARD_H = 106;
 const HAND_CARD_W = playerPovCardSizes.hand.width;
 const HAND_CARD_H = playerPovCardSizes.hand.height;
 const TABLE_CARD_W = playerPovCardSizes.table.width;
 const TABLE_CARD_H = playerPovCardSizes.table.height;
 const STOCK_TRUMP_CARD_W = playerPovCardSizes.stockTrump.width;
 const STOCK_TRUMP_CARD_H = playerPovCardSizes.stockTrump.height;
-const FELT = 0x246f34;
-const FELT_DARK = 0x0b2118;
+const DEAL_MAX_STEP_MS = 88;
+const DEAL_TARGET_TOTAL_MS = 1500;
+
+interface EffectAnimProfile {
+    duration: number;
+    delayStep: number;
+    ease: string;
+    peakScale: number;
+}
+
+function getDealDelayStep(dealCount: number): number {
+    if (dealCount <= 1) {
+        return DEAL_MAX_STEP_MS;
+    }
+
+    return Math.min(DEAL_MAX_STEP_MS, Math.floor(DEAL_TARGET_TOTAL_MS / dealCount));
+}
+
+function getEffectProfile(reason: CardGameEffectReason, dealDelayStep = DEAL_MAX_STEP_MS): EffectAnimProfile {
+    switch (reason) {
+        case "deal":
+            return { duration: 310, delayStep: dealDelayStep, ease: "Quart.easeOut", peakScale: 2.5 };
+        case "draw":
+            return { duration: 220, delayStep: 42, ease: "Cubic.easeOut", peakScale: 1.8 };
+        case "play":
+            return { duration: 260, delayStep: 60, ease: "Back.easeOut", peakScale: 1 };
+        case "collect":
+            return { duration: 300, delayStep: 48, ease: "Cubic.easeIn", peakScale: 1 };
+    }
+}
+
+function computeEffectDelays(effects: readonly MoveCardEffect[]): number[] {
+    const dealCount = effects.filter((e) => e.reason === "deal").length;
+    const dealDelayStep = getDealDelayStep(dealCount);
+    const delays: number[] = [];
+    let groupStartDelay = 0;
+    let groupReason: CardGameEffectReason | null = null;
+    let groupIndex = 0;
+    let previousProfile = getEffectProfile("deal", dealDelayStep);
+
+    effects.forEach((effect) => {
+        const profile = getEffectProfile(effect.reason, dealDelayStep);
+        if (groupReason !== null && groupReason !== effect.reason) {
+            groupStartDelay += previousProfile.duration + (groupIndex - 1) * previousProfile.delayStep + 120;
+            groupIndex = 0;
+        }
+
+        delays.push(groupStartDelay + groupIndex * profile.delayStep + (effect.delayMs ?? 0));
+        groupReason = effect.reason;
+        groupIndex += 1;
+        previousProfile = profile;
+    });
+
+    return delays;
+}
+
+interface PlayerTheme {
+    felt: number;
+    feltInner: number;
+    feltInnerBorder: number;
+    bg: number;
+    bgOverlayAlpha: number;
+    turnBg: number;
+    bgImage: string;
+    bgAlpha: number;
+    showFelt: boolean;
+}
+
+const THEMES: Record<string, PlayerTheme> = {
+    default: {
+        felt: 0x246f34,
+        feltInner: 0x2e8a3d,
+        feltInnerBorder: 0x77bf69,
+        bg: 0x07140f,
+        bgOverlayAlpha: 0.18,
+        turnBg: 0x163b2b,
+        bgImage: "bg-brisca",
+        bgAlpha: 1,
+        showFelt: false
+    },
+    war: {
+        felt: 0x1a3a6b,
+        feltInner: 0x1e4a88,
+        feltInnerBorder: 0x4d7cc9,
+        bg: 0x0a1a2e,
+        bgOverlayAlpha: 0.92,
+        turnBg: 0x0f2850,
+        bgImage: "bg-war",
+        bgAlpha: 0.18,
+        showFelt: true
+    },
+    poker: {
+        felt: 0x1a5c32,
+        feltInner: 0x226b3c,
+        feltInnerBorder: 0x4da870,
+        bg: 0x071a10,
+        bgOverlayAlpha: 0.22,
+        turnBg: 0x0f3322,
+        bgImage: "",
+        bgAlpha: 0,
+        showFelt: true
+    }
+};
+
+function getTheme(themeId?: string): PlayerTheme {
+    return THEMES[themeId ?? "default"] ?? THEMES.default;
+}
+
 const GOLD = 0xffd166;
 const CREAM = "#f6ecd2";
 const DIM = "rgba(246,236,210,0.72)";
@@ -71,6 +178,11 @@ export class PlayerTableScene extends Phaser.Scene {
     private activeDeckId = "";
     private activeCardSkinId = "";
     private activeEffectBatchKey = "";
+    private localPlayerDeckPoint: { x: number; y: number } | null = null;
+    private stockPilePoint: { x: number; y: number } | null = null;
+    private debugOverlay?: PlayerDebugOverlay;
+    private lastViewModel?: CardGameViewModel;
+    private animationLayer!: CardAnimationLayer;
 
     constructor(session: CardGameSession<CardGameViewModel>) {
         super("player-table");
@@ -78,28 +190,87 @@ export class PlayerTableScene extends Phaser.Scene {
     }
 
     preload(): void {
-        this.load.image("rewrite-table-bg", "images/map4.jpg");
+        this.load.image("bg-brisca", "images/bg-brisca.jpg");
+        this.load.image("bg-war", "images/map4.jpg");
     }
 
     create(): void {
+        this.animationLayer = createCardAnimationLayer(this, 1000);
+
         this.subscription = this.session.subscribe(() => {
             this.syncViewModel(this.session.getViewModel(null));
         });
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.subscription?.unsubscribe();
             this.subscription = undefined;
+            this.animationLayer.destroy();
         });
+
+        this.input.keyboard?.on("keydown-D", () => {
+            this.toggleDebugOverlay();
+        });
+
+        globalThis.addEventListener("debug-layer-change", () => {
+            if (this.debugOverlay) {
+                this.redrawDebugOverlay();
+            }
+        });
+
+        if (localStorage.getItem("player-debug-zones") === "on") {
+            this.toggleDebugOverlay();
+        }
+
         this.syncViewModel(this.session.getViewModel(null));
     }
 
+    private getDebugLayers(): PlayerDebugLayerFlags {
+        return {
+            hand:  localStorage.getItem("player-dbg-hand")  === "on",
+            table: localStorage.getItem("player-dbg-table") === "on",
+            piles: localStorage.getItem("player-dbg-piles") === "on",
+            seats: localStorage.getItem("player-dbg-seats") === "on",
+            zones: localStorage.getItem("player-dbg-zones") === "on"
+        };
+    }
+
+    private toggleDebugOverlay(): void {
+        if (this.debugOverlay) {
+            this.debugOverlay.destroy();
+            this.debugOverlay = undefined;
+            localStorage.removeItem("player-debug-zones");
+            return;
+        }
+        localStorage.setItem("player-debug-zones", "on");
+        this.redrawDebugOverlay();
+    }
+
+    private redrawDebugOverlay(): void {
+        this.debugOverlay?.destroy();
+        if (!this.lastViewModel) {
+            return;
+        }
+        this.debugOverlay = drawPlayerDebugOverlay({
+            scene: this,
+            viewModel: this.lastViewModel,
+            layers: this.getDebugLayers()
+        });
+    }
+
     private syncViewModel(viewModel: CardGameViewModel): void {
+        this.lastViewModel = viewModel;
         this.ensureCardTextures(viewModel);
         this.renderLayer?.destroy(true);
         this.renderLayer = this.add.container(0, 0);
+        this.stockPilePoint = null;
 
-        this.drawBackground();
+        if (this.debugOverlay) {
+            this.redrawDebugOverlay();
+        }
+
+        const theme = getTheme(viewModel.themeId);
+        this.drawBackground(theme);
         const presentation = getPlayerPovPresentation(viewModel);
-        this.drawTopBar(viewModel, presentation);
+        this.drawTopBar(viewModel, presentation, theme);
         this.drawGameInfo(viewModel, presentation);
         this.drawOpponents(viewModel);
         this.drawTableCards(viewModel, presentation);
@@ -109,27 +280,34 @@ export class PlayerTableScene extends Phaser.Scene {
         this.presentMoveEffects(viewModel);
     }
 
-    private drawBackground(): void {
+    private drawBackground(theme: PlayerTheme): void {
         if (!this.renderLayer) {
             return;
         }
 
-        if (this.textures.exists("rewrite-table-bg")) {
+        this.renderLayer.add(
+            this.add.rectangle(PLAYER_GAME_WIDTH / 2, PLAYER_GAME_HEIGHT / 2, PLAYER_GAME_WIDTH, PLAYER_GAME_HEIGHT, theme.bg, 1)
+        );
+
+        if (this.textures.exists(theme.bgImage)) {
             this.renderLayer.add(
-                this.add.image(PLAYER_GAME_WIDTH / 2, PLAYER_GAME_HEIGHT / 2, "rewrite-table-bg")
+                this.add.image(PLAYER_GAME_WIDTH / 2, PLAYER_GAME_HEIGHT / 2, theme.bgImage)
                     .setDisplaySize(PLAYER_GAME_WIDTH + 80, PLAYER_GAME_HEIGHT + 80)
-                    .setAlpha(0.18)
+                    .setAlpha(theme.bgAlpha)
             );
         }
 
         this.renderLayer.add(
-            this.add.rectangle(PLAYER_GAME_WIDTH / 2, PLAYER_GAME_HEIGHT / 2, PLAYER_GAME_WIDTH, PLAYER_GAME_HEIGHT, 0x07140f, 0.92)
+            this.add.rectangle(PLAYER_GAME_WIDTH / 2, PLAYER_GAME_HEIGHT / 2, PLAYER_GAME_WIDTH, PLAYER_GAME_HEIGHT, theme.bg, theme.bgOverlayAlpha)
         );
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 350, 312, 412, 68, FELT, 0.96, 0x133b22, 5, 0.96));
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 286, 374, 50, 0x2e8a3d, 0.55, 0x77bf69, 1, 0.18));
+
+        if (theme.showFelt) {
+            this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 350, 312, 412, 68, theme.felt, 0.96, theme.bg, 5, 0.96));
+            this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 286, 374, 50, theme.feltInner, 0.55, theme.feltInnerBorder, 1, 0.18));
+        }
     }
 
-    private drawTopBar(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
+    private drawTopBar(viewModel: CardGameViewModel, presentation: PlayerPovPresentation, theme: PlayerTheme): void {
         if (!this.renderLayer) {
             return;
         }
@@ -142,7 +320,7 @@ export class PlayerTableScene extends Phaser.Scene {
             color: CREAM
         }).setOrigin(0.5));
         const hasGameTitle = presentation.gameKind !== "generic";
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.topBarY, hasGameTitle ? 104 : 94, 30, 15, isPlayerTurn ? 0xf7efe0 : 0x163b2b, 0.98));
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.topBarY, hasGameTitle ? 104 : 94, 30, 15, isPlayerTurn ? 0xf7efe0 : theme.turnBg, 0.98));
         this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, playerPovZones.topBarY, hasGameTitle ? presentation.gameTitle : (isPlayerTurn ? "Your turn" : viewModel.phaseLabel), {
             fontFamily: "Arial",
             fontSize: hasGameTitle ? "18px" : "14px",
@@ -392,9 +570,15 @@ export class PlayerTableScene extends Phaser.Scene {
             this.drawTrickSurface();
             this.drawCurrentTrickLabel(viewModel);
         } else if (presentation.centerArea === "battle") {
-            this.drawBattleSurface(presentation);
+            this.drawBattleSurface(viewModel);
         } else if (presentation.centerArea === "showdown") {
             this.drawShowdownSurface(presentation);
+        }
+
+        if (presentation.centerDock === "stock") {
+            this.drawCenterStockPile(viewModel);
+        } else if (presentation.centerDock === "deck") {
+            this.drawCenterDeckWidget(viewModel, presentation);
         }
 
         const cards = viewModel.tableCards;
@@ -410,6 +594,19 @@ export class PlayerTableScene extends Phaser.Scene {
                 .setAngle(point.angle);
             this.setCardDisplaySize(image, TABLE_CARD_W, TABLE_CARD_H);
             this.renderLayer?.add(image);
+
+            if (card.stackBadgeLabel) {
+                this.renderLayer?.add(
+                    this.add.text(point.x + TABLE_CARD_W / 2 - 2, point.y - TABLE_CARD_H / 2 + 2, card.stackBadgeLabel, {
+                        fontFamily: "Arial",
+                        fontSize: "9px",
+                        fontStyle: "700",
+                        color: "#ffffff",
+                        backgroundColor: "rgba(0,0,0,0.72)",
+                        padding: { x: 3, y: 2 }
+                    }).setOrigin(1, 0).setDepth(32)
+                );
+            }
         });
 
         if (presentation.bottomDock === "stock-trump") {
@@ -419,7 +616,7 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const pileText = getPrimaryPileText(viewModel);
-        if (pileText && presentation.bottomDock !== "stock-trump") {
+        if (pileText && presentation.bottomDock !== "stock-trump" && presentation.centerDock === "none") {
             this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 368, pileText, {
                 fontFamily: "Arial",
                 fontSize: "13px",
@@ -427,6 +624,111 @@ export class PlayerTableScene extends Phaser.Scene {
                 color: "rgba(255,209,102,0.86)"
             }).setOrigin(0.5));
         }
+    }
+
+    private drawCenterStockPile(viewModel: CardGameViewModel): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        const stockPile = getPileByRole(viewModel, "stock") ?? getPileByRole(viewModel, "draw");
+        if (!stockPile || stockPile.cardCount === 0) {
+            return;
+        }
+
+        const cx = PLAYER_GAME_WIDTH / 2;
+        const cy = 222;
+        const w = STOCK_TRUMP_CARD_W;
+        const h = STOCK_TRUMP_CARD_H;
+        this.stockPilePoint = { x: cx, y: cy };
+
+        this.renderLayer.add(createRoundedPanel(this, cx, cy, w + 20, h + 16, 12, 0x082417, 0.72, 0x4d7cc9, 1, 0.3));
+
+        for (let i = 2; i >= 0; i--) {
+            const back = this.add.image(cx - i * 2, cy + i * 2, this.getActiveBackTextureKey())
+                .setDisplaySize(w, h)
+                .setAlpha(0.6 + i * 0.13)
+                .setAngle(-3 + i * 3);
+            this.setCardDisplaySize(back, w, h);
+            this.renderLayer.add(back);
+        }
+
+        this.renderLayer.add(
+            this.add.text(cx + w / 2 - 2, cy - h / 2 + 2, String(stockPile.cardCount), {
+                fontFamily: "Arial",
+                fontSize: "10px",
+                fontStyle: "700",
+                color: "#ffffff",
+                backgroundColor: "rgba(0,0,0,0.78)",
+                padding: { x: 3, y: 2 }
+            }).setOrigin(1, 0).setDepth(32)
+        );
+    }
+
+    private drawCenterDeckWidget(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        const drawPile = getPileByRole(viewModel, "draw");
+        const discardPile = getPileByRole(viewModel, "discard");
+        if (!drawPile && !discardPile) {
+            return;
+        }
+
+        const cy = 252;
+        const drawX = PLAYER_GAME_WIDTH / 2 - 38;
+        const discardX = PLAYER_GAME_WIDTH / 2 + 38;
+        const w = STOCK_TRUMP_CARD_W;
+        const h = STOCK_TRUMP_CARD_H;
+        this.stockPilePoint = { x: drawX, y: cy };
+
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, cy, w * 2 + 52, h + 18, 14, 0x082417, 0.82, 0x5ea65d, 1, 0.22));
+
+        if (drawPile) {
+            for (let i = 2; i >= 0; i--) {
+                const back = this.add.image(drawX - i * 2, cy - i, this.getActiveBackTextureKey())
+                    .setDisplaySize(w, h)
+                    .setAngle(-2 + i * 2)
+                    .setAlpha(drawPile.cardCount > 0 ? 0.82 : 0.25);
+                this.setCardDisplaySize(back, w, h);
+                this.renderLayer.add(back);
+            }
+            this.renderLayer.add(
+                this.add.text(drawX + w / 2 - 2, cy - h / 2 + 2, String(drawPile.cardCount), {
+                    fontFamily: "Arial",
+                    fontSize: "10px",
+                    fontStyle: "700",
+                    color: "#ffffff",
+                    backgroundColor: "rgba(0,0,0,0.72)",
+                    padding: { x: 3, y: 2 }
+                }).setOrigin(1, 0).setDepth(32)
+            );
+            this.renderLayer.add(
+                this.add.text(drawX, cy + h / 2 + 7, presentation.infoPrimaryValue, {
+                    fontFamily: "Arial",
+                    fontSize: "9px",
+                    color: DIM
+                }).setOrigin(0.5, 0)
+            );
+        }
+
+        if (discardPile?.topCard) {
+            const discardCard = this.add.image(discardX, cy, this.getTextureForCard(discardPile.topCard, "compact"))
+                .setDisplaySize(w, h)
+                .setAngle(3);
+            this.setCardDisplaySize(discardCard, w, h);
+            this.renderLayer.add(discardCard);
+        } else {
+            this.renderLayer.add(createRoundedPanel(this, discardX, cy, w, h, 5, 0x0b2118, 0.35, 0x7fb896, 1, 0.22));
+        }
+        this.renderLayer.add(
+            this.add.text(discardX, cy + h / 2 + 7, presentation.infoSecondaryValue, {
+                fontFamily: "Arial",
+                fontSize: "9px",
+                color: DIM
+            }).setOrigin(0.5, 0)
+        );
     }
 
     private drawCurrentTrickLabel(viewModel: CardGameViewModel): void {
@@ -449,23 +751,27 @@ export class PlayerTableScene extends Phaser.Scene {
             return;
         }
 
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 158, 176, 34, 0x1b6b31, 0.18, 0x7fc46c, 1, 0.18));
-        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2, 352, -58, 0, 58, 0, 0x9ad27f, 0.1));
-        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2, 352, 0, -66, 0, 66, 0x9ad27f, 0.1));
     }
 
-    private drawBattleSurface(presentation: PlayerPovPresentation): void {
+    private drawBattleSurface(viewModel: CardGameViewModel): void {
         if (!this.renderLayer) {
             return;
         }
 
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 216, 146, 28, 0x092018, 0.36, GOLD, 1, 0.22));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 286, presentation.centerLabel, {
-            fontFamily: "Arial",
-            fontSize: "11px",
-            fontStyle: "700",
-            color: "rgba(255,209,102,0.86)"
-        }).setOrigin(0.5));
+        const isWar = viewModel.roundLabel.includes("War");
+        const borderColor = isWar ? 0xff6b6b : GOLD;
+        const borderAlpha = isWar ? 0.72 : 0.22;
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 216, 146, 28, 0x092018, 0.36, borderColor, isWar ? 2 : 1, borderAlpha));
+
+        if (isWar) {
+            this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 222, 72, 24, 12, 0x6b1010, 0.92, 0xff6b6b, 1.5, 0.9));
+            this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 222, "⚔ WAR", {
+                fontFamily: "Arial",
+                fontSize: "12px",
+                fontStyle: "700",
+                color: "#ff9999"
+            }).setOrigin(0.5));
+        }
     }
 
     private drawShowdownSurface(presentation: PlayerPovPresentation): void {
@@ -502,6 +808,7 @@ export class PlayerTableScene extends Phaser.Scene {
         const stockTrumpPoint = getStockTrumpPoint();
         const centerX = stockTrumpPoint.x;
         const centerY = stockTrumpPoint.y;
+        this.stockPilePoint = { x: centerX, y: centerY };
         this.renderLayer.add(createRoundedPanel(this, 132, centerY, 194, 76, 18, 0x082417, 0.82, 0x5ea65d, 1, 0.24));
 
         for (let index = 0; index < 3; index += 1) {
@@ -560,6 +867,7 @@ export class PlayerTableScene extends Phaser.Scene {
 
         const centerY = playerPovZones.stockTrumpY;
         const centerX = 118;
+        this.stockPilePoint = { x: centerX - 64, y: centerY };
         this.renderLayer.add(createRoundedPanel(this, centerX, centerY, 206, 78, 18, 0x082417, 0.82, 0x5ea65d, 1, 0.22));
 
         if (drawPile) {
@@ -655,7 +963,16 @@ export class PlayerTableScene extends Phaser.Scene {
             }).setOrigin(0.5));
         }
 
+        this.localPlayerDeckPoint = null;
         const cards = player.hand;
+
+        if (cards.length === 0 && player.deckPile && player.deckPile.cardCount > 0) {
+            const deckX = PLAYER_GAME_WIDTH / 2;
+            const deckY = playerPovZones.handY - 10;
+            this.localPlayerDeckPoint = { x: deckX, y: deckY };
+            this.drawPlayerDeckVisual(deckX, deckY, player.deckPile.cardCount, player.isCurrentTurn, player.canInteract);
+        }
+
         cards.forEach((card, index) => {
             const isSelected = card.id === viewModel.selectedCardId;
             const point = getHandCardPoint({
@@ -692,6 +1009,50 @@ export class PlayerTableScene extends Phaser.Scene {
             }
             this.renderLayer?.add(image);
         });
+    }
+
+    private drawPlayerDeckVisual(x: number, y: number, cardCount: number, isCurrentTurn: boolean, canInteract: boolean): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        for (let i = 2; i >= 0; i--) {
+            const back = this.add.image(x + i * 2, y + i * 2, this.getActiveBackTextureKey())
+                .setDisplaySize(HAND_CARD_W, HAND_CARD_H)
+                .setAlpha(0.6 + i * 0.14)
+                .setAngle(-3 + i * 3)
+                .setDepth(28 + i);
+            this.setCardDisplaySize(back, HAND_CARD_W, HAND_CARD_H);
+            this.renderLayer.add(back);
+        }
+
+        if (isCurrentTurn) {
+            const glow = this.add.graphics().setDepth(27);
+            glow.lineStyle(3, GOLD, 0.72);
+            glow.strokeRoundedRect(x - HAND_CARD_W / 2 - 4, y - HAND_CARD_H / 2 - 4, HAND_CARD_W + 8, HAND_CARD_H + 8, 8);
+            this.renderLayer.add(glow);
+        }
+
+        this.renderLayer.add(
+            this.add.text(x + HAND_CARD_W / 2 - 2, y - HAND_CARD_H / 2 + 2, String(cardCount), {
+                fontFamily: "Arial",
+                fontSize: "11px",
+                fontStyle: "700",
+                color: "#ffffff",
+                backgroundColor: "rgba(0,0,0,0.78)",
+                padding: { x: 4, y: 2 }
+            }).setOrigin(1, 0).setDepth(32)
+        );
+
+        if (canInteract) {
+            const hit = this.add.rectangle(x, y, HAND_CARD_W, HAND_CARD_H, 0x000000, 0.001)
+                .setDepth(33)
+                .setInteractive({ useHandCursor: true });
+            hit.on(Phaser.Input.Events.POINTER_DOWN, () => {
+                this.session.send({ type: "PLAY_CARD" });
+            });
+            this.renderLayer.add(hit);
+        }
     }
 
     private drawBottomControls(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
@@ -774,14 +1135,31 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         this.activeEffectBatchKey = effectBatchKey;
+        const delays = computeEffectDelays(effects);
+        const dealCount = effects.filter((e) => e.reason === "deal").length;
+        const dealDelayStep = getDealDelayStep(dealCount);
+
         effects.forEach((effect, index) => {
             const points = this.getMoveEffectPoints(effect, viewModel);
             if (!points) {
                 return;
             }
 
-            this.animateMoveGhost(effect, points.from, points.to, index);
+            const profile = getEffectProfile(effect.reason, dealDelayStep);
+            const ghostSize = this.getGhostSizeForEffect(effect, viewModel);
+            this.animateMoveGhost(effect, points.from, points.to, profile, delays[index] ?? 0, ghostSize);
         });
+    }
+
+    private getGhostSizeForEffect(effect: MoveCardEffect, viewModel: CardGameViewModel): { width: number; height: number } {
+        if (effect.toOwnerId) {
+            const playerIndex = viewModel.players.findIndex((p) => p.id === effect.toOwnerId);
+            return playerIndex === 0
+                ? { width: HAND_CARD_W, height: HAND_CARD_H }
+                : { width: playerPovCardSizes.opponent.width, height: playerPovCardSizes.opponent.height };
+        }
+
+        return { width: TABLE_CARD_W, height: TABLE_CARD_H };
     }
 
     private getMoveEffectPoints(
@@ -799,12 +1177,20 @@ export class PlayerTableScene extends Phaser.Scene {
 
     private getEffectSourcePoint(effect: MoveCardEffect, viewModel: CardGameViewModel): { x: number; y: number } | null {
         if (effect.fromOwnerId) {
+            const playerIndex = viewModel.players.findIndex((p) => p.id === effect.fromOwnerId);
+            if (playerIndex === 0 && this.localPlayerDeckPoint && (viewModel.players[0]?.hand.length ?? 0) === 0) {
+                return this.localPlayerDeckPoint;
+            }
+
             return this.getPlayerHandPoint(viewModel, effect.fromOwnerId, effect.fromIndex ?? 0);
         }
 
         if (effect.fromPileId === "stock" || effect.fromPileId === "draw") {
-            const stockPoint = getStockTrumpPoint();
-            return { x: stockPoint.x + 20, y: stockPoint.y - 2 };
+            if (this.stockPilePoint) {
+                return this.stockPilePoint;
+            }
+
+            return { x: PLAYER_GAME_WIDTH / 2, y: playerPovZones.gameInfoY + 60 };
         }
 
         if ((viewModel.tablePileIds ?? []).includes(effect.fromPileId)) {
@@ -880,41 +1266,85 @@ export class PlayerTableScene extends Phaser.Scene {
         effect: MoveCardEffect,
         from: { x: number; y: number },
         to: { x: number; y: number; angle: number },
-        index: number
+        profile: EffectAnimProfile,
+        delay: number,
+        ghostSize: { width: number; height: number }
     ): void {
-        if (!this.renderLayer) {
-            return;
-        }
-
-        const textureKey = effect.card.isFaceUp
+        const shouldFlip = effect.card.isFaceUp && effect.fromFaceUp === false;
+        const textureKey = (effect.card.isFaceUp && !shouldFlip)
             ? getCardFaceTextureKey(effect.card.id, this.activeCardSkinId, "compact")
             : this.getActiveBackTextureKey();
-        const ghost = this.add.image(from.x, from.y, textureKey)
-            .setDisplaySize(TABLE_CARD_W, TABLE_CARD_H)
-            .setAlpha(0.92)
-            .setDepth(90);
-        this.setCardDisplaySize(ghost, TABLE_CARD_W, TABLE_CARD_H);
-        this.renderLayer.add(ghost);
 
-        const delay = index * 42 + (effect.delayMs ?? 0);
+        const ghost = this.animationLayer.createGhostCard({
+            textureKey,
+            x: from.x,
+            y: from.y,
+            width: ghostSize.width,
+            height: ghostSize.height,
+            alpha: 0.94,
+            depth: 90
+        });
+
+        const baseScaleX = ghost.image.scaleX;
+        const baseScaleY = ghost.image.scaleY;
+
         this.tweens.add({
-            targets: ghost,
+            targets: ghost.image,
             x: to.x,
             y: to.y,
             angle: to.angle,
-            alpha: 0.98,
-            scaleX: 1.04,
-            scaleY: 1.04,
-            duration: effect.reason === "play" ? 260 : 220,
+            scaleX: baseScaleX * profile.peakScale,
+            scaleY: baseScaleY * profile.peakScale,
+            alpha: 0.96,
+            duration: profile.duration,
             delay,
-            ease: effect.reason === "play" ? "Back.easeOut" : "Cubic.easeInOut",
+            ease: profile.ease,
             onComplete: () => {
+                ghost.image.setDisplaySize(ghostSize.width, ghostSize.height);
+                if (shouldFlip) {
+                    this.animateCardFlip(ghost.image, effect, ghostSize, () => { ghost.destroy(); });
+                } else {
+                    this.tweens.add({
+                        targets: ghost.image,
+                        alpha: 0,
+                        duration: 80,
+                        delay: 50,
+                        onComplete: () => { ghost.destroy(); }
+                    });
+                }
+            }
+        });
+    }
+
+    private animateCardFlip(
+        image: Phaser.GameObjects.Image,
+        effect: MoveCardEffect,
+        size: { width: number; height: number },
+        onComplete: () => void
+    ): void {
+        this.tweens.add({
+            targets: image,
+            displayWidth: 2,
+            duration: 110,
+            ease: "Sine.easeIn",
+            onComplete: () => {
+                image.setTexture(getCardFaceTextureKey(effect.card.id, this.activeCardSkinId, "compact"));
+                image.displayWidth = 2;
+                image.displayHeight = size.height;
                 this.tweens.add({
-                    targets: ghost,
-                    alpha: 0,
-                    duration: 90,
+                    targets: image,
+                    displayWidth: size.width,
+                    duration: 140,
+                    ease: "Sine.easeOut",
                     onComplete: () => {
-                        ghost.destroy();
+                        image.setDisplaySize(size.width, size.height);
+                        this.tweens.add({
+                            targets: image,
+                            alpha: 0,
+                            duration: 80,
+                            delay: 100,
+                            onComplete
+                        });
                     }
                 });
             }
