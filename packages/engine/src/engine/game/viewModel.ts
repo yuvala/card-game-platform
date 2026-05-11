@@ -30,6 +30,7 @@ export interface CardGameViewPlayer {
     nameLabel: string;
     metaLabel: string;
     hand: CardGameViewCard[];
+    handSlotCount?: number;
     handPresentation?: CardGameViewHandPresentation;
     deckPile?: CardGameViewPlayerDeckPile;
     isCurrentTurn: boolean;
@@ -117,6 +118,7 @@ export interface CardGameViewModel {
     primaryAction: CardGameViewPrimaryAction | null;
     animation: CardGameViewAnimation | null;
     effects: CardGameEffect[];
+    themeId?: string;
 }
 
 export type CardGameViewModelFactory<TSnapshot> = (

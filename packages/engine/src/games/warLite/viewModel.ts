@@ -194,6 +194,7 @@ export function getWarLiteViewModel(snapshot: WarLiteViewSnapshot, viewerId?: st
               }
             : null,
         animation: null,
-        effects: snapshot.context.lastEffects
+        effects: snapshot.context.lastEffects,
+        themeId: "war"
     }, viewerId);
 }

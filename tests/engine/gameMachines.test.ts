@@ -299,16 +299,16 @@ async function runWarLiteMachineTest() {
     const winnerStackPileId = getWarLiteHandPileId(winnerWithCapturedCards.id);
     const winnerCapturePileId = getWarLiteCapturePileId(winnerWithCapturedCards.id);
     const capturedCardCount = getPileCards(afterBattle.context.piles, winnerCapturePileId).length;
-    const recycledContext = recycleEmptyPlayerStacks({
+    const recycled = recycleEmptyPlayerStacks({
         ...afterBattle.context,
         piles: setPileCards(afterBattle.context.piles, winnerStackPileId, [])
     });
     assert(
-        getPileCards(recycledContext.piles, winnerStackPileId).length === capturedCardCount,
+        getPileCards(recycled.context.piles, winnerStackPileId).length === capturedCardCount,
         "War Lite should recycle a player's won pile into their stack when their stack is empty."
     );
     assert(
-        getPileCards(recycledContext.piles, winnerCapturePileId).length === 0,
+        getPileCards(recycled.context.piles, winnerCapturePileId).length === 0,
         "War Lite should clear the won pile after recycling it into the player stack."
     );
 }

@@ -417,7 +417,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             .map((player) => {
                 const slotCount = player.deckPile && player.hand.length === 0
                     ? 0
-                    : Math.max(DEFAULT_HAND_SLOT_COUNT, player.hand.length);
+                    : Math.max(player.handSlotCount ?? DEFAULT_HAND_SLOT_COUNT, player.hand.length);
                 return player.id + ":" + String(slotCount);
             })
             .join("|");

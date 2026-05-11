@@ -88,6 +88,7 @@ export function getBriscaLiteViewModel(snapshot: BriscaLiteViewSnapshot, viewerI
                 hand: revealHand
                     ? faceUpCards
                     : createHiddenPreviewCards(faceUpCards, Math.min(handCount, 3)),
+                handSlotCount: snapshot.context.cardsPerPlayer,
                 handPresentation: "hand-fan",
                 isCurrentTurn,
                 isRoundWinner: snapshot.context.winningPlayerIds.includes(player.id),

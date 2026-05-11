@@ -91,12 +91,12 @@ async function runWarLiteViewModelTest() {
     assert(
         viewModel.players.every((player) => {
             return (
-                player.handPresentation === "hidden-stack" &&
-                player.hand.length <= 1 &&
-                player.hand.every((card) => !card.isFaceUp && (card.stackCount ?? 0) > 0)
+                player.hand.length === 0 &&
+                player.deckPile !== undefined &&
+                player.deckPile.cardCount > 0
             );
         }),
-        "War Lite should render each player stack as one hidden stack preview card."
+        "War Lite should render each player stack as a deckPile with no hand cards."
     );
 
     const firstPlayerId = viewModel.players.find((player) => player.canInteract)?.id;

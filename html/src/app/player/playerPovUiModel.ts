@@ -74,7 +74,7 @@ export function parsePlayerCounters(metaLabel: string): PlayerPovPlayerCounters 
 
 export function normalizeActionLabel(label: string): string {
     if (label.toLowerCase() === "play card") {
-        return "PLAY SELECTED CARD";
+        return "PLAY CARD";
     }
 
     return label;
