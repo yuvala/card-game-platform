@@ -35,11 +35,11 @@ import {
     type PlayerPovPresentation
 } from "../playerPovPresentation";
 import {
-    getLeadPlayerName,
     getPlayerPovOpponentSeats,
     getPlayerPovSeatSide,
     getPrimaryPileText,
     normalizeActionLabel,
+    parsePlayerCounters,
     type PlayerPovPlayerCounters
 } from "../playerPovUiModel";
 
@@ -200,20 +200,22 @@ export class PlayerTableScene extends Phaser.Scene {
         this.subscription = this.session.subscribe(() => {
             this.syncViewModel(this.session.getViewModel(null));
         });
+        const onDebugLayerChange = () => {
+            if (this.debugOverlay) {
+                this.redrawDebugOverlay();
+            }
+        };
+        globalThis.addEventListener("debug-layer-change", onDebugLayerChange);
+
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.subscription?.unsubscribe();
             this.subscription = undefined;
             this.animationLayer.destroy();
+            globalThis.removeEventListener("debug-layer-change", onDebugLayerChange);
         });
 
         this.input.keyboard?.on("keydown-D", () => {
             this.toggleDebugOverlay();
-        });
-
-        globalThis.addEventListener("debug-layer-change", () => {
-            if (this.debugOverlay) {
-                this.redrawDebugOverlay();
-            }
         });
 
         if (localStorage.getItem("player-debug-zones") === "on") {
@@ -346,33 +348,33 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const trumpLabel = presentation.trumpLabel ?? "spent";
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 276, 62, 26, 0x082417, 0.9, 0x5ea65d, 2, 0.3));
-        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, 21, 0xd3a22e, 1)
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 256, 52, 22, 0x082417, 0.9, 0x5ea65d, 2, 0.3));
+        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 102, playerPovZones.gameInfoY, 18, 0xd3a22e, 1)
             .setStrokeStyle(2, 0xffd166, 0.72));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, "T", {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 102, playerPovZones.gameInfoY, "T", {
             fontFamily: "Arial",
-            fontSize: "14px",
+            fontSize: "12px",
             fontStyle: "700",
             color: "#10251c"
         }).setOrigin(0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY - 9, presentation.infoPrimaryLabel + ": " + trumpLabel, {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 74, playerPovZones.gameInfoY - 8, presentation.infoPrimaryLabel + ": " + trumpLabel, {
             fontFamily: "Arial",
             fontSize: "13px",
             fontStyle: "700",
             color: CREAM
         }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY + 11, presentation.infoSecondaryValue, {
-            fontFamily: "Arial",
-            fontSize: "11px",
-            color: DIM
-        }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2 + 58, playerPovZones.gameInfoY, 0, -21, 0, 21, 0x5ea65d, 0.35));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 78, playerPovZones.gameInfoY - 9, presentation.infoSecondaryLabel, {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 74, playerPovZones.gameInfoY + 9, presentation.infoSecondaryValue, {
             fontFamily: "Arial",
             fontSize: "10px",
             color: DIM
         }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 78, playerPovZones.gameInfoY + 11, String(viewModel.tableCards.length) + " cards", {
+        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2 + 52, playerPovZones.gameInfoY, 0, -18, 0, 18, 0x5ea65d, 0.35));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 68, playerPovZones.gameInfoY - 8, presentation.infoSecondaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 68, playerPovZones.gameInfoY + 9, String(viewModel.tableCards.length) + " cards", {
             fontFamily: "Arial",
             fontSize: "13px",
             fontStyle: "700",
@@ -387,38 +389,38 @@ export class PlayerTableScene extends Phaser.Scene {
 
         const accentColor = presentation.infoPanel === "battle" ? GOLD : 0x83d0ae;
         const iconLabel = presentation.infoPanel === "battle" ? "B" : "D";
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 276, 56, 24, 0x082417, 0.88, accentColor, 2, 0.28));
-        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, 19, accentColor, 0.94)
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.gameInfoY, 256, 48, 20, 0x082417, 0.88, accentColor, 2, 0.28));
+        this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 102, playerPovZones.gameInfoY, 16, accentColor, 0.94)
             .setStrokeStyle(2, 0xf6ecd2, 0.4));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 112, playerPovZones.gameInfoY, iconLabel, {
-            fontFamily: "Arial",
-            fontSize: "13px",
-            fontStyle: "700",
-            color: "#10251c"
-        }).setOrigin(0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY - 9, presentation.infoPrimaryLabel, {
-            fontFamily: "Arial",
-            fontSize: "10px",
-            color: DIM
-        }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 82, playerPovZones.gameInfoY + 10, presentation.infoPrimaryValue, {
-            fontFamily: "Arial",
-            fontSize: "12px",
-            fontStyle: "700",
-            color: CREAM
-        }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2 + 42, playerPovZones.gameInfoY, 0, -18, 0, 18, 0x5ea65d, 0.3));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 60, playerPovZones.gameInfoY - 9, presentation.infoSecondaryLabel, {
-            fontFamily: "Arial",
-            fontSize: "10px",
-            color: DIM
-        }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 60, playerPovZones.gameInfoY + 10, presentation.infoSecondaryValue, {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 102, playerPovZones.gameInfoY, iconLabel, {
             fontFamily: "Arial",
             fontSize: "11px",
             fontStyle: "700",
+            color: "#10251c"
+        }).setOrigin(0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 74, playerPovZones.gameInfoY - 8, presentation.infoPrimaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 74, playerPovZones.gameInfoY + 8, presentation.infoPrimaryValue, {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            fontStyle: "700",
+            color: CREAM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.line(PLAYER_GAME_WIDTH / 2 + 36, playerPovZones.gameInfoY, 0, -15, 0, 15, 0x5ea65d, 0.3));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 52, playerPovZones.gameInfoY - 8, presentation.infoSecondaryLabel, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            color: DIM
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 52, playerPovZones.gameInfoY + 8, presentation.infoSecondaryValue, {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            fontStyle: "700",
             color: CREAM,
-            wordWrap: { width: 78 }
+            wordWrap: { width: 70 }
         }).setOrigin(0, 0.5));
     }
 
@@ -490,7 +492,13 @@ export class PlayerTableScene extends Phaser.Scene {
             fontStyle: "700",
             color: CREAM
         }).setOrigin(0, 0.5));
-        this.renderLayer.add(this.add.text(textX, seatY + 8, "W " + counters.score + "   C " + counters.cards, {
+        this.renderLayer.add(this.add.text(textX, seatY + 8, String(counters.score), {
+            fontFamily: "Arial",
+            fontSize: "10px",
+            fontStyle: "700",
+            color: "rgba(255,209,102,0.96)"
+        }).setOrigin(0, 0.5));
+        this.renderLayer.add(this.add.text(textX + 20, seatY + 8, "· " + counters.cards, {
             fontFamily: "Arial",
             fontSize: "8px",
             color: DIM
@@ -546,15 +554,16 @@ export class PlayerTableScene extends Phaser.Scene {
             wordWrap: { width: 50 }
         }).setOrigin(textOriginX, 0.5));
 
-        this.renderLayer.add(this.add.text(textX, panelY + 6, "W " + counters.score, {
+        this.renderLayer.add(this.add.text(textX, panelY + 4, String(counters.score), {
             fontFamily: "Arial",
-            fontSize: "10px",
+            fontSize: "14px",
+            fontStyle: "700",
             color: "rgba(255,209,102,0.96)",
             align: isLeft ? "left" : "right"
         }).setOrigin(textOriginX, 0.5));
-        this.renderLayer.add(this.add.text(textX, panelY + 22, "C " + counters.cards, {
+        this.renderLayer.add(this.add.text(textX, panelY + 22, counters.cards + " cds", {
             fontFamily: "Arial",
-            fontSize: "10px",
+            fontSize: "9px",
             color: DIM,
             align: isLeft ? "left" : "right"
         }).setOrigin(textOriginX, 0.5));
@@ -567,7 +576,6 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         if (presentation.centerArea === "trick") {
-            this.drawTrickSurface();
             this.drawCurrentTrickLabel(viewModel);
         } else if (presentation.centerArea === "battle") {
             this.drawBattleSurface(viewModel);
@@ -731,26 +739,7 @@ export class PlayerTableScene extends Phaser.Scene {
         );
     }
 
-    private drawCurrentTrickLabel(viewModel: CardGameViewModel): void {
-        if (!this.renderLayer) {
-            return;
-        }
-
-        const leadPlayerName = getLeadPlayerName(viewModel);
-        const label = leadPlayerName ? "Led by " + leadPlayerName : "Current trick";
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 238, 132, 26, 12, 0x0a2a18, 0.74, 0x5ea65d, 1, 0.22));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 238, label, {
-            fontFamily: "Arial",
-            fontSize: "12px",
-            color: CREAM
-        }).setOrigin(0.5));
-    }
-
-    private drawTrickSurface(): void {
-        if (!this.renderLayer) {
-            return;
-        }
-
+    private drawCurrentTrickLabel(_viewModel: CardGameViewModel): void {
     }
 
     private drawBattleSurface(viewModel: CardGameViewModel): void {
@@ -758,7 +747,7 @@ export class PlayerTableScene extends Phaser.Scene {
             return;
         }
 
-        const isWar = viewModel.roundLabel.includes("War");
+        const isWar = viewModel.themeId === "war";
         const borderColor = isWar ? 0xff6b6b : GOLD;
         const borderAlpha = isWar ? 0.72 : 0.22;
         this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 216, 146, 28, 0x092018, 0.36, borderColor, isWar ? 2 : 1, borderAlpha));
@@ -942,26 +931,25 @@ export class PlayerTableScene extends Phaser.Scene {
             fontStyle: "700",
             color: player.isCurrentTurn ? "#10251c" : CREAM
         }).setOrigin(0.5));
+        const playerCounters = parsePlayerCounters(player.metaLabel);
         this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 38, playerPovZones.playerHudY - 8, player.nameLabel, {
             fontFamily: "Arial",
             fontSize: "12px",
             fontStyle: "700",
-            color: CREAM
+            color: CREAM,
+            wordWrap: { width: 92 }
         }));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 38, playerPovZones.playerHudY + 8, player.metaLabel, {
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 38, playerPovZones.playerHudY + 8, playerCounters.cards + " cards", {
             fontFamily: "Arial",
-            fontSize: "10px",
+            fontSize: "9px",
             color: DIM
         }));
-
-        if (player.isCurrentTurn) {
-            this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, playerPovZones.handY - 98, "Your turn", {
-                fontFamily: "Arial",
-                fontSize: "14px",
-                fontStyle: "700",
-                color: "rgba(255,209,102,0.98)"
-            }).setOrigin(0.5));
-        }
+        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 66, playerPovZones.playerHudY, String(playerCounters.score), {
+            fontFamily: "Arial",
+            fontSize: "15px",
+            fontStyle: "700",
+            color: "rgba(255,209,102,0.96)"
+        }).setOrigin(0.5));
 
         this.localPlayerDeckPoint = null;
         const cards = player.hand;
@@ -1362,14 +1350,6 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         if (status.type === "connected") {
-            this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, playerPovZones.connectionStatusY, 86, 24, 12, 0x123f2c, 0.94, 0x78d9a0, 1, 0.42));
-            this.renderLayer.add(this.add.circle(PLAYER_GAME_WIDTH / 2 - 28, playerPovZones.connectionStatusY, 4, 0x78d9a0, 1));
-            this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 6, playerPovZones.connectionStatusY, "Online", {
-                fontFamily: "Arial",
-                fontSize: "12px",
-                fontStyle: "700",
-                color: "#d7ffe5"
-            }).setOrigin(0.5));
             return;
         }
 

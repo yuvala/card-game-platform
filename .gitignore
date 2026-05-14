@@ -5,3 +5,4 @@ node_modules/
 .tmp-rewrite-server/
 .tmp-rewrite-tests/
 .tmp-server/
+.tmp-tests/

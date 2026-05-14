@@ -94,8 +94,9 @@ export function syncPlayerDeckPresentation(input: {
 
     viewModel.players.forEach((player) => {
         if (!player.deckPile) {
-            playerDeckVisuals.get(player.id)?.container.setVisible(false);
-            playerDeckVisuals.get(player.id)?.hitTarget.setVisible(false);
+            const existing = playerDeckVisuals.get(player.id);
+            existing?.container.setVisible(false);
+            existing?.hitTarget.setVisible(false);
             return;
         }
 

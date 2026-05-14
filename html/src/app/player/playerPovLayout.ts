@@ -37,7 +37,7 @@ export const playerPovCardSizes = {
 export const playerPovZones = {
     topBarY: 36,
     connectionStatusY: 74,
-    gameInfoY: 118,
+    gameInfoY: 100,
     tableCardY: 334,
     stockTrumpY: 638,
     playerHudY: 488,

@@ -433,7 +433,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             const badge = createSeatBadge(this, layout);
             const slotCount = player.deckPile && player.hand.length === 0
                 ? 0
-                : Math.max(DEFAULT_HAND_SLOT_COUNT, player.hand.length);
+                : Math.max(player.handSlotCount ?? DEFAULT_HAND_SLOT_COUNT, player.hand.length);
 
             this.seatBadges.set(player.id, badge);
             this.seatLayouts.set(player.id, layout);
