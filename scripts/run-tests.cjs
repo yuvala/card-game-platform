@@ -18,7 +18,8 @@ const testEntries = [
     "tests/engine/playerPovPresentation.test.ts",
     "tests/engine/gameMachines.test.ts",
     "tests/engine/viewModels.test.ts",
-    "tests/engine/simulation.test.ts"
+    "tests/engine/simulation.test.ts",
+    "tests/engine/batch.test.ts"
 ];
 
 function run(command, args) {

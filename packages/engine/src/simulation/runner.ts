@@ -29,9 +29,10 @@ export interface SimulationOptions<TState, TMove extends { type: string }, TOpti
      * Extract winner IDs from the final state.
      */
     getWinnerIds?: (state: TState) => string[];
+    maxRounds?: number;
 }
 
-const MAX_ROUNDS = 2000;
+const DEFAULT_MAX_ROUNDS = 10000;
 
 function countAllCards(piles: Record<string, { cards: unknown[] }>): number {
     return Object.values(piles).reduce((sum, pile) => sum + pile.cards.length, 0);
@@ -66,7 +67,7 @@ export function simulateGame<
     let stuck = false;
 
     while (!definition.isGameOver(state)) {
-        if (rounds >= MAX_ROUNDS) {
+        if (rounds >= (options.maxRounds ?? DEFAULT_MAX_ROUNDS)) {
             stuck = true;
             break;
         }
