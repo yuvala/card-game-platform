@@ -29,7 +29,11 @@ A symptom at the end of the pipe (wrong visual, wrong position) can originate at
 3. Trace **backwards** — start from the symptom, go toward the source
 4. Run `npx tsc --noEmit 2>&1 | head -20` to catch type errors
 5. Run `npm run test 2>&1 | tail -20` to catch rule/logic failures
-6. Read the relevant files — follow the data, not assumptions
+6. If the bug is in game rules/logic, run a simulation sanity check:
+   - `node scripts/simulate.cjs <game> 500` — look for stuck > 0 or conservation failures
+   - A stuck rate > 0 means the game loop can deadlock (check getAutomaticMove + getLegalMoves)
+   - A conservation failure means applyMove is creating or destroying cards
+7. Read the relevant files — follow the data, not assumptions
 
 ## Layer map
 

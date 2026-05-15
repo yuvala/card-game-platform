@@ -12,6 +12,7 @@
     "smoke": "node .\\scripts\\smoke.cjs",
     "smoke:rewrite": "node .\\scripts\\smoke.cjs",
     "build:server": "tsc -p tsconfig.server.json --noEmit",
+    "simulate": "\"%npm_node_execpath%\" .\\scripts\\simulate.cjs",
     "serve:ws": "tsc -p tsconfig.server.json && node .\\scripts\\resolve-engine-aliases.cjs .tmp-server && node .tmp-server/apps/server/src/gameServer.js",
     "preview": "vite preview --config vite.config.js",
     "serve:legacy": "node node.js/server.js"
