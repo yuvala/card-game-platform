@@ -97,6 +97,7 @@ export function createShuffledContext(
         ...baseContext,
         piles: setPileCards(baseContext.piles, WAR_LITE_STOCK_PILE_ID, shuffledDeck),
         lastEffects: [],
+        random,
         statusText: "Shuffling the " + deckDefinition.name + " for War Lite..."
     };
 }

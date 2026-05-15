@@ -293,7 +293,7 @@ export function recycleEmptyPlayerStacks(context: WarLiteContext): { context: Wa
             }));
         });
 
-        piles = setPileCards(piles, stackPileId, shuffleDeck(wonCards));
+        piles = setPileCards(piles, stackPileId, shuffleDeck(wonCards, context.random));
         piles = clearPile(piles, wonPileId);
         recycledPlayerNames.push(player.name);
     });

@@ -49,6 +49,7 @@ export interface WarLiteContext
     roundCards: WarLitePlayedCard[];
     warFaceDownCount: number;
     warState: WarLiteWarState | null;
+    random?: () => number;
 }
 
 export interface WarLiteOptions extends CardGameOptions {
