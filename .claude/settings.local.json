@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(Move-Item \"packages\\\\rewrite-core\" \"packages\\\\engine\")",
+      "Bash(Move-Item \"html\\\\src\\\\rewrite\" \"html\\\\src\\\\app\")",
+      "Bash(Move-Item \"tests\\\\rewrite\" \"tests\\\\engine\")",
+      "PowerShell(cd \"d:\\\\yuval\\\\card\\\\cardGame\"; $exit = $LASTEXITCODE; Write-Host \"robocopy exit: $exit\"; Test-Path \"packages\\\\engine\")",
+      "Bash(npm run *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(grep -v \"//\")",
+      "Bash(npx tsc *)"
+    ]
+  }
+}

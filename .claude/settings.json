@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx tsc --noEmit *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "agent",
+            "if": "Bash(git commit *)",
+            "prompt": "The user just made a git commit. Run /update-docs to scan what changed and update CLAUDE.md, TODO.md, and memory files accordingly.",
+            "timeout": 120,
+            "statusMessage": "Updating docs..."
+          }
+        ]
+      }
+    ]
+  }
+}
