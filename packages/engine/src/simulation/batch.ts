@@ -1,6 +1,6 @@
 import type { GameDefinition } from "../engine/game/definition";
 import type { CardGameOptions } from "../engine/game/types";
-import { simulateGame, type SimulationOptions } from "./runner";
+import { simulateGame, type SimulationOptions, type SimulationResult } from "./runner";
 
 export interface BatchResult {
     gamesPlayed: number;
@@ -8,6 +8,31 @@ export interface BatchResult {
     conservationFailures: number;
     winRates: Record<string, number>;
     rounds: { avg: number; min: number; max: number };
+}
+
+interface Accumulator {
+    stuckCount: number;
+    conservationFailures: number;
+    totalRounds: number;
+    minRounds: number;
+    maxRounds: number;
+    winCounts: Record<string, number>;
+}
+
+function accumulateResult(acc: Accumulator, result: SimulationResult): void {
+    if (result.stuck) { acc.stuckCount += 1; }
+    if (!result.cardConservationOk) { acc.conservationFailures += 1; }
+
+    acc.totalRounds += result.rounds;
+    if (result.rounds < acc.minRounds) { acc.minRounds = result.rounds; }
+    if (result.rounds > acc.maxRounds) { acc.maxRounds = result.rounds; }
+
+    if (result.winnerIds.length > 0) {
+        const share = 1 / result.winnerIds.length;
+        for (const winnerId of result.winnerIds) {
+            acc.winCounts[winnerId] = (acc.winCounts[winnerId] ?? 0) + share;
+        }
+    }
 }
 
 export function runBatch<
@@ -20,42 +45,33 @@ export function runBatch<
     count: number,
     startSeed = 1
 ): BatchResult {
-    let stuckCount = 0;
-    let conservationFailures = 0;
-    let totalRounds = 0;
-    let minRounds = Infinity;
-    let maxRounds = 0;
-    const winCounts: Record<string, number> = {};
+    const acc: Accumulator = {
+        stuckCount: 0,
+        conservationFailures: 0,
+        totalRounds: 0,
+        minRounds: Infinity,
+        maxRounds: 0,
+        winCounts: {}
+    };
 
     for (let index = 0; index < count; index += 1) {
-        const result = simulateGame(definition, options, startSeed + index);
-
-        if (result.stuck) { stuckCount += 1; }
-        if (!result.cardConservationOk) { conservationFailures += 1; }
-
-        totalRounds += result.rounds;
-        if (result.rounds < minRounds) { minRounds = result.rounds; }
-        if (result.rounds > maxRounds) { maxRounds = result.rounds; }
-
-        for (const winnerId of result.winnerIds) {
-            winCounts[winnerId] = (winCounts[winnerId] ?? 0) + 1;
-        }
+        accumulateResult(acc, simulateGame(definition, options, startSeed + index));
     }
 
     const winRates: Record<string, number> = {};
-    for (const [id, wins] of Object.entries(winCounts)) {
+    for (const [id, wins] of Object.entries(acc.winCounts)) {
         winRates[id] = wins / count;
     }
 
     return {
         gamesPlayed: count,
-        stuckCount,
-        conservationFailures,
+        stuckCount: acc.stuckCount,
+        conservationFailures: acc.conservationFailures,
         winRates,
         rounds: {
-            avg: count > 0 ? totalRounds / count : 0,
-            min: isFinite(minRounds) ? minRounds : 0,
-            max: maxRounds
+            avg: count > 0 ? acc.totalRounds / count : 0,
+            min: Number.isFinite(acc.minRounds) ? acc.minRounds : 0,
+            max: acc.maxRounds
         }
     };
 }

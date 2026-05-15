@@ -33,7 +33,7 @@ function runWarLite(seed: number) {
                 { type: "prepare-shuffle", random },
                 { type: "deal-opening-hands" }
             ],
-            getFinalizeMove: (): WarLiteMove => ({ type: "finalize-battle" }),
+            getFinalizeMove: (): WarLiteMove[] => [{ type: "finalize-battle" }],
             getWinnerIds: (state) => (state as WarLiteContext).winningPlayerIds
         },
         seed

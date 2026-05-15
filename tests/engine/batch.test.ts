@@ -30,7 +30,7 @@ const warLiteOptions = {
         { type: "prepare-shuffle", random },
         { type: "deal-opening-hands" }
     ],
-    getFinalizeMove: (): WarLiteMove => ({ type: "finalize-battle" }),
+    getFinalizeMove: (): WarLiteMove[] => [{ type: "finalize-battle" }],
     getWinnerIds: (state: WarLiteContext) => state.winningPlayerIds
 };
 
@@ -49,13 +49,13 @@ test("war-lite batch: card conservation holds across 200 runs", () => {
 test("war-lite batch: win rates sum to ~1", () => {
     const result = runBatch(warLiteGameDefinition, warLiteOptions, 200);
     const total = Object.values(result.winRates).reduce((sum, r) => sum + r, 0);
-    assert(total > 0.98 && total <= 1.0, "win rates sum to " + total.toFixed(3));
+    assert(total > 0.98 && total <= 1, "win rates sum to " + total.toFixed(3));
 });
 
 test("war-lite batch: neither player wins more than 70%", () => {
     const result = runBatch(warLiteGameDefinition, warLiteOptions, 200);
     for (const [id, rate] of Object.entries(result.winRates)) {
-        assert(rate < 0.70, id + " win rate too high: " + (rate * 100).toFixed(1) + "%");
+        assert(rate < 0.7, id + " win rate too high: " + (rate * 100).toFixed(1) + "%");
     }
 });
 

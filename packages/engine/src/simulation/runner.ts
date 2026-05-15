@@ -20,11 +20,12 @@ export interface SimulationOptions<TState, TMove extends { type: string }, TOpti
      */
     getStartupMoves?: (random: () => number) => TMove[];
     /**
-     * Move applied after each manual (getLegalMoves) move, before the next loop iteration.
-     * Use this for moves that the XState machine applies after an animation step
-     * (e.g. war-lite's finalize-battle which runs after reveal-battle + animation).
+     * Moves applied after each manual (getLegalMoves) move, in order, before the next loop iteration.
+     * Use this for moves the XState machine applies after animation events
+     * (e.g. commit-play + finalize-turn, or finalize-battle).
+     * Guards inside each move's applyMove handler make them no-ops when not applicable.
      */
-    getFinalizeMove?: (state: TState) => TMove | null;
+    getFinalizeMove?: (state: TState) => TMove[];
     /**
      * Extract winner IDs from the final state.
      */
@@ -81,8 +82,7 @@ export function simulateGame<
             state = definition.applyMove(state, move).state;
             rounds += 1;
 
-            const finalizeMove = options.getFinalizeMove?.(state);
-            if (finalizeMove) {
+            for (const finalizeMove of options.getFinalizeMove?.(state) ?? []) {
                 state = definition.applyMove(state, finalizeMove).state;
             }
             continue;
