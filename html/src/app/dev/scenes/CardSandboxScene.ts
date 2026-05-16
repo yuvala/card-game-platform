@@ -25,6 +25,7 @@ import { stackExample } from "../cardSandbox/examples/stackExample";
 import { verticalFlipExample } from "../cardSandbox/examples/verticalFlipExample";
 import { warCollectPileExample } from "../cardSandbox/examples/warCollectPileExample";
 import { warRevealHoldExample } from "../cardSandbox/examples/warRevealHoldExample";
+import { drawAllCardsGallery } from "../cardSandbox/allCardsGallery";
 import { drawStateGallery } from "../cardSandbox/stateGallery";
 import type {
     CardSandboxExample,
@@ -40,6 +41,7 @@ const SANDBOX_WIDTH = 1280;
 const SANDBOX_HEIGHT = 1080;
 
 const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
+    cards: [],
     real: [
         realCardExample,
         verticalFlipExample,
@@ -62,7 +64,7 @@ const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
 
 export class CardSandboxScene extends Phaser.Scene {
     private deckId: string;
-    private section: CardSandboxSection = "real";
+    private section: CardSandboxSection = "cards";
     private renderLayer?: Phaser.GameObjects.Container;
     private animationLayer?: CardAnimationLayer;
     private runtimes: CardSandboxExampleRuntime[] = [];
@@ -111,7 +113,9 @@ export class CardSandboxScene extends Phaser.Scene {
         this.drawBackground();
 
         const context = this.createExampleContext();
-        if (this.section === "real") {
+        if (this.section === "cards") {
+            drawAllCardsGallery(context);
+        } else if (this.section === "real") {
             drawStateGallery(context);
             this.drawRealCardExamplesHeading();
         } else {
@@ -126,8 +130,13 @@ export class CardSandboxScene extends Phaser.Scene {
     }
 
     private ensureTextures(): void {
-        const deckDefinition = supportedDeckDefinitions[this.deckId as keyof typeof supportedDeckDefinitions];
-        ensureDeckTextures(this, deckDefinition, getCardSkinById(SKIN_ID));
+        const skin = getCardSkinById(SKIN_ID);
+        if (this.section === "cards") {
+            Object.values(supportedDeckDefinitions).forEach((def) => ensureDeckTextures(this, def, skin));
+        } else {
+            const deckDefinition = supportedDeckDefinitions[this.deckId as keyof typeof supportedDeckDefinitions];
+            ensureDeckTextures(this, deckDefinition, skin);
+        }
     }
 
     private drawBackground(): void {
@@ -135,21 +144,10 @@ export class CardSandboxScene extends Phaser.Scene {
             return;
         }
 
+        const h = this.scale.height;
+        this.renderLayer.add(this.add.rectangle(SANDBOX_WIDTH / 2, h / 2, SANDBOX_WIDTH, h, 0x07140f, 1));
         this.renderLayer.add(this.add.rectangle(
-            SANDBOX_WIDTH / 2,
-            SANDBOX_HEIGHT / 2,
-            SANDBOX_WIDTH,
-            SANDBOX_HEIGHT,
-            0x07140f,
-            1
-        ));
-        this.renderLayer.add(this.add.rectangle(
-            SANDBOX_WIDTH / 2,
-            SANDBOX_HEIGHT / 2,
-            SANDBOX_WIDTH - 56,
-            SANDBOX_HEIGHT - 68,
-            0x0d261d,
-            0.88
+            SANDBOX_WIDTH / 2, h / 2, SANDBOX_WIDTH - 56, h - 68, 0x0d261d, 0.88
         ).setStrokeStyle(2, GOLD, 0.16));
     }
 
@@ -159,11 +157,13 @@ export class CardSandboxScene extends Phaser.Scene {
         }
 
         const titleBySection: Record<CardSandboxSection, string> = {
+            cards: "All Cards",
             real: "Real card examples",
             ghost: "Ghost card examples",
             layer: "Animation layer examples"
         };
         const detailBySection: Record<CardSandboxSection, string> = {
+            cards: "",
             real: "",
             ghost: "Temporary ghost cards are created for cross-zone movement and then inspected or cleared.",
             layer: "Animation-layer examples own temporary card visuals and keep game/table layout stable."

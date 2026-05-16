@@ -560,7 +560,7 @@ a {
 
 .cardSandboxRoot {
     width: min(1280px, 100%);
-    aspect-ratio: 32 / 27;
+    aspect-ratio: 32 / 44;
     min-height: 0;
     margin: 0 auto;
     border: 1px solid rgba(255, 209, 102, 0.18);

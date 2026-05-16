@@ -3,7 +3,7 @@ import * as Phaser from "phaser";
 import { CardSandboxScene } from "./scenes/CardSandboxScene";
 
 const CARD_SANDBOX_WIDTH = 1280;
-const CARD_SANDBOX_HEIGHT = 1080;
+const CARD_SANDBOX_HEIGHT = 1760;
 
 export interface CardSandboxGame {
     game: Phaser.Game;
@@ -12,7 +12,7 @@ export interface CardSandboxGame {
     replay(): void;
 }
 
-export type CardSandboxSection = "real" | "ghost" | "layer";
+export type CardSandboxSection = "real" | "ghost" | "layer" | "cards";
 
 export function createCardSandboxGame(parent: string, initialDeckId: string): CardSandboxGame {
     const scene = new CardSandboxScene(initialDeckId);
