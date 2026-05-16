@@ -175,6 +175,7 @@ interface CardDisplaySize {
 
 export class PlayerTableScene extends Phaser.Scene {
     private readonly session: CardGameSession<CardGameViewModel>;
+    private readonly dpr: number;
     private subscription?: { unsubscribe(): void };
     private renderLayer?: Phaser.GameObjects.Container;
     private activeDeckId = "";
@@ -186,9 +187,10 @@ export class PlayerTableScene extends Phaser.Scene {
     private lastViewModel?: CardGameViewModel;
     private animationLayer!: CardAnimationLayer;
 
-    constructor(session: CardGameSession<CardGameViewModel>) {
+    constructor(session: CardGameSession<CardGameViewModel>, dpr = 1) {
         super("player-table");
         this.session = session;
+        this.dpr = dpr;
     }
 
     preload(): void {
@@ -198,6 +200,7 @@ export class PlayerTableScene extends Phaser.Scene {
     }
 
     create(): void {
+        this.cameras.main.setZoom(this.dpr);
         this.animationLayer = createCardAnimationLayer(this, 1000);
 
         this.subscription = this.session.subscribe(() => {
@@ -973,11 +976,22 @@ export class PlayerTableScene extends Phaser.Scene {
         this.localPlayerDeckPoint = null;
         const cards = player.hand;
 
-        if (cards.length === 0 && player.deckPile && player.deckPile.cardCount > 0) {
-            const deckX = PLAYER_GAME_WIDTH / 2;
+        if (cards.length === 0 && player.deckPile) {
+            const capturePile = viewModel.piles.find(
+                (p) => p.role === "capture" && p.ownerId === player.id
+            );
+            const hasWonPile = (capturePile?.cardCount ?? 0) > 0;
+            const deckX = hasWonPile ? PLAYER_GAME_WIDTH / 2 - 62 : PLAYER_GAME_WIDTH / 2;
             const deckY = playerPovZones.handY - 10;
-            this.localPlayerDeckPoint = { x: deckX, y: deckY };
-            this.drawPlayerDeckVisual(deckX, deckY, player.deckPile.cardCount, player.isCurrentTurn, player.canInteract);
+
+            if (player.deckPile.cardCount > 0) {
+                this.localPlayerDeckPoint = { x: deckX, y: deckY };
+                this.drawPlayerDeckVisual(deckX, deckY, player.deckPile.cardCount, player.isCurrentTurn, player.canInteract);
+            }
+
+            if (hasWonPile && capturePile) {
+                this.drawWonPileVisual(PLAYER_GAME_WIDTH / 2 + 62, deckY, capturePile.cardCount);
+            }
         }
 
         cards.forEach((card, index) => {
@@ -1026,10 +1040,10 @@ export class PlayerTableScene extends Phaser.Scene {
         const isLow = cardCount < 10;
         const backCount = cardCount <= 3 ? 1 : cardCount <= 7 ? 2 : 3;
         for (let i = backCount - 1; i >= 0; i--) {
-            const back = this.add.image(x + i * 2, y + i * 2, this.getActiveBackTextureKey())
+            const back = this.add.image(x + i * 2, y - i * 2, this.getActiveBackTextureKey())
                 .setDisplaySize(HAND_CARD_W, HAND_CARD_H)
                 .setAlpha(0.6 + i * 0.14)
-                .setAngle(-3 + i * 3)
+                .setAngle(0)
                 .setDepth(28 + i);
             this.setCardDisplaySize(back, HAND_CARD_W, HAND_CARD_H);
             this.renderLayer.add(back);
@@ -1063,6 +1077,42 @@ export class PlayerTableScene extends Phaser.Scene {
             });
             this.renderLayer.add(hit);
         }
+    }
+
+    private drawWonPileVisual(x: number, y: number, cardCount: number): void {
+        if (!this.renderLayer) {
+            return;
+        }
+
+        const backCount = cardCount <= 3 ? 1 : cardCount <= 7 ? 2 : 3;
+        for (let i = backCount - 1; i >= 0; i--) {
+            const back = this.add.image(x - i * 2, y - i * 2, this.getActiveBackTextureKey())
+                .setDisplaySize(HAND_CARD_W, HAND_CARD_H)
+                .setAlpha(0.6 + i * 0.14)
+                .setAngle(0)
+                .setDepth(28 + i);
+            this.setCardDisplaySize(back, HAND_CARD_W, HAND_CARD_H);
+            this.renderLayer.add(back);
+        }
+
+        this.renderLayer.add(
+            this.add.text(x + HAND_CARD_W / 2 - 2, y - HAND_CARD_H / 2 + 2, String(cardCount), {
+                fontFamily: "Arial",
+                fontSize: "11px",
+                fontStyle: "700",
+                color: "#ffffff",
+                backgroundColor: "rgba(30,100,50,0.88)",
+                padding: { x: 4, y: 2 }
+            }).setOrigin(1, 0).setDepth(32)
+        );
+
+        this.renderLayer.add(
+            this.add.text(x, y + HAND_CARD_H / 2 + 6, "Won", {
+                fontFamily: "Arial",
+                fontSize: "10px",
+                color: "rgba(255,209,102,0.86)"
+            }).setOrigin(0.5, 0).setDepth(32)
+        );
     }
 
     private drawBottomControls(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {

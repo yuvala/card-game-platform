@@ -20,7 +20,8 @@ export function createTableGame<TSnapshot>(
         render: {
             antialias: true,
             antialiasGL: true,
-            roundPixels: false
+            roundPixels: true,
+            mipmapFilter: "LINEAR"
         },
         scale: {
             mode: Phaser.Scale.FIT,
@@ -30,7 +31,7 @@ export function createTableGame<TSnapshot>(
         scene: [new BootScene(), new TableScene(session, viewerId), new UIScene(session, viewerId)],
         callbacks: {
             postBoot: (game) => {
-                game.canvas.setAttribute("data-hud-width", String(HUD_WIDTH));
+                game.canvas.dataset.hudWidth = String(HUD_WIDTH);
             }
         }
     });

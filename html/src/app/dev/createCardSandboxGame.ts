@@ -25,7 +25,8 @@ export function createCardSandboxGame(parent: string, initialDeckId: string): Ca
         render: {
             antialias: true,
             antialiasGL: true,
-            roundPixels: false
+            roundPixels: true,
+            mipmapFilter: "LINEAR"
         },
         scale: {
             mode: Phaser.Scale.FIT,

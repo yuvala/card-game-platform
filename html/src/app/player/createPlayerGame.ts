@@ -11,22 +11,25 @@ export function createPlayerGame(
     parent: string,
     session: CardGameSession<CardGameViewModel>
 ): Phaser.Game {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     return new Phaser.Game({
         type: Phaser.AUTO,
         parent,
-        width: PLAYER_GAME_WIDTH,
-        height: PLAYER_GAME_HEIGHT,
+        width: PLAYER_GAME_WIDTH * dpr,
+        height: PLAYER_GAME_HEIGHT * dpr,
         backgroundColor: "#06140f",
         render: {
             antialias: true,
             antialiasGL: true,
-            roundPixels: false
+            roundPixels: true,
+            mipmapFilter: "LINEAR"
         },
         scale: {
             mode: Phaser.Scale.FIT,
             autoRound: true,
-            autoCenter: Phaser.Scale.CENTER_BOTH
+            autoCenter: Phaser.Scale.CENTER_BOTH,
+            zoom: 1 / dpr
         },
-        scene: [new PlayerTableScene(session)]
+        scene: [new PlayerTableScene(session, dpr)]
     });
 }

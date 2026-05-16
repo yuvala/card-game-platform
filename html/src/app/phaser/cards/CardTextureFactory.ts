@@ -47,10 +47,10 @@ export function preloadFrenchCardTextures(scene: Phaser.Scene, skinId: string): 
 
 const TEXTURE_WIDTH = 180;
 const TEXTURE_HEIGHT = 264;
-const TEXTURE_SCALE = 2;
+const TEXTURE_SCALE = 3;
 const CANVAS_TEXTURE_WIDTH = TEXTURE_WIDTH * TEXTURE_SCALE;
 const CANVAS_TEXTURE_HEIGHT = TEXTURE_HEIGHT * TEXTURE_SCALE;
-const TEXTURE_VERSION = "v3";
+const TEXTURE_VERSION = "v4";
 const CORNER_RADIUS = 18;
 const FACE_VARIANTS = ["compact", "showcase"] as const;
 
