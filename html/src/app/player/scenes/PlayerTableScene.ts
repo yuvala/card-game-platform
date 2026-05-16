@@ -276,7 +276,7 @@ export class PlayerTableScene extends Phaser.Scene {
         this.drawGameInfo(viewModel, presentation);
         this.drawOpponents(viewModel);
         this.drawTableCards(viewModel, presentation);
-        this.drawPlayerHand(viewModel);
+        this.drawPlayerHand(viewModel, presentation);
         this.drawBottomControls(viewModel, presentation);
         this.drawSessionStatus();
         this.presentMoveEffects(viewModel);
@@ -501,7 +501,7 @@ export class PlayerTableScene extends Phaser.Scene {
         this.renderLayer.add(this.add.text(textX + 20, seatY + 8, "· " + counters.cards, {
             fontFamily: "Arial",
             fontSize: "8px",
-            color: DIM
+            color: counters.cards < 10 ? "rgba(255,140,60,0.96)" : DIM
         }).setOrigin(0, 0.5));
     }
 
@@ -515,59 +515,62 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const isLeft = layout.side === "left";
-        const panelX = layout.x + (isLeft ? 8 : -8);
-        const panelY = layout.y + 34;
-        const avatarY = layout.y - 22;
-        const textOriginX = isLeft ? 0 : 1;
-        const textX = panelX + (isLeft ? -18 : 18);
+        const panelWidth = 112;
+        const panelHeight = 36;
+        const panelCenterX = isLeft ? panelWidth / 2 : PLAYER_GAME_WIDTH - panelWidth / 2;
+        const panelY = layout.y;
 
         this.renderLayer.add(createRoundedPanel(
             this,
-            panelX,
+            panelCenterX,
             panelY,
-            58,
-            78,
-            15,
+            panelWidth,
+            panelHeight,
+            14,
             0x071a13,
-            0.72,
+            0.7,
             player.isCurrentTurn ? GOLD : 0x7fb896,
             1,
-            player.isCurrentTurn ? 0.58 : 0.2
+            player.isCurrentTurn ? 0.58 : 0.22
         ));
 
-        this.renderLayer.add(this.add.circle(layout.x, avatarY, 17, player.isCurrentTurn ? GOLD : 0x1d7f54, 0.96)
+        const avatarX = isLeft
+            ? panelCenterX - panelWidth / 2 + 16
+            : panelCenterX + panelWidth / 2 - 16;
+        const dotOffsetX = isLeft ? -12 : 12;
+
+        this.renderLayer.add(this.add.circle(avatarX, panelY, 14, player.isCurrentTurn ? GOLD : 0x1d7f54, 0.96)
             .setStrokeStyle(2, player.isCurrentTurn ? 0xfff1bf : 0x83d0ae, 0.85));
-        this.renderLayer.add(this.add.circle(layout.x + (isLeft ? -14 : 14), avatarY - 14, 4, player.isCurrentTurn ? GOLD : 0x68d184, 0.96));
-        this.renderLayer.add(this.add.text(layout.x, avatarY, player.iconLabel, {
+        this.renderLayer.add(this.add.circle(avatarX + dotOffsetX, panelY - 12, 4, player.isCurrentTurn ? GOLD : 0x68d184, 0.96));
+        this.renderLayer.add(this.add.text(avatarX, panelY, player.iconLabel, {
             fontFamily: "Arial",
-            fontSize: "10px",
+            fontSize: "9px",
             fontStyle: "700",
             color: player.isCurrentTurn ? "#10251c" : CREAM
         }).setOrigin(0.5));
 
-        this.renderLayer.add(this.add.text(textX, panelY - 16, player.nameLabel, {
-            fontFamily: "Arial",
-            fontSize: "10px",
-            fontStyle: "700",
-            color: CREAM,
-            align: isLeft ? "left" : "right",
-            wordWrap: { width: 50 }
-        }).setOrigin(textOriginX, 0.5));
+        const textX = isLeft ? avatarX + 22 : avatarX - 22;
+        const originX = isLeft ? 0 : 1;
 
-        this.renderLayer.add(this.add.text(textX, panelY + 4, String(counters.score), {
-            fontFamily: "Arial",
-            fontSize: "14px",
-            fontStyle: "700",
-            color: "rgba(255,209,102,0.96)",
-            align: isLeft ? "left" : "right"
-        }).setOrigin(textOriginX, 0.5));
-        this.renderLayer.add(this.add.text(textX, panelY + 22, counters.cards + " cds", {
+        this.renderLayer.add(this.add.text(textX, panelY - 7, player.nameLabel, {
             fontFamily: "Arial",
             fontSize: "9px",
-            color: DIM,
-            align: isLeft ? "left" : "right"
-        }).setOrigin(textOriginX, 0.5));
-
+            fontStyle: "700",
+            color: CREAM
+        }).setOrigin(originX, 0.5));
+        this.renderLayer.add(this.add.text(textX, panelY + 7, String(counters.score), {
+            fontFamily: "Arial",
+            fontSize: "11px",
+            fontStyle: "700",
+            color: "rgba(255,209,102,0.96)"
+        }).setOrigin(originX, 0.5));
+        const scoreWidth = String(counters.score).length * 7 + 4;
+        const cardsX = isLeft ? textX + scoreWidth : textX - scoreWidth;
+        this.renderLayer.add(this.add.text(cardsX, panelY + 8, "· " + String(counters.cards), {
+            fontFamily: "Arial",
+            fontSize: "8px",
+            color: counters.cards < 10 ? "rgba(255,140,60,0.96)" : DIM
+        }).setOrigin(originX, 0.5));
     }
 
     private drawTableCards(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
@@ -578,7 +581,7 @@ export class PlayerTableScene extends Phaser.Scene {
         if (presentation.centerArea === "trick") {
             this.drawCurrentTrickLabel(viewModel);
         } else if (presentation.centerArea === "battle") {
-            this.drawBattleSurface(viewModel);
+            this.drawBattleSurface();
         } else if (presentation.centerArea === "showdown") {
             this.drawShowdownSurface(presentation);
         }
@@ -742,25 +745,12 @@ export class PlayerTableScene extends Phaser.Scene {
     private drawCurrentTrickLabel(_viewModel: CardGameViewModel): void {
     }
 
-    private drawBattleSurface(viewModel: CardGameViewModel): void {
+    private drawBattleSurface(): void {
         if (!this.renderLayer) {
             return;
         }
 
-        const isWar = viewModel.themeId === "war";
-        const borderColor = isWar ? 0xff6b6b : GOLD;
-        const borderAlpha = isWar ? 0.72 : 0.22;
-        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 216, 146, 28, 0x092018, 0.36, borderColor, isWar ? 2 : 1, borderAlpha));
-
-        if (isWar) {
-            this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 222, 72, 24, 12, 0x6b1010, 0.92, 0xff6b6b, 1.5, 0.9));
-            this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, 222, "⚔ WAR", {
-                fontFamily: "Arial",
-                fontSize: "12px",
-                fontStyle: "700",
-                color: "#ff9999"
-            }).setOrigin(0.5));
-        }
+        this.renderLayer.add(createRoundedPanel(this, PLAYER_GAME_WIDTH / 2, 352, 216, 146, 28, 0x092018, 0.36, GOLD, 1, 0.22));
     }
 
     private drawShowdownSurface(presentation: PlayerPovPresentation): void {
@@ -798,7 +788,7 @@ export class PlayerTableScene extends Phaser.Scene {
         const centerX = stockTrumpPoint.x;
         const centerY = stockTrumpPoint.y;
         this.stockPilePoint = { x: centerX, y: centerY };
-        this.renderLayer.add(createRoundedPanel(this, 132, centerY, 194, 76, 18, 0x082417, 0.82, 0x5ea65d, 1, 0.24));
+        this.renderLayer.add(createRoundedPanel(this, 132, centerY, 194, 76, 18, 0x082417, 0.57, 0x5ea65d, 1, 0.24));
 
         for (let index = 0; index < 3; index += 1) {
             const stockBack = this.add.image(centerX - 18 + index * 3, centerY - 1 - index * 1, this.getActiveBackTextureKey())
@@ -857,7 +847,7 @@ export class PlayerTableScene extends Phaser.Scene {
         const centerY = playerPovZones.stockTrumpY;
         const centerX = 118;
         this.stockPilePoint = { x: centerX - 64, y: centerY };
-        this.renderLayer.add(createRoundedPanel(this, centerX, centerY, 206, 78, 18, 0x082417, 0.82, 0x5ea65d, 1, 0.22));
+        this.renderLayer.add(createRoundedPanel(this, centerX, centerY, 206, 78, 18, 0x082417, 0.57, 0x5ea65d, 1, 0.22));
 
         if (drawPile) {
             for (let index = 0; index < 3; index += 1) {
@@ -900,7 +890,7 @@ export class PlayerTableScene extends Phaser.Scene {
         return true;
     }
 
-    private drawPlayerHand(viewModel: CardGameViewModel): void {
+    private drawPlayerHand(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
         if (!this.renderLayer) {
             return;
         }
@@ -932,6 +922,7 @@ export class PlayerTableScene extends Phaser.Scene {
             color: player.isCurrentTurn ? "#10251c" : CREAM
         }).setOrigin(0.5));
         const playerCounters = parsePlayerCounters(player.metaLabel);
+        const isLowCards = playerCounters.cards > 0 && playerCounters.cards < 10;
         this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 38, playerPovZones.playerHudY - 8, player.nameLabel, {
             fontFamily: "Arial",
             fontSize: "12px",
@@ -942,7 +933,7 @@ export class PlayerTableScene extends Phaser.Scene {
         this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 - 38, playerPovZones.playerHudY + 8, playerCounters.cards + " cards", {
             fontFamily: "Arial",
             fontSize: "9px",
-            color: DIM
+            color: isLowCards ? "rgba(255,140,60,0.96)" : DIM
         }));
         this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2 + 66, playerPovZones.playerHudY, String(playerCounters.score), {
             fontFamily: "Arial",
@@ -950,6 +941,16 @@ export class PlayerTableScene extends Phaser.Scene {
             fontStyle: "700",
             color: "rgba(255,209,102,0.96)"
         }).setOrigin(0.5));
+
+        if (presentation.actionStyle === "battle") {
+            const turnLabel = player.isCurrentTurn ? "▸ YOUR TURN" : "· waiting";
+            this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, playerPovZones.playerHudY + 26, turnLabel, {
+                fontFamily: "Arial",
+                fontSize: "9px",
+                fontStyle: player.isCurrentTurn ? "700" : "400",
+                color: player.isCurrentTurn ? "rgba(255,209,102,0.96)" : DIM
+            }).setOrigin(0.5));
+        }
 
         this.localPlayerDeckPoint = null;
         const cards = player.hand;
@@ -1004,7 +1005,9 @@ export class PlayerTableScene extends Phaser.Scene {
             return;
         }
 
-        for (let i = 2; i >= 0; i--) {
+        const isLow = cardCount < 10;
+        const backCount = cardCount <= 3 ? 1 : cardCount <= 7 ? 2 : 3;
+        for (let i = backCount - 1; i >= 0; i--) {
             const back = this.add.image(x + i * 2, y + i * 2, this.getActiveBackTextureKey())
                 .setDisplaySize(HAND_CARD_W, HAND_CARD_H)
                 .setAlpha(0.6 + i * 0.14)
@@ -1015,8 +1018,9 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         if (isCurrentTurn) {
+            const glowColor = isLow ? 0xff7020 : GOLD;
             const glow = this.add.graphics().setDepth(27);
-            glow.lineStyle(3, GOLD, 0.72);
+            glow.lineStyle(3, glowColor, 0.72);
             glow.strokeRoundedRect(x - HAND_CARD_W / 2 - 4, y - HAND_CARD_H / 2 - 4, HAND_CARD_W + 8, HAND_CARD_H + 8, 8);
             this.renderLayer.add(glow);
         }
@@ -1026,8 +1030,8 @@ export class PlayerTableScene extends Phaser.Scene {
                 fontFamily: "Arial",
                 fontSize: "11px",
                 fontStyle: "700",
-                color: "#ffffff",
-                backgroundColor: "rgba(0,0,0,0.78)",
+                color: isLow ? "#ffaa70" : "#ffffff",
+                backgroundColor: isLow ? "rgba(150,40,0,0.82)" : "rgba(0,0,0,0.78)",
                 padding: { x: 4, y: 2 }
             }).setOrigin(1, 0).setDepth(32)
         );
@@ -1052,8 +1056,9 @@ export class PlayerTableScene extends Phaser.Scene {
         const canPlay = viewModel.controls.canPlay || action?.eventType === "PLAY_CARD";
         const label = normalizeActionLabel(action?.label ?? (viewModel.players[0]?.isCurrentTurn ? "Select Card" : "Waiting"));
         const hasBottomDock = presentation.bottomDock !== "none";
-        const buttonX = hasBottomDock ? 294 : PLAYER_GAME_WIDTH / 2;
-        const buttonWidth = hasBottomDock ? 126 : 144;
+        const dockRightX = hasBottomDock ? 310 : PLAYER_GAME_WIDTH / 2;
+        const buttonX = dockRightX;
+        const buttonWidth = hasBottomDock ? 148 : 144;
         const button = createRoundedPanel(
             this,
             buttonX,
@@ -1061,9 +1066,9 @@ export class PlayerTableScene extends Phaser.Scene {
             buttonWidth,
             48,
             18,
-            canPlay ? 0x208338 : 0x244034,
+            canPlay ? 0xffd166 : 0x244034,
             canPlay ? 1 : 0.76,
-            canPlay ? 0x75d16a : 0x6c806f,
+            canPlay ? 0xffc840 : 0x6c806f,
             2,
             canPlay ? 0.72 : 0.2
         );
@@ -1072,7 +1077,7 @@ export class PlayerTableScene extends Phaser.Scene {
             fontFamily: "Arial",
             fontSize: canPlay && hasBottomDock ? "11px" : (canPlay ? "14px" : "16px"),
             fontStyle: "700",
-            color: canPlay ? "#f6ecd2" : DIM
+            color: canPlay ? "#10251c" : DIM
         }).setOrigin(0.5));
 
         if (canPlay && action?.eventType === "PLAY_CARD") {
@@ -1084,11 +1089,13 @@ export class PlayerTableScene extends Phaser.Scene {
             this.renderLayer.add(hitTarget);
         }
 
+        const statusX = dockRightX;
+        const statusWidth = hasBottomDock ? 148 : PLAYER_GAME_WIDTH - 60;
         this.renderLayer.add(createRoundedPanel(
             this,
-            PLAYER_GAME_WIDTH / 2,
+            statusX,
             playerPovZones.actionStatusY,
-            PLAYER_GAME_WIDTH - 60,
+            statusWidth,
             30,
             14,
             0x071a13,
@@ -1097,12 +1104,12 @@ export class PlayerTableScene extends Phaser.Scene {
             1,
             0.12
         ));
-        this.renderLayer.add(this.add.text(PLAYER_GAME_WIDTH / 2, playerPovZones.actionStatusY, viewModel.statusText, {
+        this.renderLayer.add(this.add.text(statusX, playerPovZones.actionStatusY, viewModel.statusText, {
             fontFamily: "Arial",
             fontSize: "10px",
             color: DIM,
             align: "center",
-            wordWrap: { width: PLAYER_GAME_WIDTH - 82 }
+            wordWrap: { width: hasBottomDock ? 128 : PLAYER_GAME_WIDTH - 82 }
         }).setOrigin(0.5));
     }
 
