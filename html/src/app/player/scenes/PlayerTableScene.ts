@@ -16,7 +16,8 @@ import type {
 import {
     ensureDeckTextures,
     getCardBackTextureKey,
-    getCardFaceTextureKey
+    getCardFaceTextureKey,
+    preloadFrenchCardTextures
 } from "../../phaser/cards/CardTextureFactory";
 import { PLAYER_GAME_HEIGHT, PLAYER_GAME_WIDTH } from "../createPlayerGame";
 import {
@@ -193,6 +194,7 @@ export class PlayerTableScene extends Phaser.Scene {
     preload(): void {
         this.load.image("bg-brisca", "images/bg-brisca.jpg");
         this.load.image("bg-war", "images/map4.jpg");
+        preloadFrenchCardTextures(this, "vintage-european");
     }
 
     create(): void {

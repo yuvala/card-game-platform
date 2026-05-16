@@ -1,5 +1,7 @@
 import * as Phaser from "phaser";
 
+import { preloadFrenchCardTextures } from "../cards/CardTextureFactory";
+
 export class BootScene extends Phaser.Scene {
     constructor() {
         super("rewrite-boot");
@@ -7,6 +9,7 @@ export class BootScene extends Phaser.Scene {
 
     preload(): void {
         this.load.image("rewrite-table-bg", "images/map4.jpg");
+        preloadFrenchCardTextures(this, "vintage-european");
     }
 
     create(): void {

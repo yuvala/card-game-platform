@@ -1,6 +1,7 @@
 ﻿import type Phaser from "phaser";
 
 import { createDeck } from "@engine/engine/cards/createDeck";
+import { frenchDeckDefinition } from "@engine/engine/cards/deckDefinitions";
 import type { CardInstance, DeckDefinition } from "@engine/engine/cards/types";
 import type {
     CardSkinDefinition,
@@ -8,12 +9,48 @@ import type {
     SuitEmblemKind
 } from "@engine/engine/cards/skinPacks";
 
+const FRENCH_SUIT_FILE: Record<string, string> = {
+    hearts: "heart",
+    spades: "spade",
+    diamonds: "diamond",
+    clubs: "club"
+};
+
+const FRENCH_RANK_FILE: Record<string, string> = {
+    ace: "1"
+};
+
+export function preloadFrenchCardTextures(scene: Phaser.Scene, skinId: string): void {
+    const backKey = getCardBackTextureKey("french", skinId);
+    if (!scene.textures.exists(backKey)) {
+        scene.load.image(backKey, "/assets/cards/french/back.png");
+    }
+
+    createDeck(frenchDeckDefinition).forEach((card) => {
+        const dashAfterDeckId = card.id.indexOf("-");
+        const rest = card.id.slice(dashAfterDeckId + 1);
+        const secondDash = rest.indexOf("-");
+        const rankId = rest.slice(0, secondDash);
+        const suitId = rest.slice(secondDash + 1);
+        const fileRank = FRENCH_RANK_FILE[rankId] ?? rankId;
+        const fileSuit = FRENCH_SUIT_FILE[suitId];
+        const path = `/assets/cards/french/${fileSuit}_${fileRank}.png`;
+
+        FACE_VARIANTS.forEach((variant) => {
+            const key = getCardFaceTextureKey(card.id, skinId, variant);
+            if (!scene.textures.exists(key)) {
+                scene.load.image(key, path);
+            }
+        });
+    });
+}
+
 const TEXTURE_WIDTH = 180;
 const TEXTURE_HEIGHT = 264;
 const TEXTURE_SCALE = 2;
 const CANVAS_TEXTURE_WIDTH = TEXTURE_WIDTH * TEXTURE_SCALE;
 const CANVAS_TEXTURE_HEIGHT = TEXTURE_HEIGHT * TEXTURE_SCALE;
-const TEXTURE_VERSION = "v2";
+const TEXTURE_VERSION = "v3";
 const CORNER_RADIUS = 18;
 const FACE_VARIANTS = ["compact", "showcase"] as const;
 
@@ -279,12 +316,30 @@ function drawCompactCenterPanel(
     context.restore();
 }
 
+// Face card rank IDs across all supported decks
+const FACE_RANK_IDS = new Set([
+    "jack", "queen", "king",        // French
+    "sota", "caballo", "rey",       // Spanish
+    "fante", "cavallo", "re"        // Italian
+]);
+const ACE_RANK_IDS = new Set(["ace"]);
+
 function drawShowcaseCenterPanel(
     context: CanvasRenderingContext2D,
     card: CardInstance,
     suitAppearance: CardSuitAppearance,
     skin: CardSkinDefinition
 ): void {
+    if (ACE_RANK_IDS.has(card.rankId)) {
+        drawAceCenterPanel(context, suitAppearance, skin);
+        return;
+    }
+    if (FACE_RANK_IDS.has(card.rankId)) {
+        drawFaceCenterPanel(context, card, suitAppearance, skin);
+        return;
+    }
+
+    // Number cards — oval + emblem + rank name
     context.save();
     context.translate(TEXTURE_WIDTH / 2, TEXTURE_HEIGHT / 2);
 
@@ -306,6 +361,106 @@ function drawShowcaseCenterPanel(
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillText(card.rankLabel.toUpperCase(), 0, 50, 96);
+
+    context.restore();
+}
+
+function drawAceCenterPanel(
+    context: CanvasRenderingContext2D,
+    suitAppearance: CardSuitAppearance,
+    skin: CardSkinDefinition
+): void {
+    const cx = TEXTURE_WIDTH / 2;
+    const cy = TEXTURE_HEIGHT / 2 - 4;
+
+    context.save();
+
+    context.fillStyle = withAlpha(suitAppearance.secondaryColor, 0.13);
+    context.beginPath();
+    context.ellipse(cx, cy, 56, 76, 0, 0, Math.PI * 2);
+    context.fill();
+
+    context.strokeStyle = withAlpha(suitAppearance.primaryColor, 0.32);
+    context.lineWidth = 1.5;
+    context.beginPath();
+    context.ellipse(cx, cy, 56, 76, 0, 0, Math.PI * 2);
+    context.stroke();
+
+    drawSuitEmblem(context, suitAppearance.emblem, cx, cy - 6, 66, suitAppearance, skin);
+
+    context.restore();
+}
+
+function drawFaceCenterPanel(
+    context: CanvasRenderingContext2D,
+    card: CardInstance,
+    suitAppearance: CardSuitAppearance,
+    skin: CardSkinDefinition
+): void {
+    const PX = 18, PY = 56;
+    const PW = TEXTURE_WIDTH - 36;    // 144
+    const PH = TEXTURE_HEIGHT - 112;  // 152
+    const PR = 8;
+    const CX = TEXTURE_WIDTH / 2;
+    const CE = 15;  // corner emblem size
+    const CI = 19;  // corner emblem inset from panel edge
+
+    context.save();
+
+    // Panel background
+    context.fillStyle = withAlpha(suitAppearance.primaryColor, 0.1);
+    roundRectPath(context, PX, PY, PW, PH, PR);
+    context.fill();
+
+    // Outer border
+    context.strokeStyle = suitAppearance.primaryColor;
+    context.lineWidth = 2;
+    roundRectPath(context, PX, PY, PW, PH, PR);
+    context.stroke();
+
+    // Inner border
+    context.strokeStyle = withAlpha(suitAppearance.primaryColor, 0.35);
+    context.lineWidth = 1;
+    roundRectPath(context, PX + 8, PY + 8, PW - 16, PH - 16, PR - 4);
+    context.stroke();
+
+    // Large rank letter — upper section of panel
+    context.fillStyle = suitAppearance.primaryColor;
+    context.font = "700 54px Georgia";
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    context.fillText(card.rankShortLabel, CX, PY + PH * 0.36);
+
+    // Divider
+    const divY = PY + PH * 0.54;
+    context.strokeStyle = withAlpha(suitAppearance.primaryColor, 0.26);
+    context.lineWidth = 1;
+    context.beginPath();
+    context.moveTo(PX + 22, divY);
+    context.lineTo(PX + PW - 22, divY);
+    context.stroke();
+
+    // Suit emblem — lower section of panel
+    drawSuitEmblem(context, suitAppearance.emblem, CX, PY + PH * 0.74, 36, suitAppearance, skin);
+
+    // Top-left corner emblem
+    drawSuitEmblem(context, suitAppearance.emblem, PX + CI, PY + CI, CE, suitAppearance, skin);
+    // Top-right corner emblem
+    drawSuitEmblem(context, suitAppearance.emblem, PX + PW - CI, PY + CI, CE, suitAppearance, skin);
+
+    // Bottom-left (rotated 180°)
+    context.save();
+    context.translate(PX + CI, PY + PH - CI);
+    context.rotate(Math.PI);
+    drawSuitEmblem(context, suitAppearance.emblem, 0, 0, CE, suitAppearance, skin);
+    context.restore();
+
+    // Bottom-right (rotated 180°)
+    context.save();
+    context.translate(PX + PW - CI, PY + PH - CI);
+    context.rotate(Math.PI);
+    drawSuitEmblem(context, suitAppearance.emblem, 0, 0, CE, suitAppearance, skin);
+    context.restore();
 
     context.restore();
 }

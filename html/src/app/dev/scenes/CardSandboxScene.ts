@@ -7,7 +7,8 @@ import type { CardSandboxSection } from "../createCardSandboxGame";
 import {
     ensureDeckTextures,
     getCardBackTextureKey,
-    getCardFaceTextureKey
+    getCardFaceTextureKey,
+    preloadFrenchCardTextures
 } from "../../phaser/cards/CardTextureFactory";
 import {
     createCardAnimationLayer,
@@ -72,6 +73,10 @@ export class CardSandboxScene extends Phaser.Scene {
     constructor(initialDeckId: string) {
         super("card-sandbox");
         this.deckId = initialDeckId;
+    }
+
+    preload(): void {
+        preloadFrenchCardTextures(this, SKIN_ID);
     }
 
     create(): void {
