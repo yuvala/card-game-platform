@@ -134,6 +134,27 @@ export function getTrickCardPoint(side: PlayerPovSeatSide): PlayerPovOrientedPoi
     }
 }
 
+// Battle surface: 216×146 centered at (195, 352) → x=87–303, y=279–425
+// Local player (bottom) clusters on the left half; opponent (top) on the right half.
+// Face-down cards form a compact cascading stack; the reveal card floats above.
+export function getWarBattleCardPoint(
+    side: "bottom" | "top",
+    isComparisonCard: boolean,
+    faceDownIndex: number
+): PlayerPovOrientedPoint {
+    const baseX = side === "bottom" ? 148 : 242;
+
+    if (isComparisonCard) {
+        return { x: baseX, y: 322, angle: 0 };
+    }
+
+    return {
+        x: baseX + faceDownIndex * 4,
+        y: 368 - faceDownIndex * 2,
+        angle: -6 + faceDownIndex * 4
+    };
+}
+
 export function getStockTrumpPoint(): PlayerPovPoint {
     return {
         x: 76,

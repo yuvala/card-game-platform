@@ -25,6 +25,7 @@ import {
     getStockTrumpPoint,
     getTableRowCardPoint,
     getTrickCardPoint,
+    getWarBattleCardPoint,
     playerPovCardSizes,
     playerPovZones,
     type PlayerPovSeatLayout
@@ -593,13 +594,28 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const cards = viewModel.tableCards;
+        const battlePoints = new Map<string, { x: number; y: number; angle: number }>();
+        if (presentation.centerArea === "battle") {
+            const localPlayerId = viewModel.players[0]?.id ?? "";
+            const faceDownCounts = new Map<string, number>();
+            cards.forEach((card) => {
+                const side = card.playerId === localPlayerId ? "bottom" : "top";
+                const isComparison = card.isFaceUp === true;
+                const fdIndex = isComparison ? 0 : (faceDownCounts.get(card.playerId ?? "") ?? 0);
+                if (!isComparison) {
+                    faceDownCounts.set(card.playerId ?? "", fdIndex + 1);
+                }
+                battlePoints.set(card.id, getWarBattleCardPoint(side, isComparison, fdIndex));
+            });
+        }
+
         cards.forEach((card, index) => {
-            const point = presentation.centerArea === "trick"
+            const point = battlePoints.get(card.id) ?? (presentation.centerArea === "trick"
                 ? this.getTrickCardPointForCard(card, viewModel)
                 : getTableRowCardPoint({
                       cardCount: cards.length,
                       index
-                  });
+                  }));
             const image = this.add.image(point.x, point.y, this.getTextureForCard(card, "compact"))
                 .setDisplaySize(TABLE_CARD_W, TABLE_CARD_H)
                 .setAngle(point.angle);
@@ -1250,11 +1266,24 @@ export class PlayerTableScene extends Phaser.Scene {
         if (tableCard && viewModel.tablePresentation === "trick-seats") {
             return this.getTrickCardPointForCard(tableCard, viewModel);
         }
-
+        if (tableCard && viewModel.themeId === "war") {
+            return this.getWarCardPoint(tableCard, viewModel);
+        }
         return getTableRowCardPoint({
             cardCount: viewModel.tableCards.length,
             index
         });
+    }
+
+    private getWarCardPoint(card: { id: string; playerId?: string; isFaceUp?: boolean }, viewModel: CardGameViewModel): { x: number; y: number; angle: number } {
+        const localPlayerId = viewModel.players[0]?.id ?? "";
+        let fdIndex = 0;
+        for (const c of viewModel.tableCards) {
+            if (c.id === card.id) break;
+            if (c.playerId === card.playerId && !c.isFaceUp) fdIndex++;
+        }
+        const side = card.playerId === localPlayerId ? "bottom" : "top";
+        return getWarBattleCardPoint(side, card.isFaceUp === true, fdIndex);
     }
 
     private animateMoveGhost(
