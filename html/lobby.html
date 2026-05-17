@@ -15,16 +15,22 @@
     const bg = document.getElementById("lobby-bg");
     const img = new Image();
     img.src = "/assets/lobby-bg.jpg";
-    function position() {
-      const scale = window.innerHeight / img.naturalHeight;
-      const panelWidth = (img.naturalWidth * scale) / 3;
-      bg.style.width = panelWidth + "px";
-      bg.style.backgroundPosition = (-panelIndex * panelWidth) + "px center";
-    }
-    img.onload = () => {
+    img.decode().then(() => {
+      const root = document.getElementById("lobby-root");
+      function position() {
+        const scale = window.innerHeight / img.naturalHeight;
+        const fullW = Math.round(img.naturalWidth * scale);
+        const panelW = Math.round(fullW / 3);
+        bg.style.width = panelW + "px";
+        bg.style.backgroundSize = fullW + "px 100%";
+        const shifts = [8, 0, -21];
+        const shift = shifts[panelIndex];
+        bg.style.backgroundPosition = (-panelIndex * panelW + shift) + "px 0";
+        root.style.width = panelW + "px";
+      }
       position();
       window.addEventListener("resize", position);
-    };
+    }).catch(() => {});
   </script>
   <script type="module" src="src/lobby/main.tsx"></script>
 </body>
