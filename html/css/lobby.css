@@ -1,0 +1,201 @@
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+    font-family: 'Crimson Text', Georgia, serif;
+    background: #0d0d0f;
+    color: #d4b896;
+    min-height: 100dvh;
+    position: relative;
+}
+
+.lobby-bg {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    /* width set by JS */
+    background-image: url('/assets/lobby-bg.jpg');
+    background-size: auto 100%;
+    background-repeat: no-repeat;
+    filter: brightness(0.8) saturate(0.8);
+    z-index: 0;
+}
+
+#lobby-root {
+    position: relative;
+    z-index: 1;
+}
+
+/* ── Nickname screen ── */
+.lobby-center {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100dvh;
+    gap: 32px;
+}
+
+.lobby-center h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: #c9a84c;
+    text-shadow: 0 0 40px rgba(201,168,76,0.4);
+}
+
+.nickname-form {
+    display: flex;
+    gap: 0;
+    border: 1px solid #6b4f28;
+    border-radius: 4px;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201,168,76,0.15);
+}
+
+.nickname-form input {
+    padding: 14px 20px;
+    background: rgba(255,255,255,0.04);
+    border: none;
+    color: #f5ead8;
+    font-family: 'Crimson Text', serif;
+    font-size: 1.2rem;
+    outline: none;
+    width: 240px;
+}
+
+.nickname-form input::placeholder { color: #6b5a40; }
+
+/* ── Buttons ── */
+button {
+    padding: 14px 28px;
+    border: none;
+    background: linear-gradient(135deg, #c9a84c 0%, #a07830 100%);
+    color: #1a0f00;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: filter 0.15s, transform 0.1s;
+}
+
+button:hover:not(:disabled) {
+    filter: brightness(1.15);
+    transform: translateY(-1px);
+}
+
+button:disabled { opacity: 0.35; cursor: default; transform: none; }
+
+/* ── Lobby main ── */
+.lobby-wrap {
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 48px;
+}
+
+.lobby-header {
+    text-align: center;
+    border-bottom: 1px solid #3a2a14;
+    padding-bottom: 24px;
+}
+
+.lobby-header h1 {
+    font-family: 'Cinzel', serif;
+    font-size: 2.2rem;
+    color: #c9a84c;
+    letter-spacing: 0.15em;
+    text-shadow: 0 0 30px rgba(201,168,76,0.3);
+}
+
+.lobby-nick {
+    display: block;
+    font-size: 0.95rem;
+    color: #7a6040;
+    margin-top: 8px;
+    letter-spacing: 0.05em;
+}
+
+/* ── Section titles ── */
+h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: 0.2em;
+    color: #7a6040;
+    text-transform: uppercase;
+    margin-bottom: 16px;
+}
+
+/* ── New room ── */
+.game-buttons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.game-buttons button {
+    flex: 1;
+    border-radius: 3px;
+    padding: 16px 12px;
+    font-size: 0.8rem;
+}
+
+/* ── Room list ── */
+.room-list { display: flex; flex-direction: column; gap: 10px; }
+
+.room-row {
+    display: flex;
+    align-items: center;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid #2e2010;
+    border-radius: 4px;
+    padding: 16px 20px;
+    gap: 16px;
+    transition: border-color 0.15s;
+}
+
+.room-row:hover { border-color: #6b4f28; }
+
+.room-game {
+    flex: 1;
+    font-size: 1.15rem;
+    color: #d4b896;
+    font-style: italic;
+}
+
+.room-count {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    color: #6b5a40;
+    min-width: 40px;
+    text-align: center;
+}
+
+.room-row button {
+    padding: 10px 20px;
+    font-size: 0.75rem;
+    border-radius: 3px;
+}
+
+.empty {
+    color: #4a3820;
+    font-style: italic;
+    font-size: 1rem;
+    padding: 20px 0;
+    text-align: center;
+}
+
+/* ── Divider ornament ── */
+.ornament {
+    text-align: center;
+    color: #3a2a14;
+    font-size: 1.2rem;
+    letter-spacing: 0.5em;
+}

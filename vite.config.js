@@ -1,8 +1,11 @@
 const { resolve } = require("path");
 const { defineConfig } = require("vite");
+const react = require("@vitejs/plugin-react");
 
 module.exports = defineConfig({
     root: "html",
+    envDir: __dirname,
+    plugins: [react()],
     resolve: {
         alias: {
             "@engine": resolve(__dirname, "packages/engine/src")
@@ -25,7 +28,8 @@ module.exports = defineConfig({
                 game: resolve(__dirname, "html/game.html"),
                 table: resolve(__dirname, "html/rewrite.html"),
                 player: resolve(__dirname, "html/player.html"),
-                cardSandbox: resolve(__dirname, "html/card-sandbox.html")
+                cardSandbox: resolve(__dirname, "html/card-sandbox.html"),
+                lobby: resolve(__dirname, "html/lobby.html")
             }
         }
     }

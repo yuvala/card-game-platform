@@ -7,6 +7,8 @@ node_modules/
 .tmp-server/
 .tmp-tests/
 .tmp-simulate/
+.env
 .env*.local
 .claude/settings.json
 .claude/settings.local.json
+dev_graphics/
