@@ -288,6 +288,11 @@ function getRequestedWebSocketUrl(params: URLSearchParams): string {
         return explicitUrl;
     }
 
+    const envUrl = import.meta.env.VITE_WS_URL as string | undefined;
+    if (envUrl) {
+        return envUrl;
+    }
+
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     return protocol + "//" + window.location.hostname + ":8787/";
 }

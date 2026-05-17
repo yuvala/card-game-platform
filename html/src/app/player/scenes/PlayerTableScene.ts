@@ -19,6 +19,7 @@ import {
     getCardFaceTextureKey,
     preloadFrenchCardTextures
 } from "../../phaser/cards/CardTextureFactory";
+import { playCardFlipSound, playCardMoveSound } from "../../phaser/scenes/audio/cardSoundEffects";
 import { PLAYER_GAME_HEIGHT, PLAYER_GAME_WIDTH } from "../createPlayerGame";
 import {
     getHandCardPoint,
@@ -186,6 +187,8 @@ export class PlayerTableScene extends Phaser.Scene {
     private debugOverlay?: PlayerDebugOverlay;
     private lastViewModel?: CardGameViewModel;
     private animationLayer!: CardAnimationLayer;
+    private flashContainer?: Phaser.GameObjects.Container;
+    private lastBattleFlashKey = "";
 
     constructor(session: CardGameSession<CardGameViewModel>, dpr = 1) {
         super("player-table");
@@ -217,6 +220,7 @@ export class PlayerTableScene extends Phaser.Scene {
             this.subscription?.unsubscribe();
             this.subscription = undefined;
             this.animationLayer.destroy();
+            this.flashContainer?.destroy(true);
             globalThis.removeEventListener("debug-layer-change", onDebugLayerChange);
         });
 
@@ -286,6 +290,87 @@ export class PlayerTableScene extends Phaser.Scene {
         this.drawBottomControls(viewModel, presentation);
         this.drawSessionStatus();
         this.presentMoveEffects(viewModel);
+        this.checkBattleFlash(viewModel);
+    }
+
+    private checkBattleFlash(viewModel: CardGameViewModel): void {
+        const outcome = viewModel.outcome;
+        if (!outcome) {
+            return;
+        }
+
+        const flashKey = "outcome:" + outcome.winnerPlayerIds.join(",");
+        if (flashKey === this.lastBattleFlashKey) {
+            return;
+        }
+
+        this.lastBattleFlashKey = flashKey;
+        const localPlayerId = viewModel.players[0]?.id ?? "";
+        const isLocalWin = outcome.winnerPlayerIds.includes(localPlayerId);
+        const winnerName = viewModel.players.find((p) => outcome.winnerPlayerIds.includes(p.id))?.nameLabel ?? "";
+        this.showBattleFlash(winnerName, isLocalWin);
+    }
+
+    private showBattleFlash(winnerName: string, isLocalPlayer: boolean): void {
+        this.flashContainer?.destroy(true);
+
+        const cx = PLAYER_GAME_WIDTH / 2;
+        const cy = PLAYER_GAME_HEIGHT / 2;
+        const container = this.add.container(cx, cy);
+        container.setDepth(2000);
+        container.setAlpha(0);
+        this.flashContainer = container;
+
+        const overlay = this.add.rectangle(0, 0, PLAYER_GAME_WIDTH, PLAYER_GAME_HEIGHT, 0x000000, 0.52);
+        const panelW = 262;
+        const panelH = 92;
+        const panelBg = this.add.graphics();
+        const panelFill = isLocalPlayer ? 0x1a5c2a : 0x0f2850;
+        const panelBorder = isLocalPlayer ? GOLD : 0x6699cc;
+        panelBg.fillStyle(panelFill, 0.97);
+        panelBg.fillRoundedRect(-panelW / 2, -panelH / 2, panelW, panelH, 22);
+        panelBg.lineStyle(2, panelBorder, 0.9);
+        panelBg.strokeRoundedRect(-panelW / 2, -panelH / 2, panelW, panelH, 22);
+
+        const titleLabel = isLocalPlayer ? "YOU WIN!" : winnerName + " wins";
+        const title = this.add.text(0, -16, titleLabel, {
+            fontFamily: "Arial",
+            fontSize: isLocalPlayer ? "30px" : "24px",
+            fontStyle: "700",
+            color: isLocalPlayer ? "#ffd166" : "#c8dff8"
+        }).setOrigin(0.5);
+
+        const sub = this.add.text(0, 20, isLocalPlayer ? "Battle won" : "Battle won", {
+            fontFamily: "Arial",
+            fontSize: "12px",
+            color: isLocalPlayer ? "rgba(255,240,180,0.65)" : "rgba(180,210,255,0.65)"
+        }).setOrigin(0.5);
+
+        container.add([overlay, panelBg, title, sub]);
+
+        this.tweens.add({
+            targets: container,
+            alpha: 1,
+            scaleX: { from: 0.88, to: 1 },
+            scaleY: { from: 0.88, to: 1 },
+            duration: 180,
+            ease: "Back.easeOut",
+            onComplete: () => {
+                this.tweens.add({
+                    targets: container,
+                    alpha: 0,
+                    duration: 360,
+                    delay: 780,
+                    ease: "Sine.easeIn",
+                    onComplete: () => {
+                        container.destroy(true);
+                        if (this.flashContainer === container) {
+                            this.flashContainer = undefined;
+                        }
+                    }
+                });
+            }
+        });
     }
 
     private drawBackground(theme: PlayerTheme): void {
@@ -1202,16 +1287,32 @@ export class PlayerTableScene extends Phaser.Scene {
         const dealCount = effects.filter((e) => e.reason === "deal").length;
         const dealDelayStep = getDealDelayStep(dealCount);
 
+        let scheduledCount = 0;
+        let completedCount = 0;
+        const onEffectDone = () => {
+            completedCount += 1;
+            if (completedCount === scheduledCount) {
+                this.session.send({ type: "ANIMATION_DONE" });
+            }
+        };
+
         effects.forEach((effect, index) => {
             const points = this.getMoveEffectPoints(effect, viewModel);
             if (!points) {
                 return;
             }
 
+            scheduledCount += 1;
             const profile = getEffectProfile(effect.reason, dealDelayStep);
             const ghostSize = this.getGhostSizeForEffect(effect, viewModel);
-            this.animateMoveGhost(effect, points.from, points.to, profile, delays[index] ?? 0, ghostSize);
+            this.animateMoveGhost(effect, points.from, points.to, profile, delays[index] ?? 0, ghostSize, onEffectDone);
         });
+
+        if (scheduledCount === 0) {
+            this.time.delayedCall(0, () => {
+                this.session.send({ type: "ANIMATION_DONE" });
+            });
+        }
     }
 
     private getGhostSizeForEffect(effect: MoveCardEffect, viewModel: CardGameViewModel): { width: number; height: number } {
@@ -1344,7 +1445,8 @@ export class PlayerTableScene extends Phaser.Scene {
         to: { x: number; y: number; angle: number },
         profile: EffectAnimProfile,
         delay: number,
-        ghostSize: { width: number; height: number }
+        ghostSize: { width: number; height: number },
+        onComplete?: () => void
     ): void {
         const shouldFlip = effect.card.isFaceUp && effect.fromFaceUp === false;
         const textureKey = (effect.card.isFaceUp && !shouldFlip)
@@ -1377,15 +1479,22 @@ export class PlayerTableScene extends Phaser.Scene {
             ease: profile.ease,
             onComplete: () => {
                 ghost.image.setDisplaySize(ghostSize.width, ghostSize.height);
+                playCardMoveSound(this, effect.reason);
                 if (shouldFlip) {
-                    this.animateCardFlip(ghost.image, effect, ghostSize, () => { ghost.destroy(); });
+                    this.animateCardFlip(ghost.image, effect, ghostSize, () => {
+                        ghost.destroy();
+                        onComplete?.();
+                    });
                 } else {
                     this.tweens.add({
                         targets: ghost.image,
                         alpha: 0,
                         duration: 80,
                         delay: 50,
-                        onComplete: () => { ghost.destroy(); }
+                        onComplete: () => {
+                            ghost.destroy();
+                            onComplete?.();
+                        }
                     });
                 }
             }
@@ -1404,6 +1513,7 @@ export class PlayerTableScene extends Phaser.Scene {
             duration: 110,
             ease: "Sine.easeIn",
             onComplete: () => {
+                playCardFlipSound(this);
                 image.setTexture(getCardFaceTextureKey(effect.card.id, this.activeCardSkinId, "compact"));
                 image.displayWidth = 2;
                 image.displayHeight = size.height;

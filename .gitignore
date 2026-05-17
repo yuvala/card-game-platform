@@ -7,3 +7,4 @@ node_modules/
 .tmp-server/
 .tmp-tests/
 .tmp-simulate/
+.env*.local
