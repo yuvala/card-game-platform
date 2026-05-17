@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.tmp-server/
+.tmp-rewrite-server/
+.tmp-tests/
+html/
+.claude/
+.vscode/
+.git/
+*.md
+.env*
