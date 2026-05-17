@@ -1,0 +1,12 @@
+.c9revisions/
+.c9/
+dist/
+node_modules/
+.tmp-rewrite-server/
+.tmp-rewrite-tests/
+.tmp-server/
+.tmp-tests/
+.tmp-simulate/
+.env*.local
+.claude/settings.json
+.claude/settings.local.json
