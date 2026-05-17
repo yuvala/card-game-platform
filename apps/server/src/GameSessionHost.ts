@@ -198,16 +198,11 @@ export class GameSessionHost {
         const playMove = moves.find((m: any) => m.type === "queue-play");
 
         if (selectMove && !playMove) {
-            // Need to select a card first (pick random)
             const cardMoves = moves.filter((m: any) => m.type === "select-card");
             const pick = cardMoves[Math.floor(Math.random() * cardMoves.length)];
-            this.session.send(pick);
+            this.session.send({ type: "SELECT_CARD", cardId: pick.cardId });
         } else if (playMove) {
-            this.session.send(playMove);
-        } else {
-            // Pick any legal move at random
-            const pick = moves[Math.floor(Math.random() * moves.length)];
-            this.session.send(pick);
+            this.session.send({ type: "PLAY_CARD" });
         }
     }
 
