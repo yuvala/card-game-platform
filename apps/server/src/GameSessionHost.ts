@@ -41,6 +41,8 @@ export class GameSessionHost {
     private sessionSubscription: { unsubscribe(): void } | null = null;
     private readonly listeners = new Set<() => void>();
     private sequence = 0;
+    private botSeatIndices: Set<number> = new Set();
+    private botTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(options: RewriteSessionHostOptions = {}) {
         this.sessionId = options.sessionId ?? "main";
@@ -48,6 +50,10 @@ export class GameSessionHost {
         this.session = this.createSession(options);
         this.startSession();
         runDebugScenario(options.debugScenarioId, this.session);
+    }
+
+    setBotSeats(indices: number[]): void {
+        this.botSeatIndices = new Set(indices);
     }
 
     subscribe(listener: () => void): { unsubscribe(): void } {
@@ -64,6 +70,9 @@ export class GameSessionHost {
         this.session.stop();
         this.entry = resolveGame(config.gameId);
         this.session = this.createSession(config);
+        if (config.botSeats) {
+            this.setBotSeats(config.botSeats);
+        }
         this.startSession();
         runDebugScenario(config.debugScenarioId, this.session);
         this.notify();
@@ -161,6 +170,45 @@ export class GameSessionHost {
         this.listeners.forEach((listener) => {
             listener();
         });
+        this.scheduleBotMove();
+    }
+
+    private scheduleBotMove(): void {
+        if (this.botSeatIndices.size === 0) return;
+        if (this.botTimer) clearTimeout(this.botTimer);
+        this.botTimer = setTimeout(() => {
+            this.botTimer = null;
+            this.runBotMove();
+        }, 600);
+    }
+
+    private runBotMove(): void {
+        const viewModel = this.session.getViewModel(null);
+        const botPlayer = viewModel.players.find(
+            (p, i) => this.botSeatIndices.has(i) && p.canInteract
+        );
+        if (!botPlayer) return;
+
+        const snapshot = this.session.getSnapshot();
+        const moves = this.entry.definition.getLegalMoves(snapshot, botPlayer.id);
+        if (moves.length === 0) return;
+
+        // For games that need select-card then queue-play, send both
+        const selectMove = moves.find((m: any) => m.type === "select-card");
+        const playMove = moves.find((m: any) => m.type === "queue-play");
+
+        if (selectMove && !playMove) {
+            // Need to select a card first (pick random)
+            const cardMoves = moves.filter((m: any) => m.type === "select-card");
+            const pick = cardMoves[Math.floor(Math.random() * cardMoves.length)];
+            this.session.send(pick);
+        } else if (playMove) {
+            this.session.send(playMove);
+        } else {
+            // Pick any legal move at random
+            const pick = moves[Math.floor(Math.random() * moves.length)];
+            this.session.send(pick);
+        }
     }
 
     private validatePlayerEvent(playerId: string, event: CardGameEvent): RewriteClientEventResult {

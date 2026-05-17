@@ -31,8 +31,9 @@ async function tryStartGame(roomId: string) {
         .eq("status", "waiting");
 }
 
-function redirectToGame(roomId: string, gameId: string, wsUrl: string) {
-    globalThis.location.href = `player.html?room=${roomId}&game=${gameId}&wsUrl=${encodeURIComponent(wsUrl)}`;
+function redirectToGame(roomId: string, gameId: string, wsUrl: string, bots = 0) {
+    const botsParam = bots > 0 ? `&bots=${bots}` : "";
+    globalThis.location.href = `player.html?room=${roomId}&game=${gameId}&wsUrl=${encodeURIComponent(wsUrl)}${botsParam}`;
 }
 
 const GAME_LABELS: Record<string, string> = {
@@ -44,7 +45,7 @@ const GAME_LABELS: Record<string, string> = {
 export function RoomList({ userId, nickname }: Props) {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [creating, setCreating] = useState(false);
-    const [myRoom, setMyRoom] = useState<{ id: string; gameId: string } | null>(null);
+    const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number } | null>(null);
 
     // Main room list subscription
     useEffect(() => {
@@ -83,8 +84,9 @@ export function RoomList({ userId, nickname }: Props) {
         const { data } = await supabase
             .from("rooms")
             .select("id, game_id, status, max_players, players(count)")
-            .eq("status", "waiting")
-            .order("created_at", { ascending: false });
+            .in("status", ["waiting", "playing"])
+            .order("created_at", { ascending: false })
+            .limit(6);
 
         if (!data) return;
         setRooms(data.map((r: any) => ({
@@ -111,18 +113,39 @@ export function RoomList({ userId, nickname }: Props) {
             .insert({ room_id: roomId, nickname, user_id: userId });
         if (error) return;
 
-        setMyRoom({ id: roomId, gameId });
+        const { data: room } = await supabase
+            .from("rooms")
+            .select("max_players")
+            .eq("id", roomId)
+            .single();
+
+        setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2 });
         await tryStartGame(roomId);
+    }
+
+    async function playWithBots() {
+        if (!myRoom) return;
+        const wsUrl = (import.meta.env.VITE_WS_URL as string) ?? "ws://localhost:8787";
+        await supabase
+            .from("rooms")
+            .update({ status: "playing", ws_url: wsUrl })
+            .eq("id", myRoom.id)
+            .eq("status", "waiting");
+        const bots = myRoom.maxPlayers - 1;
+        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, bots);
     }
 
     if (myRoom) {
         return (
             <div className="lobby-center">
                 <h1>Lobby</h1>
-                <p style={{ color: "#7a6040", fontStyle: "italic", fontSize: "1.2rem" }}>
+                <p style={{ color: "#d4b896", fontStyle: "italic", fontSize: "1.2rem", textShadow: "0 1px 6px rgba(0,0,0,0.9)" }}>
                     Waiting for players…
                 </p>
-                <button onClick={() => setMyRoom(null)} style={{ background: "none", border: "1px solid #6b4f28", color: "#7a6040", fontSize: "0.8rem" }}>
+                <button onClick={playWithBots}>
+                    Play vs Computer
+                </button>
+                <button onClick={() => setMyRoom(null)} style={{ background: "none", border: "1px solid #6b4f28", color: "#a08860", fontSize: "0.8rem" }}>
                     Leave Room
                 </button>
             </div>
@@ -153,18 +176,19 @@ export function RoomList({ userId, nickname }: Props) {
                 <h2>Open Rooms</h2>
                 <div className="room-list">
                     {rooms.length === 0 && <p className="empty">No open rooms — create one above</p>}
-                    {rooms.map(room => (
-                        <div key={room.id} className="room-row">
-                            <span className="room-game">{GAME_LABELS[room.game_id] ?? room.game_id}</span>
-                            <span className="room-count">{room.player_count}/{room.max_players}</span>
-                            <button
-                                onClick={() => joinRoom(room.id, room.game_id)}
-                                disabled={room.player_count >= room.max_players}
-                            >
-                                Join
-                            </button>
-                        </div>
-                    ))}
+                    {rooms.map(room => {
+                        const playing = room.status === "playing";
+                        return (
+                            <div key={room.id} className={`room-row${playing ? " room-row--playing" : ""}`}>
+                                <span className="room-game">{GAME_LABELS[room.game_id] ?? room.game_id}</span>
+                                <span className="room-count">{room.player_count}/{room.max_players}</span>
+                                {playing
+                                    ? <span className="room-badge">In game</span>
+                                    : <button onClick={() => joinRoom(room.id, room.game_id)} disabled={room.player_count >= room.max_players}>Join</button>
+                                }
+                            </div>
+                        );
+                    })}
                 </div>
             </section>
         </div>

@@ -25,11 +25,24 @@ startPlayerPov().catch((error) => {
 });
 
 async function startPlayerPov(): Promise<void> {
+    const botCount = Number.parseInt(requestedParams.get("bots") ?? "0", 10);
     const session = await createRemoteGameSession({
         url: getRequestedWebSocketUrl(requestedParams),
-        role: "player",
+        role: botCount > 0 ? "admin" : "player",
         sessionId: requestedParams.get("session") ?? undefined
     });
+
+    if (botCount > 0) {
+        const gameId = requestedParams.get("game") ?? "war-lite";
+        const playerCount = botCount + 1;
+        const botSeats = Array.from({ length: botCount }, (_, i) => i + 1);
+        await session.configure({
+            gameId,
+            playerCount,
+            deckId: "french",
+            botSeats
+        });
+    }
 
     activeSession = session;
     activeGame = createPlayerGame("player-root", session);

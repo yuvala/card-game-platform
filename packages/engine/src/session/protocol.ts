@@ -17,6 +17,7 @@ export interface SessionConfig {
     cardsPerPlayer?: number;
     seed?: string;
     debugScenarioId?: string;
+    botSeats?: number[];
 }
 
 export type ClientRole = "admin" | "player";
@@ -137,6 +138,7 @@ function isSessionConfig(value: unknown): value is SessionConfig {
         cardsPerPlayer?: unknown;
         seed?: unknown;
         debugScenarioId?: unknown;
+        botSeats?: unknown;
     };
 
     return (
@@ -158,6 +160,10 @@ function isSessionConfig(value: unknown): value is SessionConfig {
         (
             typeof config.debugScenarioId === "undefined" ||
             typeof config.debugScenarioId === "string"
+        ) &&
+        (
+            typeof config.botSeats === "undefined" ||
+            (Array.isArray(config.botSeats) && config.botSeats.every((s) => typeof s === "number"))
         )
     );
 }
