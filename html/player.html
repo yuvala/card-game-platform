@@ -6,6 +6,7 @@
         <title>Card Game Player POV</title>
         <link rel="icon" type="image/svg+xml" href="favicon-joker.svg" />
         <link rel="stylesheet" href="css/app.css" type="text/css" />
+        <style>html, body { height: 100%; overflow: hidden; }</style>
     </head>
     <body>
         <div class="playerShell">
@@ -17,8 +18,36 @@
             <main class="playerDeviceFrame">
                 <div id="player-root" class="playerRoot"></div>
             </main>
+            <footer class="playerFooter">
+                <kbd>D</kbd> — toggle zone overlay
+                <span class="appDevSep">|</span>
+                <label class="appDevCheck"><input type="checkbox" id="pdbg-hand"> HAND</label>
+                <label class="appDevCheck"><input type="checkbox" id="pdbg-table"> TABLE</label>
+                <label class="appDevCheck"><input type="checkbox" id="pdbg-piles"> PILES</label>
+                <label class="appDevCheck"><input type="checkbox" id="pdbg-seats"> SEATS</label>
+                <label class="appDevCheck"><input type="checkbox" id="pdbg-zones"> ZONES</label>
+            </footer>
         </div>
 
         <script type="module" src="./src/app/playerMain.ts"></script>
+        <script>
+            (function () {
+                const keys = {
+                    hand:  "pdbg-hand",
+                    table: "pdbg-table",
+                    piles: "pdbg-piles",
+                    seats: "pdbg-seats",
+                    zones: "pdbg-zones"
+                };
+                Object.entries(keys).forEach(([layer, id]) => {
+                    const el = document.getElementById(id);
+                    el.checked = localStorage.getItem("player-dbg-" + layer) === "on";
+                    el.addEventListener("change", () => {
+                        localStorage.setItem("player-dbg-" + layer, el.checked ? "on" : "off");
+                        globalThis.dispatchEvent(new Event("debug-layer-change"));
+                    });
+                });
+            })();
+        </script>
     </body>
 </html>
