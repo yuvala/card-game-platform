@@ -103,10 +103,6 @@ function handleClientMessage(
             sendView(gameHost, client);
             return;
         case "set-viewer":
-            if (client.role !== "player") {
-                sendError(client, "Only player clients can select a viewer.");
-                return;
-            }
             client.viewerId = message.playerId;
             sendView(gameHost, client);
             return;

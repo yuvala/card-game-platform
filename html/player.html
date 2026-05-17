@@ -10,53 +10,15 @@
     <body>
         <div class="playerShell">
             <header class="playerHeader">
-                <div class="playerIntro">
-                    <p class="appEyebrow">Player POV</p>
-                    <h1>Private Table View</h1>
-                    <p class="playerLead">
-                        One seat, one hand, one decision surface. The table stays shared, the information stays personal.
-                    </p>
-                </div>
-                <section class="playerControlCard" aria-label="Player controls">
-                    <label class="playerSelectLabel" for="player-viewer-select">Viewing Seat</label>
-                    <select id="player-viewer-select" class="playerSelect"></select>
-                    <p id="player-status" class="playerStatus">Connecting to table...</p>
-                </section>
+                <label class="playerSelectLabel" for="player-viewer-select">Viewing Seat</label>
+                <select id="player-viewer-select" class="playerSelect"></select>
+                <p id="player-status" class="playerStatus">Connecting to table...</p>
             </header>
             <main class="playerDeviceFrame">
                 <div id="player-root" class="playerRoot"></div>
             </main>
         </div>
 
-        <div class="appDevHints">
-            <kbd>D</kbd> — toggle zone overlay
-            <span class="appDevSep">|</span>
-            <label class="appDevCheck"><input type="checkbox" id="pdbg-hand"> HAND</label>
-            <label class="appDevCheck"><input type="checkbox" id="pdbg-table"> TABLE</label>
-            <label class="appDevCheck"><input type="checkbox" id="pdbg-piles"> PILES</label>
-            <label class="appDevCheck"><input type="checkbox" id="pdbg-seats"> SEATS</label>
-            <label class="appDevCheck"><input type="checkbox" id="pdbg-zones"> ZONES</label>
-        </div>
-
         <script type="module" src="./src/app/playerMain.ts"></script>
-        <script>
-            (function () {
-                const keys = {
-                    hand:  "pdbg-hand",
-                    table: "pdbg-table",
-                    piles: "pdbg-piles",
-                    seats: "pdbg-seats",
-                    zones: "pdbg-zones"
-                };
-                Object.entries(keys).forEach(([layer, id]) => {
-                    const el = document.getElementById(id);
-                    el.checked = localStorage.getItem("player-dbg-" + layer) === "on";
-                    el.addEventListener("change", () => {
-                        localStorage.setItem("player-dbg-" + layer, el.checked ? "on" : "off");
-                        globalThis.dispatchEvent(new Event("debug-layer-change"));
-                    });
-                });
-            })();
-        </script>
     </body>
 </html>

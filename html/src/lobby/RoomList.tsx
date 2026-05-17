@@ -86,7 +86,7 @@ export function RoomList({ userId, nickname }: Props) {
             .select("id, game_id, status, max_players, players(count)")
             .in("status", ["waiting", "playing"])
             .order("created_at", { ascending: false })
-            .limit(6);
+            .limit(3);
 
         if (!data) return;
         setRooms(data.map((r: any) => ({

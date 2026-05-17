@@ -390,19 +390,19 @@ a {
 .playerShell {
     height: 100vh;
     display: grid;
-    grid-template-columns: minmax(260px, 360px) minmax(320px, 1fr);
-    gap: 24px;
-    align-items: center;
-    padding: 24px;
+    grid-template-rows: auto 1fr;
+    justify-items: center;
     box-sizing: border-box;
-    width: min(1180px, 100%);
-    margin: 0 auto;
 }
 
 .playerHeader {
-    display: grid;
-    gap: 20px;
-    align-content: start;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 10px 20px;
+    background: rgba(6, 19, 14, 0.92);
+    border-bottom: 1px solid rgba(255, 209, 102, 0.15);
 }
 
 .playerIntro {
@@ -439,35 +439,33 @@ a {
 
 .playerSelectLabel {
     color: rgba(243, 234, 213, 0.78);
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 700;
     letter-spacing: 0.12em;
     text-transform: uppercase;
+    white-space: nowrap;
 }
 
 .playerSelect {
-    width: 100%;
-    padding: 13px 14px;
-    border-radius: 12px;
+    padding: 6px 10px;
+    border-radius: 8px;
     border: 1px solid rgba(255, 209, 102, 0.32);
     background: rgba(6, 19, 14, 0.96);
     color: #f7efe0;
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 700;
-    box-shadow: 0 10px 26px rgba(0, 0, 0, 0.16);
 }
 
 .playerStatus {
     margin: 0;
-    width: 100%;
-    box-sizing: border-box;
-    padding: 12px 14px;
-    border-radius: 12px;
-    background: rgba(255, 209, 102, 0.1);
-    border: 1px solid rgba(255, 209, 102, 0.22);
-    color: rgba(255, 209, 102, 0.96);
+    padding: 5px 12px;
+    border-radius: 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 209, 102, 0.2);
+    color: #ffd166;
+    font-size: 13px;
     font-weight: 700;
-    line-height: 1.35;
+    white-space: nowrap;
 }
 
 .playerDeviceFrame {
