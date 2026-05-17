@@ -8,3 +8,5 @@ node_modules/
 .tmp-tests/
 .tmp-simulate/
 .env*.local
+.claude/settings.json
+.claude/settings.local.json
