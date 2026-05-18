@@ -630,11 +630,10 @@ a {
     }
 
     .playerShell {
-        height: auto;
+        height: 100dvh;
         grid-template-columns: 1fr;
         align-items: start;
-        /* padding: 12px; */
-        gap: 10px;
+        gap: 0;
     }
 
     .playerHeader {
@@ -682,8 +681,9 @@ a {
     }
 
     .playerDeviceFrame {
-        height: auto;
-        width: min(430px, 100%);
+        height: 100%;
+        max-height: none;
+        width: auto;
         max-width: 100%;
         aspect-ratio: 9 / 16;
     }
