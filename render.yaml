@@ -21,4 +21,3 @@ services:
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
         sync: false
-    plan: free
