@@ -332,6 +332,9 @@ a {
     place-items: center;
     padding: 28px;
     box-sizing: border-box;
+    background-image: url('/assets/table-closed.png');
+    background-size: cover;
+    background-position: center;
 }
 
 .appEmptyState {
