@@ -8,3 +8,17 @@ services:
       - key: HOST
         value: 0.0.0.0
     plan: free
+
+  - type: web
+    name: card-game-frontend
+    runtime: static
+    buildCommand: npm install && npm run build
+    staticPublishPath: ./dist
+    envVars:
+      - key: VITE_WS_URL
+        value: wss://card-game-server.onrender.com
+      - key: VITE_SUPABASE_URL
+        sync: false
+      - key: VITE_SUPABASE_ANON_KEY
+        sync: false
+    plan: free
