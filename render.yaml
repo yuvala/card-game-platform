@@ -16,7 +16,7 @@ services:
     staticPublishPath: ./dist
     envVars:
       - key: VITE_WS_URL
-        value: wss://card-game-server.onrender.com
+        value: wss://card-game-server-u5hq.onrender.com
       - key: VITE_SUPABASE_URL
         sync: false
       - key: VITE_SUPABASE_ANON_KEY
