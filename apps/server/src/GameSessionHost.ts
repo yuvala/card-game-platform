@@ -241,9 +241,10 @@ export class GameSessionHost {
                 }
 
                 return { ok: true };
+            case "ANIMATION_DONE":
+                return { ok: true };
             case "START":
             case "RESTART":
-            case "ANIMATION_DONE":
                 return {
                     ok: false,
                     message: "Only the admin table can send table control events."
