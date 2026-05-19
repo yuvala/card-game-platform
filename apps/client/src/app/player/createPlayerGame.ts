@@ -11,7 +11,6 @@ export function createPlayerGame(
     parent: string,
     session: CardGameSession<CardGameViewModel>,
 ): Phaser.Game {
-    const dpr = Math.min(globalThis.devicePixelRatio || 1, 3);
     return new Phaser.Game({
         type: Phaser.AUTO,
         parent,
@@ -23,7 +22,6 @@ export function createPlayerGame(
             antialiasGL: true,
             roundPixels: true,
             mipmapFilter: 'LINEAR',
-            resolution: dpr,
         },
         scale: {
             mode: Phaser.Scale.FIT,

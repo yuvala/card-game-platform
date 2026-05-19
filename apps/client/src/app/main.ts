@@ -10,10 +10,9 @@ import { createLocalGameSession, type CardGameSession } from '@engine/engine/gam
 import { createRemoteGameSession } from './session/remoteSession';
 import {
     DEFAULT_GAME_ID,
-    gameCatalogEntries,
     getGameCatalogEntryById,
 } from '@engine/games/catalog';
-import { createGamePanel, type GameSelection } from './app/createGamePanel';
+import { type GameSelection } from './app/gamePanelTypes';
 import { getDebugScenarioById, type DebugScenario } from './app/debugScenarios';
 import { createTableGame } from './phaser/createTableGame';
 
@@ -26,7 +25,6 @@ interface ActiveRuntime {
 export function init(): void {
     const seedPlayerNames = playersData.players.map((player) => player.playerName);
     const gameRoot = document.getElementById('game-root');
-    const setupMount = document.getElementById('game-setup');
     const gameTitle = document.getElementById('game-title');
     const requestedParams = new URLSearchParams(window.location.search);
     const requestedDebugScenario = getDebugScenarioById(requestedParams.get('scenario'));
@@ -36,39 +34,32 @@ export function init(): void {
         requestedParams.get('transport') === 'local' || requestedParams.get('local') === '1';
     const shouldUseWebSocketSession = !shouldUseLocalSession;
 
-    if (!gameRoot || !setupMount || !gameTitle) {
-        throw new Error('App requires #game-root, #game-setup, and #game-title containers.');
+    if (!gameRoot || !gameTitle) {
+        throw new Error('App requires #game-root and #game-title containers.');
     }
 
     const rootElement = gameRoot;
-    const setupMountElement = setupMount;
     const gameTitleElement = gameTitle;
 
     let activeRuntime: ActiveRuntime | null = null;
 
     const initialSelection = getInitialSelection(requestedParams, requestedDebugScenario);
     setPageGameTitle(initialSelection.gameId);
-    const setupPanel = createGamePanel({
-        container: setupMountElement,
-        entries: gameCatalogEntries,
-        initialSelection,
-        initialOpen: !shouldAutostart,
-        getDeckLabel: (deckId) => supportedDeckDefinitions[deckId].name,
-        getPlayerNames: (playerCount) => buildPlayerNames(playerCount),
-        onSelectionChange: (selection) => {
-            setPageGameTitle(selection.gameId);
-        },
-        onStart: (selection) => {
-            startGame(selection).catch((error) => {
-                renderStartError(error);
-            });
-        },
+
+    globalThis.addEventListener('game-panel:selection-change', (e) => {
+        setPageGameTitle((e as CustomEvent<GameSelection>).detail.gameId);
+    });
+
+    globalThis.addEventListener('game-panel:start', (e) => {
+        startGame((e as CustomEvent<GameSelection>).detail).catch((error) => {
+            renderStartError(error);
+        });
     });
 
     renderEmptyTable();
 
     if (shouldAutostart) {
-        startGame(setupPanel.getSelection()).catch((error) => {
+        startGame(initialSelection).catch((error) => {
             renderStartError(error);
         });
     }
@@ -231,14 +222,18 @@ export function init(): void {
         const gameEntry = resolveSelectedGame(session.gameId);
 
         setPageGameTitle(session.gameId);
-        setupPanel.updateActiveTable({
-            gameLabel: gameEntry.label,
-            deckLabel: viewModel.deckLabel || fallback.fallbackDeckLabel,
-            playerNames:
-                session.playerNames.length > 0
-                    ? [...session.playerNames]
-                    : fallback.fallbackPlayerNames,
-        });
+        globalThis.dispatchEvent(
+            new CustomEvent('game-panel:active', {
+                detail: {
+                    gameLabel: gameEntry.label,
+                    deckLabel: viewModel.deckLabel || fallback.fallbackDeckLabel,
+                    playerNames:
+                        session.playerNames.length > 0
+                            ? [...session.playerNames]
+                            : fallback.fallbackPlayerNames,
+                },
+            }),
+        );
     }
 
     function getRequestedCardsPerPlayer(

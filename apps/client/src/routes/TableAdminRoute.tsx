@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { AdminToolbar } from '../components/AdminToolbar';
+import { GamePanel } from '../app/app/GamePanel';
 
 export function TableAdminRoute() {
     useEffect(() => {
@@ -24,9 +25,11 @@ export function TableAdminRoute() {
     return (
         <div className="adminShell">
             <AdminToolbar>
-                <span id="game-title" className="adminToolbarGameTitle">Card Game</span>
+                <span id="game-title" className="adminToolbarGameTitle">
+                    Card Game
+                </span>
             </AdminToolbar>
-            <div id="game-setup" className="appSetupMount"></div>
+            <GamePanel />
             <div id="game-root" className="appRoot"></div>
             <div className="appDevHints">
                 <kbd>D</kbd>
