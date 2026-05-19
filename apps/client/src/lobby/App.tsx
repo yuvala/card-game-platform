@@ -24,9 +24,16 @@ export function App() {
         setNickname(name);
     }
 
+    async function handleLogout() {
+        await supabase.auth.signOut();
+        sessionStorage.removeItem('nickname');
+        setUserId(null);
+        setNickname(null);
+    }
+
     if (!userId || !nickname) {
         return <NicknameScreen onSubmit={handleNickname} />;
     }
 
-    return <RoomList userId={userId} nickname={nickname} />;
+    return <RoomList userId={userId} nickname={nickname} onLogout={handleLogout} />;
 }

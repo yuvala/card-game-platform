@@ -3,26 +3,28 @@ import { App as LobbyApp } from '../lobby/App';
 
 export function LobbyRoute() {
     useEffect(() => {
-        const panelIndex = Math.floor(Math.random() * 3);
+        const images = [
+            '/assets/lobby/lobby-bg_01.png',
+            '/assets/lobby/lobby-bg_02.png',
+            '/assets/lobby/lobby-bg_03.png',
+        ];
+        const src = images[Math.floor(Math.random() * images.length)];
         const bg = document.getElementById('lobby-bg');
         const root = document.getElementById('lobby-root');
         if (!bg || !root) return;
 
         let removeResize: (() => void) | null = null;
         const img = new Image();
-        img.src = '/assets/lobby-bg.jpg';
+        img.src = src;
         img.decode()
             .then(() => {
-                const shifts = [8, 0, -21];
+                bg.style.backgroundImage = `url('${src}')`;
                 function position() {
                     const scale = window.innerHeight / img.naturalHeight;
-                    const fullW = Math.round(img.naturalWidth * scale);
-                    const panelW = Math.round(fullW / 3);
-                    bg.style.width = panelW + 'px';
-                    bg.style.backgroundSize = fullW + 'px 100%';
-                    bg.style.backgroundPosition =
-                        -panelIndex * panelW + shifts[panelIndex] + 'px 0';
-                    root.style.width = panelW + 'px';
+                    const w = Math.round(img.naturalWidth * scale);
+                    bg.style.width = w + 'px';
+                    bg.style.backgroundSize = w + 'px 100%';
+                    root.style.width = w + 'px';
                 }
                 position();
                 window.addEventListener('resize', position);
@@ -30,9 +32,7 @@ export function LobbyRoute() {
             })
             .catch(() => {});
 
-        return () => {
-            removeResize?.();
-        };
+        return () => { removeResize?.(); };
     }, []);
 
     return (

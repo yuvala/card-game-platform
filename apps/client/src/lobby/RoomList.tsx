@@ -13,6 +13,7 @@ interface Room {
 interface Props {
     readonly userId: string;
     readonly nickname: string;
+    readonly onLogout: () => void;
 }
 
 async function tryStartGame(roomId: string) {
@@ -54,7 +55,7 @@ const GAME_LABELS: Record<string, string> = {
     'poker-lite': 'Poker',
 };
 
-export function RoomList({ userId, nickname }: Props) {
+export function RoomList({ userId, nickname, onLogout }: Props) {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [creating, setCreating] = useState(false);
     const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number; isCreator: boolean } | null>(
@@ -235,7 +236,11 @@ export function RoomList({ userId, nickname }: Props) {
         <div className="lobby-wrap">
             <header className="lobby-header">
                 <h1>Lobby</h1>
-                <span className="lobby-nick">👤 {nickname}</span>
+                <span className="lobby-nick">
+                    <span className="lobby-nick-suit">♠</span>
+                    {nickname}
+                    <button className="lobby-nick-logout" onClick={onLogout} title="Switch user">✕</button>
+                </span>
             </header>
 
             <section>

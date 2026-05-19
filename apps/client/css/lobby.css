@@ -24,7 +24,6 @@ body {
     left: 50%;
     transform: translateX(-50%);
     /* width set by JS */
-    background-image: url('/assets/lobby-bg.jpg');
     background-size: auto 100%;
     background-repeat: no-repeat;
     filter: brightness(0.8) saturate(0.8);
@@ -139,12 +138,38 @@ button:disabled {
 }
 
 .lobby-nick {
-    display: block;
-    font-size: 0.95rem;
-    color: #d4b896;
-    margin-top: 8px;
-    letter-spacing: 0.05em;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 10px;
+    padding: 5px 14px;
+    border: 1px solid rgba(201, 168, 76, 0.25);
+    border-radius: 20px;
+    background: rgba(0, 0, 0, 0.3);
+    font-family: 'Cinzel', serif;
+    font-size: 0.78rem;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: #c9a84c;
     text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
+}
+
+.lobby-nick-logout {
+    all: unset;
+    cursor: pointer;
+    font-size: 0.65rem;
+    color: #e05555;
+    margin-left: 4px;
+    transition: color 0.15s;
+}
+
+.lobby-nick-logout:hover {
+    color: #c84c4c;
+}
+
+.lobby-nick-suit {
+    font-size: 1.2rem;
+    opacity: 0.7;
 }
 
 /* ── Section titles ── */
