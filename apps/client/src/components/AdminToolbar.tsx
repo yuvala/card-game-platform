@@ -2,9 +2,9 @@ import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 
 const NAV_LINKS = [
-    { to: '/table-admin', label: 'Table Admin' },
-    { to: '/sandbox', label: 'Card Sandbox' },
-    { to: '/', label: 'Lobby' },
+    { to: '/table-admin', label: 'Table Admin', newTab: false },
+    { to: '/sandbox', label: 'Card Sandbox', newTab: false },
+    { to: '/', label: 'Lobby', newTab: true },
 ];
 
 interface AdminToolbarProps {
@@ -17,11 +17,13 @@ export function AdminToolbar({ children }: AdminToolbarProps) {
         <header className="adminToolbar">
             <span className="adminToolbarBrand">Card Game Dev</span>
             <nav className="adminToolbarNav">
-                {NAV_LINKS.map(({ to, label }) => (
+                {NAV_LINKS.map(({ to, label, newTab }) => (
                     <Link
                         key={to}
                         to={to}
                         className={`adminToolbarLink${pathname === to ? ' is-active' : ''}`}
+                        target={newTab ? '_blank' : undefined}
+                        rel={newTab ? 'noopener noreferrer' : undefined}
                     >
                         {label}
                     </Link>
