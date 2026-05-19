@@ -23,7 +23,9 @@ export function TableAdminRoute() {
 
     return (
         <div className="adminShell">
-            <AdminToolbar />
+            <AdminToolbar>
+                <span id="game-title" className="adminToolbarGameTitle">Card Game</span>
+            </AdminToolbar>
             <div id="game-setup" className="appSetupMount"></div>
             <div id="game-root" className="appRoot"></div>
             <div className="appDevHints">
