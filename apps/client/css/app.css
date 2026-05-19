@@ -656,6 +656,67 @@ a {
     background: rgba(255, 209, 102, 0.1);
 }
 
+.adminShell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+}
+
+.adminToolbar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    padding: 0 20px;
+    height: 48px;
+    background: rgba(8, 21, 15, 0.9);
+    border-bottom: 1px solid rgba(255, 209, 102, 0.12);
+    backdrop-filter: blur(8px);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.adminToolbarBrand {
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #ffd166;
+    flex-shrink: 0;
+}
+
+.adminToolbarNav {
+    display: flex;
+    gap: 4px;
+    flex: 1;
+}
+
+.adminToolbarLink {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: rgba(243, 234, 213, 0.75);
+    text-decoration: none;
+    transition: color 0.15s, background 0.15s;
+}
+
+.adminToolbarLink:hover {
+    color: #f3ead5;
+    background: rgba(255, 255, 255, 0.06);
+}
+
+.adminToolbarLink.is-active {
+    color: #f3ead5;
+    background: rgba(255, 209, 102, 0.1);
+}
+
+.adminToolbarActions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+}
+
 .cardSandboxShell {
     min-height: 100vh;
     display: grid;

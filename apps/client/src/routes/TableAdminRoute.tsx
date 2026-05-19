@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { AdminToolbar } from '../components/AdminToolbar';
 
 export function TableAdminRoute() {
     useEffect(() => {
@@ -22,19 +22,13 @@ export function TableAdminRoute() {
     }, []);
 
     return (
-        <div className="appShell">
-            <div className="appIntro">
-                <p className="appEyebrow">Card Game</p>
-                <h1 id="game-title">Card Game</h1>
-                <nav className="appAdminNav">
-                    <Link to="/sandbox" className="appAdminNavLink">Card Sandbox</Link>
-                    <Link to="/" className="appAdminNavLink">Lobby</Link>
-                </nav>
-            </div>
+        <div className="adminShell">
+            <AdminToolbar />
             <div id="game-setup" className="appSetupMount"></div>
             <div id="game-root" className="appRoot"></div>
             <div className="appDevHints">
-                <kbd>D</kbd> — toggle zone overlay
+                <kbd>D</kbd>
+                {' — toggle zone overlay '}
                 <span className="appDevSep">|</span>
                 <label className="appDevCheck">
                     <input type="checkbox" id="dbg-origins" /> ORIGIN
