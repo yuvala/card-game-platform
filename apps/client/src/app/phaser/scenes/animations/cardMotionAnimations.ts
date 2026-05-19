@@ -1,6 +1,6 @@
-import type * as Phaser from "phaser";
+import type * as Phaser from 'phaser';
 
-import type { CardAnimationLayer } from "./cardAnimationLayer";
+import type { CardAnimationLayer } from './cardAnimationLayer';
 
 export interface CardMotionPoint {
     x: number;
@@ -179,7 +179,9 @@ export interface AnimateCardHoldHighlightInput {
     strokeAlpha?: number;
 }
 
-export function animateGhostMoveReveal(input: AnimateGhostMoveRevealInput): Phaser.GameObjects.Image {
+export function animateGhostMoveReveal(
+    input: AnimateGhostMoveRevealInput,
+): Phaser.GameObjects.Image {
     const {
         scene,
         animationLayer,
@@ -195,7 +197,7 @@ export function animateGhostMoveReveal(input: AnimateGhostMoveRevealInput): Phas
         revealInDuration = 120,
         revealOutDuration = 120,
         onMoveComplete,
-        onComplete
+        onComplete,
     } = input;
     const ghost = animationLayer.createGhostCard({
         textureKey: backTextureKey,
@@ -204,7 +206,7 @@ export function animateGhostMoveReveal(input: AnimateGhostMoveRevealInput): Phas
         width: size.width,
         height: size.height,
         angle: sourceAngle,
-        depth
+        depth,
     });
 
     scene.tweens.add({
@@ -213,7 +215,7 @@ export function animateGhostMoveReveal(input: AnimateGhostMoveRevealInput): Phas
         y: target.y,
         angle: targetAngle,
         duration: moveDuration,
-        ease: "Cubic.easeInOut",
+        ease: 'Cubic.easeInOut',
         onComplete: () => {
             onMoveComplete?.();
             animateImageHorizontalFlip({
@@ -225,9 +227,9 @@ export function animateGhostMoveReveal(input: AnimateGhostMoveRevealInput): Phas
                 onMidpoint: () => {
                     ghost.image.setTexture(faceTextureKey);
                 },
-                onComplete
+                onComplete,
             });
-        }
+        },
     });
 
     return ghost.image;
@@ -242,18 +244,19 @@ export function createCardMotionImage(input: CreateCardMotionImageInput): Phaser
         angle = 0,
         depth = 0,
         alpha = 1,
-        storeDisplaySize = true
+        storeDisplaySize = true,
     } = input;
-    const image = scene.add.image(center.x, center.y, textureKey)
+    const image = scene.add
+        .image(center.x, center.y, textureKey)
         .setDisplaySize(size.width, size.height)
         .setAngle(angle)
         .setDepth(depth)
         .setAlpha(alpha);
 
     if (storeDisplaySize) {
-        image.setData("cardDisplaySize", {
+        image.setData('cardDisplaySize', {
             width: size.width,
-            height: size.height
+            height: size.height,
         } satisfies CardMotionSize);
     }
 
@@ -271,7 +274,7 @@ export function animateImageMove(input: AnimateImageMoveInput): void {
         duration,
         delay = 0,
         ease,
-        onComplete
+        onComplete,
     } = input;
 
     scene.tweens.add({
@@ -284,7 +287,7 @@ export function animateImageMove(input: AnimateImageMoveInput): void {
         duration,
         delay,
         ease,
-        onComplete
+        onComplete,
     });
 }
 
@@ -296,14 +299,14 @@ export function animateImageHorizontalFlip(input: AnimateImageHorizontalFlipInpu
         revealInDuration = 130,
         revealOutDuration = 130,
         onMidpoint,
-        onComplete
+        onComplete,
     } = input;
 
     scene.tweens.add({
         targets: image,
         displayWidth: 2,
         duration: revealInDuration,
-        ease: "Sine.easeIn",
+        ease: 'Sine.easeIn',
         onComplete: () => {
             onMidpoint();
             image.displayWidth = 2;
@@ -312,13 +315,13 @@ export function animateImageHorizontalFlip(input: AnimateImageHorizontalFlipInpu
                 targets: image,
                 displayWidth: size.width,
                 duration: revealOutDuration,
-                ease: "Sine.easeOut",
+                ease: 'Sine.easeOut',
                 onComplete: () => {
                     image.setDisplaySize(size.width, size.height);
                     onComplete?.();
-                }
+                },
             });
-        }
+        },
     });
 }
 
@@ -329,7 +332,7 @@ export function animateImageCollectMotions(input: AnimateImageCollectMotionsInpu
         landingDuration = 80,
         destroyDelay = 140,
         onItemLanded,
-        onComplete
+        onComplete,
     } = input;
     if (items.length === 0) {
         onComplete?.();
@@ -352,7 +355,7 @@ export function animateImageCollectMotions(input: AnimateImageCollectMotionsInpu
             scaleY: (item.peakScale ?? 1) * baseScaleY,
             duration: item.duration ?? 330,
             delay: item.delay ?? 0,
-            ease: item.ease ?? "Cubic.easeInOut",
+            ease: item.ease ?? 'Cubic.easeInOut',
             onComplete: () => {
                 scene.tweens.add({
                     targets: item.image,
@@ -360,7 +363,7 @@ export function animateImageCollectMotions(input: AnimateImageCollectMotionsInpu
                     scaleX: (item.landingScale ?? 1) * baseScaleX,
                     scaleY: (item.landingScale ?? 1) * baseScaleY,
                     duration: landingDuration,
-                    ease: "Back.easeOut",
+                    ease: 'Back.easeOut',
                     onComplete: () => {
                         landedImages.push(item.image);
                         onItemLanded?.(item);
@@ -375,32 +378,20 @@ export function animateImageCollectMotions(input: AnimateImageCollectMotionsInpu
                             });
                             onComplete?.();
                         });
-                    }
+                    },
                 });
-            }
+            },
         });
         item.image.setDepth(142 + index);
     });
 }
 
-export function animateCardHoldHighlight(input: AnimateCardHoldHighlightInput): Phaser.GameObjects.Rectangle {
-    const {
-        scene,
-        image,
-        width,
-        height,
-        duration,
-        color = 0xffd166,
-        strokeAlpha = 0.96
-    } = input;
-    const highlight = scene.add.rectangle(
-        image.x,
-        image.y,
-        width,
-        height,
-        0x000000,
-        0
-    )
+export function animateCardHoldHighlight(
+    input: AnimateCardHoldHighlightInput,
+): Phaser.GameObjects.Rectangle {
+    const { scene, image, width, height, duration, color = 0xffd166, strokeAlpha = 0.96 } = input;
+    const highlight = scene.add
+        .rectangle(image.x, image.y, width, height, 0x000000, 0)
         .setAngle(image.angle)
         .setStrokeStyle(3, color, strokeAlpha)
         .setDepth(image.depth + 1)
@@ -412,7 +403,7 @@ export function animateCardHoldHighlight(input: AnimateCardHoldHighlightInput): 
         scaleY: 1.18,
         alpha: 0.18,
         duration: Math.max(180, duration - 80),
-        ease: "Sine.easeOut"
+        ease: 'Sine.easeOut',
     });
 
     return highlight;
@@ -431,7 +422,7 @@ export function animateGhostArcMove(input: AnimateGhostArcMoveInput): Phaser.Gam
         targetAngle = 0,
         depth = 0,
         duration = 780,
-        onComplete
+        onComplete,
     } = input;
     const ghost = animationLayer.createGhostCard({
         textureKey,
@@ -440,19 +431,19 @@ export function animateGhostArcMove(input: AnimateGhostArcMoveInput): Phaser.Gam
         width: size.width,
         height: size.height,
         angle: sourceAngle,
-        depth
+        depth,
     });
     const progress = { t: 0 };
     const controlOut = {
         x: target.x,
-        y: target.y
+        y: target.y,
     };
 
     scene.tweens.add({
         targets: progress,
         t: 1,
         duration,
-        ease: "Sine.easeInOut",
+        ease: 'Sine.easeInOut',
         onUpdate: () => {
             const point = getCubicBezierPoint(source, controlIn, controlOut, target, progress.t);
             ghost.image.setPosition(point.x, point.y);
@@ -463,7 +454,7 @@ export function animateGhostArcMove(input: AnimateGhostArcMoveInput): Phaser.Gam
             ghost.image.setAngle(targetAngle);
             ghost.image.setDisplaySize(size.width, size.height);
             onComplete?.();
-        }
+        },
     });
 
     return ghost.image;
@@ -484,7 +475,7 @@ export function animateDealReveal(input: AnimateDealRevealInput): Phaser.GameObj
         dealDuration = 520,
         revealDelay = 320,
         onLanded,
-        onComplete
+        onComplete,
     } = input;
     const ghost = animationLayer.createGhostCard({
         textureKey: backTextureKey,
@@ -493,7 +484,7 @@ export function animateDealReveal(input: AnimateDealRevealInput): Phaser.GameObj
         width: size.width,
         height: size.height,
         angle: sourceAngle,
-        depth
+        depth,
     });
 
     scene.tweens.add({
@@ -502,7 +493,7 @@ export function animateDealReveal(input: AnimateDealRevealInput): Phaser.GameObj
         y: target.y,
         angle: targetAngle,
         duration: dealDuration,
-        ease: "Cubic.easeOut",
+        ease: 'Cubic.easeOut',
         onComplete: () => {
             onLanded?.();
             scene.time.delayedCall(revealDelay, () => {
@@ -513,10 +504,10 @@ export function animateDealReveal(input: AnimateDealRevealInput): Phaser.GameObj
                     onMidpoint: () => {
                         ghost.image.setTexture(faceTextureKey);
                     },
-                    onComplete
+                    onComplete,
                 });
             });
-        }
+        },
     });
 
     return ghost.image;
@@ -533,7 +524,7 @@ export function animateLayerStack(input: AnimateLayerStackInput): Phaser.GameObj
         depth = 0,
         delayStep = 90,
         duration = 260,
-        onComplete
+        onComplete,
     } = input;
     const ghosts: Phaser.GameObjects.Image[] = [];
     let completedCount = 0;
@@ -547,7 +538,7 @@ export function animateLayerStack(input: AnimateLayerStackInput): Phaser.GameObj
             height: size.height,
             angle: 0,
             alpha: 0,
-            depth: depth + index
+            depth: depth + index,
         });
         ghosts.push(ghost.image);
 
@@ -559,13 +550,13 @@ export function animateLayerStack(input: AnimateLayerStackInput): Phaser.GameObj
             alpha: 1,
             delay: index * delayStep,
             duration,
-            ease: "Back.easeOut",
+            ease: 'Back.easeOut',
             onComplete: () => {
                 completedCount += 1;
                 if (completedCount === count) {
                     onComplete?.();
                 }
-            }
+            },
         });
     });
 
@@ -573,14 +564,7 @@ export function animateLayerStack(input: AnimateLayerStackInput): Phaser.GameObj
 }
 
 export function animateCollectPile(input: AnimateCollectPileInput): Phaser.GameObjects.Image[] {
-    const {
-        scene,
-        animationLayer,
-        cards,
-        delayStep = 110,
-        duration = 420,
-        onComplete
-    } = input;
+    const { scene, animationLayer, cards, delayStep = 110, duration = 420, onComplete } = input;
     const ghosts: Phaser.GameObjects.Image[] = [];
     let completedCount = 0;
 
@@ -593,7 +577,7 @@ export function animateCollectPile(input: AnimateCollectPileInput): Phaser.GameO
             height: card.size.height,
             angle: card.sourceAngle ?? 0,
             alpha: 1,
-            depth: card.depth ?? 0
+            depth: card.depth ?? 0,
         });
         ghosts.push(ghost.image);
 
@@ -604,14 +588,14 @@ export function animateCollectPile(input: AnimateCollectPileInput): Phaser.GameO
             angle: card.targetAngle ?? 0,
             delay: index * delayStep,
             duration,
-            ease: "Cubic.easeInOut",
+            ease: 'Cubic.easeInOut',
             onComplete: () => {
                 ghost.image.setDisplaySize(card.size.width, card.size.height);
                 completedCount += 1;
                 if (completedCount === cards.length) {
                     onComplete?.();
                 }
-            }
+            },
         });
     });
 
@@ -631,7 +615,7 @@ export function animateRiffleShuffle(input: AnimateRiffleShuffleInput): Phaser.G
         size,
         count = 10,
         depth = 50,
-        onComplete
+        onComplete,
     } = input;
     const ghosts = Array.from({ length: count }, (_, index) => {
         const midpoint = count / 2;
@@ -644,7 +628,7 @@ export function animateRiffleShuffle(input: AnimateRiffleShuffleInput): Phaser.G
             height: size.height,
             angle: isLeftPacket ? -16 : 16,
             alpha: 1,
-            depth: depth + index
+            depth: depth + index,
         }).image;
     });
     let completedCount = 0;
@@ -658,7 +642,7 @@ export function animateRiffleShuffle(input: AnimateRiffleShuffleInput): Phaser.G
             angle: -7 + index * 1.5,
             delay: riffleIndex * 80,
             duration: 330,
-            ease: "Sine.easeInOut",
+            ease: 'Sine.easeInOut',
             onComplete: () => {
                 scene.tweens.add({
                     targets: ghost,
@@ -666,32 +650,26 @@ export function animateRiffleShuffle(input: AnimateRiffleShuffleInput): Phaser.G
                     y: center.y + index * 1.5,
                     angle: -4 + index * 0.8,
                     duration: 220,
-                    ease: "Back.easeOut",
+                    ease: 'Back.easeOut',
                     onComplete: () => {
                         ghost.setDisplaySize(size.width, size.height);
                         completedCount += 1;
                         if (completedCount === ghosts.length) {
                             onComplete?.();
                         }
-                    }
+                    },
                 });
-            }
+            },
         });
     });
 
     return ghosts;
 }
 
-export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckInput): Phaser.GameObjects.Image[] {
-    const {
-        scene,
-        textureKey,
-        center,
-        size,
-        count = 8,
-        depth = 132,
-        onComplete
-    } = input;
+export function animateTransientShuffleDeck(
+    input: AnimateTransientShuffleDeckInput,
+): Phaser.GameObjects.Image[] {
+    const { scene, textureKey, center, size, count = 8, depth = 132, onComplete } = input;
     const cards = Array.from({ length: count }, (_, index) => {
         return createCardMotionImage({
             scene,
@@ -699,7 +677,7 @@ export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckIn
             center,
             size,
             depth: depth + index,
-            angle: index % 2 === 0 ? -2 : 2
+            angle: index % 2 === 0 ? -2 : 2,
         });
     });
     let completedCount = 0;
@@ -719,7 +697,7 @@ export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckIn
             angle: side * (10 + (index % 3) * 2),
             duration: 170,
             delay,
-            ease: "Cubic.easeOut",
+            ease: 'Cubic.easeOut',
             onComplete: () => {
                 scene.tweens.add({
                     targets: card,
@@ -727,7 +705,7 @@ export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckIn
                     y: bridgeY,
                     angle: -side * (5 + (index % 2) * 3),
                     duration: 210,
-                    ease: "Sine.easeInOut",
+                    ease: 'Sine.easeInOut',
                     onComplete: () => {
                         scene.tweens.add({
                             targets: card,
@@ -737,18 +715,18 @@ export function animateTransientShuffleDeck(input: AnimateTransientShuffleDeckIn
                             scaleX: card.scaleX * 0.94,
                             scaleY: card.scaleY * 1.04,
                             duration: 140,
-                            ease: "Back.easeOut",
+                            ease: 'Back.easeOut',
                             onComplete: () => {
                                 completedCount += 1;
                                 card.destroy();
                                 if (completedCount === cards.length) {
                                     onComplete?.();
                                 }
-                            }
+                            },
                         });
-                    }
+                    },
                 });
-            }
+            },
         });
     });
 
@@ -760,20 +738,20 @@ function getCubicBezierPoint(
     controlIn: CardMotionPoint,
     controlOut: CardMotionPoint,
     end: CardMotionPoint,
-    t: number
+    t: number,
 ): CardMotionPoint {
     const inverse = 1 - t;
 
     return {
         x:
-            inverse * inverse * inverse * start.x
-            + 3 * inverse * inverse * t * controlIn.x
-            + 3 * inverse * t * t * controlOut.x
-            + t * t * t * end.x,
+            inverse * inverse * inverse * start.x +
+            3 * inverse * inverse * t * controlIn.x +
+            3 * inverse * t * t * controlOut.x +
+            t * t * t * end.x,
         y:
-            inverse * inverse * inverse * start.y
-            + 3 * inverse * inverse * t * controlIn.y
-            + 3 * inverse * t * t * controlOut.y
-            + t * t * t * end.y
+            inverse * inverse * inverse * start.y +
+            3 * inverse * inverse * t * controlIn.y +
+            3 * inverse * t * t * controlOut.y +
+            t * t * t * end.y,
     };
 }

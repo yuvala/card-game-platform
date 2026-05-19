@@ -1,6 +1,6 @@
-﻿import type { SupportedDeckId } from "@engine/engine/cards/deckDefinitions";
-import type { CardGameActor } from "@engine/engine/game/viewModel";
-import type { GameSelection } from "./createGamePanel";
+﻿import type { SupportedDeckId } from '@engine/engine/cards/deckDefinitions';
+import type { CardGameActor } from '@engine/engine/game/viewModel';
+import type { GameSelection } from './createGamePanel';
 
 interface DebugSnapshot {
     value: unknown;
@@ -24,23 +24,24 @@ export interface DebugScenario {
     run?: (actor: CardGameActor<DebugSnapshot>) => Promise<void>;
 }
 
-const WAR_ANIMATION_SCENARIO_ID = "war-animation";
+const WAR_ANIMATION_SCENARIO_ID = 'war-animation';
 
 export const DebugScenarios: readonly DebugScenario[] = [
     {
         id: WAR_ANIMATION_SCENARIO_ID,
-        label: "War Animation",
-        description: "Starts War Lite and pauses on War 1 before the face-down war cards are placed.",
+        label: 'War Animation',
+        description:
+            'Starts War Lite and pauses on War 1 before the face-down war cards are placed.',
         selection: {
-            gameId: "war-lite",
+            gameId: 'war-lite',
             playerCount: 2,
-            deckId: "french" as SupportedDeckId
+            deckId: 'french' as SupportedDeckId,
         },
         cardsPerPlayer: 5,
-        seed: "war-manual-0",
+        seed: 'war-manual-0',
         autostart: true,
-        run: runWarAnimationScenario
-    }
+        run: runWarAnimationScenario,
+    },
 ];
 
 export function getDebugScenarioById(id: string | null | undefined): DebugScenario | null {
@@ -64,7 +65,7 @@ function delay(ms: number): Promise<void> {
 function waitForActorSnapshot(
     actor: CardGameActor<DebugSnapshot>,
     condition: (snapshot: DebugSnapshot) => boolean,
-    timeoutMs = 15000
+    timeoutMs = 15000,
 ): Promise<void> {
     return new Promise((resolve, reject) => {
         const startedAt = Date.now();
@@ -91,37 +92,42 @@ function waitForActorSnapshot(
             }
 
             if (Date.now() - startedAt > timeoutMs) {
-                finish(new Error("Timed out while running debug scenario."));
+                finish(new Error('Timed out while running debug scenario.'));
             }
         };
 
         subscription = actor.subscribe(check);
         timeoutId = globalThis.setTimeout(() => {
-            finish(new Error("Timed out while running debug scenario."));
+            finish(new Error('Timed out while running debug scenario.'));
         }, timeoutMs);
         check(actor.getSnapshot());
     });
 }
 
 async function settleDealing(actor: CardGameActor<DebugSnapshot>): Promise<void> {
-    await waitForActorSnapshot(actor, (snapshot) => snapshot.value === "dealing");
+    await waitForActorSnapshot(actor, (snapshot) => snapshot.value === 'dealing');
     await delay(650);
-    if (getSnapshotValue(actor) === "dealing") {
-        actor.send({ type: "ANIMATION_DONE" });
+    if (getSnapshotValue(actor) === 'dealing') {
+        actor.send({ type: 'ANIMATION_DONE' });
     }
-    await waitForActorSnapshot(actor, (snapshot) => snapshot.value === "battleReady");
+    await waitForActorSnapshot(actor, (snapshot) => snapshot.value === 'battleReady');
 }
 
 async function runWarAnimationScenario(actor: CardGameActor<DebugSnapshot>): Promise<void> {
     await settleDealing(actor);
 
-    actor.send({ type: "PLAY_CARD" });
+    actor.send({ type: 'PLAY_CARD' });
     await waitForActorSnapshot(actor, (snapshot) => {
-        return snapshot.value === "battleReady" && (snapshot.context?.comparisonCards?.length ?? 0) === 1;
+        return (
+            snapshot.value === 'battleReady' &&
+            (snapshot.context?.comparisonCards?.length ?? 0) === 1
+        );
     });
 
-    actor.send({ type: "PLAY_CARD" });
+    actor.send({ type: 'PLAY_CARD' });
     await waitForActorSnapshot(actor, (snapshot) => {
-        return snapshot.value === "battleReady" && snapshot.context?.warState?.stage === "face-down";
+        return (
+            snapshot.value === 'battleReady' && snapshot.context?.warState?.stage === 'face-down'
+        );
     });
 }

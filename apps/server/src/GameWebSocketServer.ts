@@ -1,13 +1,13 @@
-﻿import http from "node:http";
-import { WebSocket, WebSocketServer } from "ws";
+﻿import http from 'node:http';
+import { WebSocket, WebSocketServer } from 'ws';
 
 import {
     isClientMessage,
     type ClientRole,
     type ClientMessage,
-    type ServerMessage
-} from "@engine/session/protocol";
-import { GameSessionHost, type RewriteSessionHostOptions } from "./GameSessionHost";
+    type ServerMessage,
+} from '@engine/session/protocol';
+import { GameSessionHost, type RewriteSessionHostOptions } from './GameSessionHost';
 
 interface RewriteClient {
     socket: WebSocket;
@@ -22,17 +22,21 @@ export interface GameWebSocketServer {
     close(): Promise<void>;
 }
 
-export function createGameWebSocketServer(options: RewriteSessionHostOptions = {}): GameWebSocketServer {
+export function createGameWebSocketServer(
+    options: RewriteSessionHostOptions = {},
+): GameWebSocketServer {
     const gameHost = new GameSessionHost(options);
     const clients = new Set<RewriteClient>();
 
     const server = http.createServer((_request, response) => {
-        response.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
-        response.end(JSON.stringify({
-            ok: true,
-            service: "rewrite-websocket",
-            sessionId: gameHost.sessionId
-        }));
+        response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
+        response.end(
+            JSON.stringify({
+                ok: true,
+                service: 'rewrite-websocket',
+                sessionId: gameHost.sessionId,
+            }),
+        );
     });
     const wss = new WebSocketServer({ server });
 
@@ -41,19 +45,19 @@ export function createGameWebSocketServer(options: RewriteSessionHostOptions = {
         broadcastViews(gameHost, clients);
     });
 
-    wss.on("connection", (socket) => {
+    wss.on('connection', (socket) => {
         const client: RewriteClient = {
             socket,
-            role: "admin",
-            viewerId: null
+            role: 'admin',
+            viewerId: null,
         };
         clients.add(client);
 
-        socket.on("message", (payload) => {
+        socket.on('message', (payload) => {
             handleSocketMessage(gameHost, client, payload.toString());
         });
 
-        socket.on("close", () => {
+        socket.on('close', () => {
             clients.delete(client);
         });
     });
@@ -62,25 +66,25 @@ export function createGameWebSocketServer(options: RewriteSessionHostOptions = {
         server,
         wss,
         gameHost,
-        close: () => closeGameWebSocketServer(server, wss, gameHost)
+        close: () => closeGameWebSocketServer(server, wss, gameHost),
     };
 }
 
 function handleSocketMessage(
     gameHost: GameSessionHost,
     client: RewriteClient,
-    rawMessage: string
+    rawMessage: string,
 ): void {
     let parsed: unknown;
     try {
         parsed = JSON.parse(rawMessage);
     } catch {
-        sendError(client, "Invalid JSON message.");
+        sendError(client, 'Invalid JSON message.');
         return;
     }
 
     if (!isClientMessage(parsed)) {
-        sendError(client, "Unsupported client message.");
+        sendError(client, 'Unsupported client message.');
         return;
     }
 
@@ -90,38 +94,45 @@ function handleSocketMessage(
 function handleClientMessage(
     gameHost: GameSessionHost,
     client: RewriteClient,
-    message: ClientMessage
+    message: ClientMessage,
 ): void {
     switch (message.type) {
-        case "watch-session":
+        case 'watch-session':
             if (message.role) {
                 client.role = message.role;
-                if (client.role === "admin") {
+                if (client.role === 'admin') {
                     client.viewerId = null;
                 }
             }
             sendView(gameHost, client);
             return;
-        case "set-viewer":
+        case 'set-viewer':
             client.viewerId = message.playerId;
             sendView(gameHost, client);
             return;
-        case "configure-session":
-            if (client.role !== "admin") {
-                sendError(client, "Only admin clients can configure the session.");
+        case 'configure-session':
+            if (client.role !== 'admin') {
+                sendError(client, 'Only admin clients can configure the session.');
                 return;
             }
             gameHost.configure(message.config);
             return;
-        case "game-event":
+        case 'game-event':
             {
-                if (client.role === "player" && !client.viewerId) {
-                    sendError(client, "Player clients must select a viewer before sending game events.");
+                if (client.role === 'player' && !client.viewerId) {
+                    sendError(
+                        client,
+                        'Player clients must select a viewer before sending game events.',
+                    );
                     return;
                 }
-                const result = gameHost.sendClientEvent(client.viewerId, message.event, message.expectedSequence);
+                const result = gameHost.sendClientEvent(
+                    client.viewerId,
+                    message.event,
+                    message.expectedSequence,
+                );
                 if (!result.ok) {
-                    sendError(client, result.message ?? "Illegal player event.");
+                    sendError(client, result.message ?? 'Illegal player event.');
                 }
             }
             return;
@@ -130,7 +141,7 @@ function handleClientMessage(
 
 function sanitizeClientViewers(gameHost: GameSessionHost, clients: Set<RewriteClient>): void {
     const sessionView = gameHost.getSessionView(null);
-    if (sessionView.type !== "session-view") {
+    if (sessionView.type !== 'session-view') {
         return;
     }
 
@@ -153,7 +164,7 @@ function sendView(gameHost: GameSessionHost, client: RewriteClient): void {
 }
 
 function sendError(client: RewriteClient, message: string): void {
-    send(client, { type: "error", message });
+    send(client, { type: 'error', message });
 }
 
 function send(client: RewriteClient, message: ServerMessage): void {
@@ -167,7 +178,7 @@ function send(client: RewriteClient, message: ServerMessage): void {
 function closeGameWebSocketServer(
     server: http.Server,
     wss: WebSocketServer,
-    gameHost: GameSessionHost
+    gameHost: GameSessionHost,
 ): Promise<void> {
     gameHost.stop();
     wss.clients.forEach((client) => {

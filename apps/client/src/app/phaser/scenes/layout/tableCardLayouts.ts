@@ -1,8 +1,8 @@
-﻿import { TABLE_CENTER_X, TABLE_CENTER_Y } from "../../layout";
+﻿import { TABLE_CENTER_X, TABLE_CENTER_Y } from '../../layout';
 
-import type { CardGameViewPlayer, CardGameViewTableCard } from "@engine/engine/game/viewModel";
-import { getSeatLayouts } from "./seatLayouts";
-import type { ScenePoint } from "./types";
+import type { CardGameViewPlayer, CardGameViewTableCard } from '@engine/engine/game/viewModel';
+import { getSeatLayouts } from './seatLayouts';
+import type { ScenePoint } from './types';
 
 export interface TableCardDisplayState extends ScenePoint {
     angle: number;
@@ -20,12 +20,12 @@ export function getTableCardPosition(index: number, cardCount: number): ScenePoi
 
     return {
         x: startX + spacing * index,
-        y: TABLE_CENTER_Y
+        y: TABLE_CENTER_Y,
     };
 }
 
 function getTableCardGroupId(card: CardGameViewTableCard, index: number): string {
-    return card.playerId ?? card.id + "-" + String(index);
+    return card.playerId ?? card.id + '-' + String(index);
 }
 
 function getTableCardGroupIds(cards: readonly CardGameViewTableCard[]): string[] {
@@ -75,11 +75,17 @@ function getStackAngle(stackIndex: number, side: number): number {
     return anglePattern[(stackIndex - 1) % anglePattern.length] * side;
 }
 
-function getGroupCards(cards: readonly CardGameViewTableCard[], groupId: string): CardGameViewTableCard[] {
+function getGroupCards(
+    cards: readonly CardGameViewTableCard[],
+    groupId: string,
+): CardGameViewTableCard[] {
     return cards.filter((card, index) => getTableCardGroupId(card, index) === groupId);
 }
 
-function getFaceDownStackIndex(groupCards: readonly CardGameViewTableCard[], card: CardGameViewTableCard): number {
+function getFaceDownStackIndex(
+    groupCards: readonly CardGameViewTableCard[],
+    card: CardGameViewTableCard,
+): number {
     let faceDownIndex = 0;
     for (const groupCard of groupCards) {
         if (groupCard.id === card.id) {
@@ -111,7 +117,7 @@ function getLayeredBattleStackOffset(input: {
         return {
             x: 0,
             y: 4,
-            angle: 0
+            angle: 0,
         };
     }
 
@@ -122,21 +128,21 @@ function getLayeredBattleStackOffset(input: {
         return {
             x: side * (10 + faceDownIndex * 7),
             y: -8 - faceDownIndex * 7,
-            angle: anglePattern[faceDownIndex % anglePattern.length] * side
+            angle: anglePattern[faceDownIndex % anglePattern.length] * side,
         };
     }
 
     return {
         x: side * 46,
         y: -18,
-        angle: side * 4
+        angle: side * 4,
     };
 }
 
 export function getTableCardDisplayState(
     cards: readonly CardGameViewTableCard[],
     index: number,
-    players?: readonly CardGameViewPlayer[]
+    players?: readonly CardGameViewPlayer[],
 ): TableCardDisplayState {
     const card = cards[index];
     const groupId = getTableCardGroupId(card, index);
@@ -160,7 +166,7 @@ export function getTableCardDisplayState(
         card: cards[index],
         groupCards: getGroupCards(cards, groupId),
         stackIndex,
-        side
+        side,
     });
 
     if (layeredBattleOffset) {
@@ -168,7 +174,7 @@ export function getTableCardDisplayState(
             x: basePosition.x + layeredBattleOffset.x,
             y: basePosition.y + layeredBattleOffset.y,
             angle: layeredBattleOffset.angle,
-            stackIndex
+            stackIndex,
         };
     }
 
@@ -176,7 +182,7 @@ export function getTableCardDisplayState(
         x: basePosition.x + side * stackIndex * 12,
         y: basePosition.y - stackIndex * 9,
         angle: getStackAngle(stackIndex, side),
-        stackIndex
+        stackIndex,
     };
 }
 
@@ -187,7 +193,7 @@ function getTrickSeatFallbackPosition(index: number, cardCount: number): ScenePo
 
     return {
         x: TABLE_CENTER_X + Math.cos(angle) * radiusX,
-        y: TABLE_CENTER_Y + Math.sin(angle) * radiusY
+        y: TABLE_CENTER_Y + Math.sin(angle) * radiusY,
     };
 }
 
@@ -195,7 +201,7 @@ function getTrickSeatPosition(playerIndex: number, playerCount: number): ScenePo
     if (playerCount <= 1) {
         return {
             x: TABLE_CENTER_X,
-            y: TABLE_CENTER_Y + 78
+            y: TABLE_CENTER_Y + 78,
         };
     }
 
@@ -209,7 +215,7 @@ function getTrickSeatPosition(playerIndex: number, playerCount: number): ScenePo
         const positions = [
             { x: TABLE_CENTER_X, y: TABLE_CENTER_Y + 118 },
             { x: TABLE_CENTER_X + 148, y: TABLE_CENTER_Y - 48 },
-            { x: TABLE_CENTER_X - 148, y: TABLE_CENTER_Y - 48 }
+            { x: TABLE_CENTER_X - 148, y: TABLE_CENTER_Y - 48 },
         ];
         return positions[playerIndex] ?? getTrickSeatFallbackPosition(playerIndex, playerCount);
     }
@@ -219,7 +225,7 @@ function getTrickSeatPosition(playerIndex: number, playerCount: number): ScenePo
             { x: TABLE_CENTER_X, y: TABLE_CENTER_Y + 124 },
             { x: TABLE_CENTER_X + 168, y: TABLE_CENTER_Y },
             { x: TABLE_CENTER_X, y: TABLE_CENTER_Y - 124 },
-            { x: TABLE_CENTER_X - 168, y: TABLE_CENTER_Y }
+            { x: TABLE_CENTER_X - 168, y: TABLE_CENTER_Y },
         ];
         return positions[playerIndex] ?? getTrickSeatFallbackPosition(playerIndex, playerCount);
     }
@@ -230,7 +236,7 @@ function getTrickSeatPosition(playerIndex: number, playerCount: number): ScenePo
             { x: TABLE_CENTER_X + 150, y: TABLE_CENTER_Y + 34 },
             { x: TABLE_CENTER_X + 84, y: TABLE_CENTER_Y - 104 },
             { x: TABLE_CENTER_X - 84, y: TABLE_CENTER_Y - 104 },
-            { x: TABLE_CENTER_X - 150, y: TABLE_CENTER_Y + 34 }
+            { x: TABLE_CENTER_X - 150, y: TABLE_CENTER_Y + 34 },
         ];
         return positions[playerIndex] ?? getTrickSeatFallbackPosition(playerIndex, playerCount);
     }
@@ -242,7 +248,7 @@ function getTrickSeatPosition(playerIndex: number, playerCount: number): ScenePo
             { x: TABLE_CENTER_X + 150, y: TABLE_CENTER_Y - 62 },
             { x: TABLE_CENTER_X, y: TABLE_CENTER_Y - 130 },
             { x: TABLE_CENTER_X - 150, y: TABLE_CENTER_Y - 62 },
-            { x: TABLE_CENTER_X - 150, y: TABLE_CENTER_Y + 62 }
+            { x: TABLE_CENTER_X - 150, y: TABLE_CENTER_Y + 62 },
         ];
         return positions[playerIndex] ?? getTrickSeatFallbackPosition(playerIndex, playerCount);
     }
@@ -257,7 +263,10 @@ export function getTrickSeatCardDisplayState(input: {
 }): TableCardDisplayState {
     const { cards, players, index } = input;
     const card = cards[index];
-    const playerIndex = Math.max(players.findIndex((player) => player.id === card.playerId), 0);
+    const playerIndex = Math.max(
+        players.findIndex((player) => player.id === card.playerId),
+        0,
+    );
     const seatLayout = getSeatLayouts(players.length)[playerIndex];
     const position = getTrickSeatPosition(playerIndex, players.length);
 
@@ -265,6 +274,6 @@ export function getTrickSeatCardDisplayState(input: {
         x: position.x,
         y: position.y,
         angle: seatLayout?.angle ?? 0,
-        stackIndex: 0
+        stackIndex: 0,
     };
 }

@@ -1,4 +1,4 @@
-import type { CardPile, CardPileMap, CardPileRole } from "./types";
+import type { CardPile, CardPileMap, CardPileRole } from './types';
 
 interface CreateCardPileOptions<TCard> {
     id: string;
@@ -18,7 +18,7 @@ export function createCardPile<TCard>(options: CreateCardPileOptions<TCard>): Ca
         ownerId: options.ownerId,
         cards: options.cards ? options.cards.slice() : [],
         isFaceUp: options.isFaceUp ?? false,
-        isVisibleToAll: options.isVisibleToAll ?? false
+        isVisibleToAll: options.isVisibleToAll ?? false,
     };
 }
 
@@ -33,7 +33,7 @@ export function getPileCards<TCard>(piles: CardPileMap<TCard>, pileId: string): 
 export function setPileCards<TCard>(
     piles: CardPileMap<TCard>,
     pileId: string,
-    cards: readonly TCard[]
+    cards: readonly TCard[],
 ): CardPileMap<TCard> {
     const pile = getPile(piles, pileId);
     if (!pile) {
@@ -44,15 +44,15 @@ export function setPileCards<TCard>(
         ...piles,
         [pileId]: {
             ...pile,
-            cards: cards.slice()
-        }
+            cards: cards.slice(),
+        },
     };
 }
 
 export function appendCardsToPile<TCard>(
     piles: CardPileMap<TCard>,
     pileId: string,
-    cards: readonly TCard[]
+    cards: readonly TCard[],
 ): CardPileMap<TCard> {
     const pile = getPile(piles, pileId);
     if (!pile || cards.length === 0) {
@@ -63,8 +63,8 @@ export function appendCardsToPile<TCard>(
         ...piles,
         [pileId]: {
             ...pile,
-            cards: pile.cards.concat(cards)
-        }
+            cards: pile.cards.concat(cards),
+        },
     };
 }
 
@@ -74,13 +74,13 @@ export function clearPile<TCard>(piles: CardPileMap<TCard>, pileId: string): Car
 
 export function drawTopCardFromPile<TCard>(
     piles: CardPileMap<TCard>,
-    pileId: string
+    pileId: string,
 ): { piles: CardPileMap<TCard>; card: TCard | null } {
     const pile = getPile(piles, pileId);
     if (!pile || pile.cards.length === 0) {
         return {
             piles,
-            card: null
+            card: null,
         };
     }
 
@@ -89,14 +89,14 @@ export function drawTopCardFromPile<TCard>(
 
     return {
         piles: setPileCards(piles, pileId, cards),
-        card
+        card,
     };
 }
 
 export function moveTopCardBetweenPiles<TCard>(
     piles: CardPileMap<TCard>,
     fromPileId: string,
-    toPileId: string
+    toPileId: string,
 ): { piles: CardPileMap<TCard>; card: TCard | null } {
     const drawn = drawTopCardFromPile(piles, fromPileId);
     if (!drawn.card) {
@@ -105,20 +105,20 @@ export function moveTopCardBetweenPiles<TCard>(
 
     return {
         piles: appendCardsToPile(drawn.piles, toPileId, [drawn.card]),
-        card: drawn.card
+        card: drawn.card,
     };
 }
 
 export function removeCardFromPile<TCard>(
     piles: CardPileMap<TCard>,
     pileId: string,
-    predicate: (card: TCard) => boolean
+    predicate: (card: TCard) => boolean,
 ): { piles: CardPileMap<TCard>; card: TCard | null } {
     const pile = getPile(piles, pileId);
     if (!pile) {
         return {
             piles,
-            card: null
+            card: null,
         };
     }
 
@@ -126,7 +126,7 @@ export function removeCardFromPile<TCard>(
     if (cardIndex < 0) {
         return {
             piles,
-            card: null
+            card: null,
         };
     }
 
@@ -135,7 +135,7 @@ export function removeCardFromPile<TCard>(
 
     return {
         piles: setPileCards(piles, pileId, cards),
-        card: card ?? null
+        card: card ?? null,
     };
 }
 
@@ -143,7 +143,7 @@ export function moveCardBetweenPiles<TCard>(
     piles: CardPileMap<TCard>,
     fromPileId: string,
     toPileId: string,
-    predicate: (card: TCard) => boolean
+    predicate: (card: TCard) => boolean,
 ): { piles: CardPileMap<TCard>; card: TCard | null } {
     const removed = removeCardFromPile(piles, fromPileId, predicate);
     if (!removed.card) {
@@ -152,6 +152,6 @@ export function moveCardBetweenPiles<TCard>(
 
     return {
         piles: appendCardsToPile(removed.piles, toPileId, [removed.card]),
-        card: removed.card
+        card: removed.card,
     };
 }

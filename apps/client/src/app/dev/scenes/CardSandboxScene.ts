@@ -1,57 +1,50 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
-import { createDeck } from "@engine/engine/cards/createDeck";
-import { supportedDeckDefinitions } from "@engine/engine/cards/deckDefinitions";
-import { getCardSkinById } from "@engine/engine/cards/skinPacks";
-import type { CardSandboxSection } from "../createCardSandboxGame";
+import { createDeck } from '@engine/engine/cards/createDeck';
+import { supportedDeckDefinitions } from '@engine/engine/cards/deckDefinitions';
+import { getCardSkinById } from '@engine/engine/cards/skinPacks';
+import type { CardSandboxSection } from '../createCardSandboxGame';
 import {
     ensureDeckTextures,
     getCardBackTextureKey,
     getCardFaceTextureKey,
-    preloadFrenchCardTextures
-} from "../../phaser/cards/CardTextureFactory";
+    preloadFrenchCardTextures,
+} from '../../phaser/cards/CardTextureFactory';
 import {
     createCardAnimationLayer,
-    type CardAnimationLayer
-} from "../../phaser/scenes/animations/cardAnimationLayer";
-import { collectPileExample } from "../cardSandbox/examples/collectPileExample";
-import { dealerRevealExample } from "../cardSandbox/examples/dealerRevealExample";
-import { ghostArcExample } from "../cardSandbox/examples/ghostArcExample";
-import { ghostMoveExample } from "../cardSandbox/examples/ghostMoveExample";
-import { liftFlipExample } from "../cardSandbox/examples/liftFlipExample";
-import { productionStackAdapterExample } from "../cardSandbox/examples/productionStackAdapterExample";
-import { realCardExample } from "../cardSandbox/examples/realCardExample";
-import { shuffleExample } from "../cardSandbox/examples/shuffleExample";
-import { stackExample } from "../cardSandbox/examples/stackExample";
-import { verticalFlipExample } from "../cardSandbox/examples/verticalFlipExample";
-import { warCollectPileExample } from "../cardSandbox/examples/warCollectPileExample";
-import { warRevealHoldExample } from "../cardSandbox/examples/warRevealHoldExample";
-import { drawAllCardsGallery } from "../cardSandbox/allCardsGallery";
-import { drawStateGallery } from "../cardSandbox/stateGallery";
+    type CardAnimationLayer,
+} from '../../phaser/scenes/animations/cardAnimationLayer';
+import { collectPileExample } from '../cardSandbox/examples/collectPileExample';
+import { dealerRevealExample } from '../cardSandbox/examples/dealerRevealExample';
+import { ghostArcExample } from '../cardSandbox/examples/ghostArcExample';
+import { ghostMoveExample } from '../cardSandbox/examples/ghostMoveExample';
+import { liftFlipExample } from '../cardSandbox/examples/liftFlipExample';
+import { productionStackAdapterExample } from '../cardSandbox/examples/productionStackAdapterExample';
+import { realCardExample } from '../cardSandbox/examples/realCardExample';
+import { shuffleExample } from '../cardSandbox/examples/shuffleExample';
+import { stackExample } from '../cardSandbox/examples/stackExample';
+import { verticalFlipExample } from '../cardSandbox/examples/verticalFlipExample';
+import { warCollectPileExample } from '../cardSandbox/examples/warCollectPileExample';
+import { warRevealHoldExample } from '../cardSandbox/examples/warRevealHoldExample';
+import { drawAllCardsGallery } from '../cardSandbox/allCardsGallery';
+import { drawStateGallery } from '../cardSandbox/stateGallery';
 import type {
     CardSandboxExample,
     CardSandboxExampleContext,
-    CardSandboxExampleRuntime
-} from "../cardSandbox/types";
+    CardSandboxExampleRuntime,
+} from '../cardSandbox/types';
 
 const GOLD = 0xffd166;
-const CREAM = "#f6ecd2";
-const DIM = "rgba(246,236,210,0.72)";
-const SKIN_ID = "vintage-european";
+const CREAM = '#f6ecd2';
+const DIM = 'rgba(246,236,210,0.72)';
+const SKIN_ID = 'vintage-european';
 const SANDBOX_WIDTH = 1280;
 const SANDBOX_HEIGHT = 1080;
 
 const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
     cards: [],
-    real: [
-        realCardExample,
-        verticalFlipExample,
-        liftFlipExample
-    ],
-    ghost: [
-        ghostMoveExample,
-        ghostArcExample
-    ],
+    real: [realCardExample, verticalFlipExample, liftFlipExample],
+    ghost: [ghostMoveExample, ghostArcExample],
     layer: [
         warRevealHoldExample,
         warCollectPileExample,
@@ -59,19 +52,19 @@ const sectionExamples: Record<CardSandboxSection, CardSandboxExample[]> = {
         dealerRevealExample,
         stackExample,
         collectPileExample,
-        shuffleExample
-    ]
+        shuffleExample,
+    ],
 };
 
 export class CardSandboxScene extends Phaser.Scene {
     private deckId: string;
-    private section: CardSandboxSection = "cards";
+    private section: CardSandboxSection = 'cards';
     private renderLayer?: Phaser.GameObjects.Container;
     private animationLayer?: CardAnimationLayer;
     private runtimes: CardSandboxExampleRuntime[] = [];
 
     constructor(initialDeckId: string) {
-        super("card-sandbox");
+        super('card-sandbox');
         this.deckId = initialDeckId;
     }
 
@@ -118,9 +111,9 @@ export class CardSandboxScene extends Phaser.Scene {
         this.drawBackground();
 
         const context = this.createExampleContext();
-        if (this.section === "cards") {
+        if (this.section === 'cards') {
             drawAllCardsGallery(context);
-        } else if (this.section === "real") {
+        } else if (this.section === 'real') {
             drawStateGallery(context);
             this.drawRealCardExamplesHeading();
         } else {
@@ -129,17 +122,20 @@ export class CardSandboxScene extends Phaser.Scene {
         this.runtimes = sectionExamples[this.section].map((example, index) => {
             return example.render({
                 ...context,
-                panel: getSectionPanel(this.section, index, example)
+                panel: getSectionPanel(this.section, index, example),
             });
         });
     }
 
     private ensureTextures(): void {
         const skin = getCardSkinById(SKIN_ID);
-        if (this.section === "cards") {
-            Object.values(supportedDeckDefinitions).forEach((def) => ensureDeckTextures(this, def, skin));
+        if (this.section === 'cards') {
+            Object.values(supportedDeckDefinitions).forEach((def) =>
+                ensureDeckTextures(this, def, skin),
+            );
         } else {
-            const deckDefinition = supportedDeckDefinitions[this.deckId as keyof typeof supportedDeckDefinitions];
+            const deckDefinition =
+                supportedDeckDefinitions[this.deckId as keyof typeof supportedDeckDefinitions];
             ensureDeckTextures(this, deckDefinition, skin);
         }
     }
@@ -150,10 +146,14 @@ export class CardSandboxScene extends Phaser.Scene {
         }
 
         const h = this.scale.height;
-        this.renderLayer.add(this.add.rectangle(SANDBOX_WIDTH / 2, h / 2, SANDBOX_WIDTH, h, 0x07140f, 1));
-        this.renderLayer.add(this.add.rectangle(
-            SANDBOX_WIDTH / 2, h / 2, SANDBOX_WIDTH - 56, h - 68, 0x0d261d, 0.88
-        ).setStrokeStyle(2, GOLD, 0.16));
+        this.renderLayer.add(
+            this.add.rectangle(SANDBOX_WIDTH / 2, h / 2, SANDBOX_WIDTH, h, 0x07140f, 1),
+        );
+        this.renderLayer.add(
+            this.add
+                .rectangle(SANDBOX_WIDTH / 2, h / 2, SANDBOX_WIDTH - 56, h - 68, 0x0d261d, 0.88)
+                .setStrokeStyle(2, GOLD, 0.16),
+        );
     }
 
     private drawSectionHeading(section: CardSandboxSection): void {
@@ -162,30 +162,34 @@ export class CardSandboxScene extends Phaser.Scene {
         }
 
         const titleBySection: Record<CardSandboxSection, string> = {
-            cards: "All Cards",
-            real: "Real card examples",
-            ghost: "Ghost card examples",
-            layer: "Animation layer examples"
+            cards: 'All Cards',
+            real: 'Real card examples',
+            ghost: 'Ghost card examples',
+            layer: 'Animation layer examples',
         };
         const detailBySection: Record<CardSandboxSection, string> = {
-            cards: "",
-            real: "",
-            ghost: "Temporary ghost cards are created for cross-zone movement and then inspected or cleared.",
-            layer: "Animation-layer examples own temporary card visuals and keep game/table layout stable."
+            cards: '',
+            real: '',
+            ghost: 'Temporary ghost cards are created for cross-zone movement and then inspected or cleared.',
+            layer: 'Animation-layer examples own temporary card visuals and keep game/table layout stable.',
         };
 
-        this.renderLayer.add(this.add.text(70, 50, titleBySection[section], {
-            fontFamily: "Arial",
-            fontSize: "22px",
-            fontStyle: "700",
-            color: CREAM
-        }));
-        this.renderLayer.add(this.add.text(70, 84, detailBySection[section], {
-            fontFamily: "Arial",
-            fontSize: "14px",
-            color: DIM,
-            wordWrap: { width: 520 }
-        }));
+        this.renderLayer.add(
+            this.add.text(70, 50, titleBySection[section], {
+                fontFamily: 'Arial',
+                fontSize: '22px',
+                fontStyle: '700',
+                color: CREAM,
+            }),
+        );
+        this.renderLayer.add(
+            this.add.text(70, 84, detailBySection[section], {
+                fontFamily: 'Arial',
+                fontSize: '14px',
+                color: DIM,
+                wordWrap: { width: 520 },
+            }),
+        );
     }
 
     private drawRealCardExamplesHeading(): void {
@@ -193,20 +197,23 @@ export class CardSandboxScene extends Phaser.Scene {
             return;
         }
 
-        this.renderLayer.add(this.add.text(70, 298, "Real card local effect", {
-            fontFamily: "Arial",
-            fontSize: "18px",
-            fontStyle: "700",
-            color: CREAM
-        }));
+        this.renderLayer.add(
+            this.add.text(70, 298, 'Real card local effect', {
+                fontFamily: 'Arial',
+                fontSize: '18px',
+                fontStyle: '700',
+                color: CREAM,
+            }),
+        );
     }
 
     private createExampleContext(): CardSandboxExampleContext {
         if (!this.renderLayer || !this.animationLayer) {
-            throw new Error("Card sandbox scene is missing its render or animation layer.");
+            throw new Error('Card sandbox scene is missing its render or animation layer.');
         }
 
-        const deckDefinition = supportedDeckDefinitions[this.deckId as keyof typeof supportedDeckDefinitions];
+        const deckDefinition =
+            supportedDeckDefinitions[this.deckId as keyof typeof supportedDeckDefinitions];
         const skin = getCardSkinById(SKIN_ID);
 
         return {
@@ -219,28 +226,24 @@ export class CardSandboxScene extends Phaser.Scene {
             colors: {
                 gold: GOLD,
                 cream: CREAM,
-                dim: DIM
+                dim: DIM,
             },
-            getFaceTexture: (card, variant = "showcase") => {
+            getFaceTexture: (card, variant = 'showcase') => {
                 return getCardFaceTextureKey(card.id, skin.id, variant);
             },
             getBackTexture: () => {
                 return getCardBackTextureKey(deckDefinition.id, skin.id);
-            }
+            },
         };
     }
 }
 
-function getSectionPanel(
-    section: CardSandboxSection,
-    index: number,
-    example: CardSandboxExample
-) {
-    if (section === "real") {
+function getSectionPanel(section: CardSandboxSection, index: number, example: CardSandboxExample) {
+    if (section === 'real') {
         return example.panel;
     }
 
-    if (section === "layer") {
+    if (section === 'layer') {
         const columns = [70, 380, 690, 1000];
         const row = Math.floor(index / columns.length);
         const column = index % columns.length;
@@ -250,7 +253,7 @@ function getSectionPanel(
             x: columns[column],
             y: row === 0 ? 176 : 528,
             width: 250,
-            height: 300
+            height: 300,
         };
     }
 
@@ -265,6 +268,6 @@ function getSectionPanel(
         x: columns[column],
         y: row === 0 ? topRowY : secondRowY,
         width: 260,
-        height: 300
+        height: 300,
     };
 }

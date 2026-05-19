@@ -1,19 +1,12 @@
-import type { DeckDefinition } from "../cards/types";
-import type { CardGameEffect } from "./effects";
+import type { DeckDefinition } from '../cards/types';
+import type { CardGameEffect } from './effects';
 
 export interface CardGameDefinition {
     id: string;
     name: string;
 }
 
-export type CardPileRole =
-    | "stock"
-    | "discard"
-    | "hand"
-    | "table"
-    | "capture"
-    | "trump"
-    | "custom";
+export type CardPileRole = 'stock' | 'discard' | 'hand' | 'table' | 'capture' | 'trump' | 'custom';
 
 export interface CardPile<TCard> {
     id: string;
@@ -44,7 +37,7 @@ export interface CardGameTurn<TPlayedCard> {
 export interface CardGameSession<
     TCard,
     TPlayer extends CardGamePlayer<TCard>,
-    TPlayedCard
+    TPlayedCard,
 > extends CardGameTurn<TPlayedCard> {
     deckDefinition: DeckDefinition;
     lastEffects: CardGameEffect[];
@@ -62,8 +55,8 @@ export interface CardGameOptions {
 }
 
 export type CardGameEvent =
-    | { type: "START" }
-    | { type: "SELECT_CARD"; cardId: string }
-    | { type: "PLAY_CARD" }
-    | { type: "ANIMATION_DONE" }
-    | { type: "RESTART" };
+    | { type: 'START' }
+    | { type: 'SELECT_CARD'; cardId: string }
+    | { type: 'PLAY_CARD' }
+    | { type: 'ANIMATION_DONE' }
+    | { type: 'RESTART' };

@@ -1,17 +1,17 @@
-import * as Phaser from "phaser";
+import * as Phaser from 'phaser';
 
-import type { CardSandboxExample } from "../types";
-import { drawExamplePanel } from "../examplePanel";
+import type { CardSandboxExample } from '../types';
+import { drawExamplePanel } from '../examplePanel';
 
 export const liftFlipExample: CardSandboxExample = {
-    id: "tilt-flip",
+    id: 'tilt-flip',
     panel: {
         x: 790,
         y: 298,
         width: 160,
         height: 270,
-        title: "",
-        description: ""
+        title: '',
+        description: '',
     },
     render: (context) => {
         const panel = context.panel ?? liftFlipExample.panel;
@@ -23,17 +23,21 @@ export const liftFlipExample: CardSandboxExample = {
         const centerY = panel.y + 170;
         const liftedY = centerY - 34;
         const shadow = scene.add.ellipse(centerX + 8, centerY + 86, 102, 18, 0x000000, 0.28);
-        const image = scene.add.image(centerX, centerY, context.getFaceTexture(card, "showcase"))
+        const image = scene.add
+            .image(centerX, centerY, context.getFaceTexture(card, 'showcase'))
             .setDisplaySize(112, 164)
             .setInteractive({ useHandCursor: true });
-        const outline = scene.add.rectangle(centerX, centerY, 122, 174, 0x000000, 0)
+        const outline = scene.add
+            .rectangle(centerX, centerY, 122, 174, 0x000000, 0)
             .setStrokeStyle(2, colors.gold, 0.86);
-        const label = scene.add.text(centerX, centerY + 106, "tilt", {
-            fontFamily: "Arial",
-            fontSize: "13px",
-            fontStyle: "700",
-            color: colors.dim
-        }).setOrigin(0.5);
+        const label = scene.add
+            .text(centerX, centerY + 106, 'tilt', {
+                fontFamily: 'Arial',
+                fontSize: '13px',
+                fontStyle: '700',
+                color: colors.dim,
+            })
+            .setOrigin(0.5);
         let isFaceUp = true;
         let isFlipping = false;
 
@@ -55,14 +59,14 @@ export const liftFlipExample: CardSandboxExample = {
                 angle: -7,
                 scaleY: 0.93,
                 duration: 150,
-                ease: "Sine.easeOut",
+                ease: 'Sine.easeOut',
                 onStart: () => {
                     scene.tweens.add({
                         targets: shadow,
                         scaleX: 0.72,
                         alpha: 0.16,
                         duration: 150,
-                        ease: "Sine.easeOut"
+                        ease: 'Sine.easeOut',
                     });
                 },
                 onComplete: () => {
@@ -71,10 +75,14 @@ export const liftFlipExample: CardSandboxExample = {
                         displayWidth: 2,
                         angle: -13,
                         duration: 140,
-                        ease: "Sine.easeIn",
+                        ease: 'Sine.easeIn',
                         onComplete: () => {
                             isFaceUp = !isFaceUp;
-                            image.setTexture(isFaceUp ? context.getFaceTexture(card, "showcase") : context.getBackTexture());
+                            image.setTexture(
+                                isFaceUp
+                                    ? context.getFaceTexture(card, 'showcase')
+                                    : context.getBackTexture(),
+                            );
                             image.displayWidth = 2;
                             image.displayHeight = 164;
                             scene.tweens.add({
@@ -82,7 +90,7 @@ export const liftFlipExample: CardSandboxExample = {
                                 displayWidth: 112,
                                 angle: -7,
                                 duration: 140,
-                                ease: "Sine.easeOut",
+                                ease: 'Sine.easeOut',
                                 onComplete: () => {
                                     image.setY(liftedY);
                                     outline.setY(liftedY);
@@ -94,7 +102,7 @@ export const liftFlipExample: CardSandboxExample = {
                                         angle: 0,
                                         scaleY: 1,
                                         duration: 150,
-                                        ease: "Back.easeOut",
+                                        ease: 'Back.easeOut',
                                         onComplete: () => {
                                             shadow.setScale(1);
                                             shadow.setAlpha(0.28);
@@ -105,17 +113,17 @@ export const liftFlipExample: CardSandboxExample = {
                                             outline.setAngle(0);
                                             isFlipping = false;
                                             image.setInteractive({ useHandCursor: true });
-                                        }
+                                        },
                                     });
-                                }
+                                },
                             });
-                        }
+                        },
                     });
-                }
+                },
             });
         });
 
         renderLayer.add([shadow, outline, image, label]);
         return {};
-    }
+    },
 };

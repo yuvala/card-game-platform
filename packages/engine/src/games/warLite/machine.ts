@@ -1,9 +1,9 @@
-import { ActorRefFrom, SnapshotFrom } from "xstate";
+import { ActorRefFrom, SnapshotFrom } from 'xstate';
 
-import { frenchDeckDefinition } from "../../engine/cards/deckDefinitions";
-import { createCardGameMachine } from "../../engine/game/machineFactory";
-import { warLiteGameDefinition } from "./definition";
-import type { WarLiteContext, WarLiteEvent, WarLiteOptions } from "./types";
+import { frenchDeckDefinition } from '../../engine/cards/deckDefinitions';
+import { createCardGameMachine } from '../../engine/game/machineFactory';
+import { warLiteGameDefinition } from './definition';
+import type { WarLiteContext, WarLiteEvent, WarLiteOptions } from './types';
 
 export function createWarLiteMachine(playerNames: string[], options?: WarLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? frenchDeckDefinition;
@@ -12,52 +12,57 @@ export function createWarLiteMachine(playerNames: string[], options?: WarLiteOpt
         deckDefinition,
         cardsPerPlayer: options?.cardsPerPlayer,
         warFaceDownCount: options?.warFaceDownCount,
-        random
+        random,
     };
 
-    return createCardGameMachine<WarLiteContext, WarLiteEvent, Parameters<typeof warLiteGameDefinition.applyMove>[1], WarLiteOptions>({
+    return createCardGameMachine<
+        WarLiteContext,
+        WarLiteEvent,
+        Parameters<typeof warLiteGameDefinition.applyMove>[1],
+        WarLiteOptions
+    >({
         definition: warLiteGameDefinition,
         playerNames,
         definitionOptions,
         prepareShuffleMove: {
-            type: "prepare-shuffle",
-            random
+            type: 'prepare-shuffle',
+            random,
         },
         prepareDealMove: {
-            type: "deal-opening-hands"
+            type: 'deal-opening-hands',
         },
         flow: {
-            readyState: "battleReady",
-            resolvingState: "resolvingBattle",
+            readyState: 'battleReady',
+            resolvingState: 'resolvingBattle',
             shuffleDelayMs: 2000,
             dealDelayMs: 900,
             resolveDelayMs: 1200,
             prepareReadyMove: {
-                type: "prepare-battle"
+                type: 'prepare-battle',
             },
             playMove: {
-                type: "reveal-battle"
+                type: 'reveal-battle',
             },
-            playGuardMoveType: "reveal-battle",
+            playGuardMoveType: 'reveal-battle',
             animation: {
-                kind: "timed",
-                state: "revealingBattle",
-                delayMs: 900
+                kind: 'timed',
+                state: 'revealingBattle',
+                delayMs: 900,
             },
             finalizeMove: {
-                type: "finalize-battle"
+                type: 'finalize-battle',
             },
             resolutionTargets: [
                 {
-                    automaticMoveType: "prepare-battle",
-                    target: "battleReady"
+                    automaticMoveType: 'prepare-battle',
+                    target: 'battleReady',
                 },
                 {
-                    automaticMoveType: "advance-next-round",
-                    target: "battleReady"
-                }
-            ]
-        }
+                    automaticMoveType: 'advance-next-round',
+                    target: 'battleReady',
+                },
+            ],
+        },
     });
 }
 

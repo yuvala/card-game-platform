@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from "react";
-import { supabase } from "./supabase";
-import { NicknameScreen } from "./NicknameScreen";
-import { RoomList } from "./RoomList";
+import React, { useEffect, useState } from 'react';
+import { supabase } from './supabase';
+import { NicknameScreen } from './NicknameScreen';
+import { RoomList } from './RoomList';
 
 export function App() {
     const [userId, setUserId] = useState<string | null>(null);
@@ -11,7 +11,7 @@ export function App() {
         supabase.auth.getSession().then(({ data }) => {
             if (data.session) {
                 setUserId(data.session.user.id);
-                setNickname(sessionStorage.getItem("nickname"));
+                setNickname(sessionStorage.getItem('nickname'));
             }
         });
     }, []);
@@ -19,7 +19,7 @@ export function App() {
     async function handleNickname(name: string) {
         const { data, error } = await supabase.auth.signInAnonymously();
         if (error || !data.user) return;
-        sessionStorage.setItem("nickname", name);
+        sessionStorage.setItem('nickname', name);
         setUserId(data.user.id);
         setNickname(name);
     }

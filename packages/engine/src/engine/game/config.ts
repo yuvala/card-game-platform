@@ -1,7 +1,7 @@
-import type { SupportedDeckId } from "../cards/deckDefinitions";
-import type { CardInstance } from "../cards/types";
-import type { CardPileMap, CardPileRole, CardGamePlayer } from "./types";
-import { createCardPile } from "./piles";
+import type { SupportedDeckId } from '../cards/deckDefinitions';
+import type { CardInstance } from '../cards/types';
+import type { CardPileMap, CardPileRole, CardGamePlayer } from './types';
+import { createCardPile } from './piles';
 
 export interface CardGameConfig {
     id: string;
@@ -17,9 +17,9 @@ export interface CardGameConfig {
     piles: readonly CardPileConfig[];
 }
 
-export type CardPileOwner = "table" | "player";
+export type CardPileOwner = 'table' | 'player';
 
-export type CardPileVisibility = "face-up" | "face-down" | "owner-only";
+export type CardPileVisibility = 'face-up' | 'face-down' | 'owner-only';
 
 export interface CardPileConfig {
     id: string;
@@ -35,22 +35,24 @@ export function defineCardGameConfig<TConfig extends CardGameConfig>(config: TCo
     return config;
 }
 
-function resolveVisibility(visibility: CardPileVisibility): Pick<CardPileConfigResult, "isFaceUp" | "isVisibleToAll"> {
+function resolveVisibility(
+    visibility: CardPileVisibility,
+): Pick<CardPileConfigResult, 'isFaceUp' | 'isVisibleToAll'> {
     switch (visibility) {
-        case "face-up":
+        case 'face-up':
             return {
                 isFaceUp: true,
-                isVisibleToAll: true
+                isVisibleToAll: true,
             };
-        case "owner-only":
+        case 'owner-only':
             return {
                 isFaceUp: true,
-                isVisibleToAll: false
+                isVisibleToAll: false,
             };
-        case "face-down":
+        case 'face-down':
             return {
                 isFaceUp: false,
-                isVisibleToAll: false
+                isVisibleToAll: false,
             };
     }
 }
@@ -61,13 +63,13 @@ interface CardPileConfigResult {
 }
 
 export function createConfiguredPiles<TPlayer extends CardGamePlayer<CardInstance>>(
-    config: Pick<CardGameConfig, "piles">,
-    players: readonly TPlayer[]
+    config: Pick<CardGameConfig, 'piles'>,
+    players: readonly TPlayer[],
 ): CardPileMap<CardInstance> {
     return config.piles.reduce<CardPileMap<CardInstance>>((piles, pileConfig) => {
         const visibility = resolveVisibility(pileConfig.visibility);
 
-        if (pileConfig.owner === "table") {
+        if (pileConfig.owner === 'table') {
             return {
                 ...piles,
                 [pileConfig.id]: createCardPile<CardInstance>({
@@ -75,14 +77,17 @@ export function createConfiguredPiles<TPlayer extends CardGamePlayer<CardInstanc
                     role: pileConfig.role,
                     label: pileConfig.label,
                     isFaceUp: visibility.isFaceUp,
-                    isVisibleToAll: visibility.isVisibleToAll
-                })
+                    isVisibleToAll: visibility.isVisibleToAll,
+                }),
             };
         }
 
         return players.reduce<CardPileMap<CardInstance>>((nextPiles, player) => {
-            const pileId = pileConfig.getPlayerPileId?.(player.id) ?? pileConfig.id + ":" + player.id;
-            const pileLabel = pileConfig.getPlayerPileLabel?.(player.name) ?? player.name + " " + pileConfig.label;
+            const pileId =
+                pileConfig.getPlayerPileId?.(player.id) ?? pileConfig.id + ':' + player.id;
+            const pileLabel =
+                pileConfig.getPlayerPileLabel?.(player.name) ??
+                player.name + ' ' + pileConfig.label;
 
             return {
                 ...nextPiles,
@@ -92,8 +97,8 @@ export function createConfiguredPiles<TPlayer extends CardGamePlayer<CardInstanc
                     ownerId: player.id,
                     label: pileLabel,
                     isFaceUp: visibility.isFaceUp,
-                    isVisibleToAll: visibility.isVisibleToAll
-                })
+                    isVisibleToAll: visibility.isVisibleToAll,
+                }),
             };
         }, piles);
     }, {});

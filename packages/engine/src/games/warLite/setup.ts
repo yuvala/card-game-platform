@@ -1,35 +1,28 @@
-import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
-import type { DeckDefinition } from "../../engine/cards/types";
-import { createConfiguredPiles } from "../../engine/game/config";
-import { createDealCardEffect, type CardGameEffect } from "../../engine/game/effects";
-import {
-    drawTopCardFromPile,
-    getPileCards,
-    setPileCards
-} from "../../engine/game/piles";
-import { warLiteConfig } from "./config";
-import type { WarLiteContext, WarLitePlayer } from "./types";
-import {
-    WAR_LITE_STOCK_PILE_ID,
-    getWarLiteHandPileId
-} from "./types";
+import { createDeck, shuffleDeck } from '../../engine/cards/createDeck';
+import type { DeckDefinition } from '../../engine/cards/types';
+import { createConfiguredPiles } from '../../engine/game/config';
+import { createDealCardEffect, type CardGameEffect } from '../../engine/game/effects';
+import { drawTopCardFromPile, getPileCards, setPileCards } from '../../engine/game/piles';
+import { warLiteConfig } from './config';
+import type { WarLiteContext, WarLitePlayer } from './types';
+import { WAR_LITE_STOCK_PILE_ID, getWarLiteHandPileId } from './types';
 
 function createPlayers(names: string[]): WarLitePlayer[] {
     return names.slice(0, 2).map((name, index) => ({
-        id: "p" + (index + 1),
+        id: 'p' + (index + 1),
         name,
-        score: 0
+        score: 0,
     }));
 }
 
 function resolveCardsPerPlayer(
     deckDefinition: DeckDefinition,
     playerCount: number,
-    requestedCardsPerPlayer?: number
+    requestedCardsPerPlayer?: number,
 ): number {
     const totalCards = deckDefinition.suits.length * deckDefinition.ranks.length;
     const maximumCardsPerPlayer = Math.max(1, Math.floor(totalCards / Math.max(playerCount, 1)));
-    if (typeof requestedCardsPerPlayer === "number" && Number.isFinite(requestedCardsPerPlayer)) {
+    if (typeof requestedCardsPerPlayer === 'number' && Number.isFinite(requestedCardsPerPlayer)) {
         return Math.min(Math.max(1, Math.floor(requestedCardsPerPlayer)), maximumCardsPerPlayer);
     }
 
@@ -37,7 +30,10 @@ function resolveCardsPerPlayer(
 }
 
 function resolveWarFaceDownCount(requestedWarFaceDownCount?: number): number {
-    if (typeof requestedWarFaceDownCount === "number" && Number.isFinite(requestedWarFaceDownCount)) {
+    if (
+        typeof requestedWarFaceDownCount === 'number' &&
+        Number.isFinite(requestedWarFaceDownCount)
+    ) {
         return Math.max(0, Math.floor(requestedWarFaceDownCount));
     }
 
@@ -48,10 +44,14 @@ export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
     requestedCardsPerPlayer?: number,
-    requestedWarFaceDownCount?: number
+    requestedWarFaceDownCount?: number,
 ): WarLiteContext {
     const players = createPlayers(playerNames);
-    const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, players.length || 2, requestedCardsPerPlayer);
+    const cardsPerPlayer = resolveCardsPerPlayer(
+        deckDefinition,
+        players.length || 2,
+        requestedCardsPerPlayer,
+    );
     const warFaceDownCount = resolveWarFaceDownCount(requestedWarFaceDownCount);
 
     return {
@@ -69,12 +69,12 @@ export function createInitialContext(
         warFaceDownCount,
         warState: null,
         statusText:
-            "Press Deal Cards to split the " +
+            'Press Deal Cards to split the ' +
             deckDefinition.name +
-            " between both players. Each battle reveals the top card from each stack.",
+            ' between both players. Each battle reveals the top card from each stack.',
         lastPlayedCard: null,
         selectedCardId: null,
-        winningPlayerIds: []
+        winningPlayerIds: [],
     };
 }
 
@@ -83,13 +83,13 @@ export function createShuffledContext(
     deckDefinition: DeckDefinition,
     requestedCardsPerPlayer?: number,
     requestedWarFaceDownCount?: number,
-    random: () => number = Math.random
+    random: () => number = Math.random,
 ): WarLiteContext {
     const baseContext = createInitialContext(
         playerNames,
         deckDefinition,
         requestedCardsPerPlayer,
-        requestedWarFaceDownCount
+        requestedWarFaceDownCount,
     );
     const shuffledDeck = shuffleDeck(createDeck(deckDefinition), random).reverse();
 
@@ -98,11 +98,14 @@ export function createShuffledContext(
         piles: setPileCards(baseContext.piles, WAR_LITE_STOCK_PILE_ID, shuffledDeck),
         lastEffects: [],
         random,
-        statusText: "Shuffling the " + deckDefinition.name + " for War Lite..."
+        statusText: 'Shuffling the ' + deckDefinition.name + ' for War Lite...',
     };
 }
 
-export function dealOpeningHands(context: WarLiteContext): { state: WarLiteContext; effects: CardGameEffect[] } {
+export function dealOpeningHands(context: WarLiteContext): {
+    state: WarLiteContext;
+    effects: CardGameEffect[];
+} {
     let piles = context.piles;
     let dealingIndex = 0;
     const effects: CardGameEffect[] = [];
@@ -125,17 +128,19 @@ export function dealOpeningHands(context: WarLiteContext): { state: WarLiteConte
         const toPileId = getWarLiteHandPileId(player.id);
         piles = setPileCards(drawResult.piles, toPileId, [
             drawResult.card,
-            ...getPileCards(drawResult.piles, toPileId)
+            ...getPileCards(drawResult.piles, toPileId),
         ]);
-        effects.push(createDealCardEffect({
-            card: drawResult.card,
-            fromPileId: WAR_LITE_STOCK_PILE_ID,
-            toPileId,
-            toOwnerId: player.id,
-            toIndex: 0,
-            isFaceUp: false,
-            keyPrefix: "deal-" + String(dealingIndex) + "-" + player.id
-        }));
+        effects.push(
+            createDealCardEffect({
+                card: drawResult.card,
+                fromPileId: WAR_LITE_STOCK_PILE_ID,
+                toPileId,
+                toOwnerId: player.id,
+                toIndex: 0,
+                isFaceUp: false,
+                keyPrefix: 'deal-' + String(dealingIndex) + '-' + player.id,
+            }),
+        );
         dealingIndex += 1;
     }
 
@@ -153,10 +158,10 @@ export function dealOpeningHands(context: WarLiteContext): { state: WarLiteConte
             winningPlayerIds: [],
             warState: null,
             statusText:
-                "The " +
+                'The ' +
                 context.deckDefinition.name +
-                " is split. Press Play Card to reveal the first battle."
+                ' is split. Press Play Card to reveal the first battle.',
         },
-        effects
+        effects,
     };
 }

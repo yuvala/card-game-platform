@@ -1,26 +1,26 @@
-import { createActor } from "xstate";
+import { createActor } from 'xstate';
 
 import {
     type CardGameCatalogOptions,
     defineGameCatalogEntry,
     type CardGameActorRuntime,
-    type AnyGameCatalogEntry
-} from "../engine/game/catalog";
-import type { CardGameConfig } from "../engine/game/config";
-import type { GameDefinition } from "../engine/game/definition";
-import type { CardGameViewModelFactory } from "../engine/game/viewModel";
-import { briscaLiteConfig } from "./briscaLite/config";
-import { briscaLiteGameDefinition } from "./briscaLite/definition";
-import { createBriscaLiteMachine } from "./briscaLite/machine";
-import type { BriscaLiteOptions, BriscaLiteViewSnapshot } from "./briscaLite/types";
-import { pokerLiteConfig } from "./pokerLite/config";
-import { pokerLiteGameDefinition } from "./pokerLite/definition";
-import { createPokerLiteMachine } from "./pokerLite/machine";
-import type { PokerLiteOptions, PokerLiteViewSnapshot } from "./pokerLite/types";
-import { warLiteConfig } from "./warLite/config";
-import { warLiteGameDefinition } from "./warLite/definition";
-import { createWarLiteMachine } from "./warLite/machine";
-import type { WarLiteOptions, WarLiteViewSnapshot } from "./warLite/types";
+    type AnyGameCatalogEntry,
+} from '../engine/game/catalog';
+import type { CardGameConfig } from '../engine/game/config';
+import type { GameDefinition } from '../engine/game/definition';
+import type { CardGameViewModelFactory } from '../engine/game/viewModel';
+import { briscaLiteConfig } from './briscaLite/config';
+import { briscaLiteGameDefinition } from './briscaLite/definition';
+import { createBriscaLiteMachine } from './briscaLite/machine';
+import type { BriscaLiteOptions, BriscaLiteViewSnapshot } from './briscaLite/types';
+import { pokerLiteConfig } from './pokerLite/config';
+import { pokerLiteGameDefinition } from './pokerLite/definition';
+import { createPokerLiteMachine } from './pokerLite/machine';
+import type { PokerLiteOptions, PokerLiteViewSnapshot } from './pokerLite/types';
+import { warLiteConfig } from './warLite/config';
+import { warLiteGameDefinition } from './warLite/definition';
+import { createWarLiteMachine } from './warLite/machine';
+import type { WarLiteOptions, WarLiteViewSnapshot } from './warLite/types';
 
 function createConfiguredCatalogEntry<TSnapshot, TOptions extends CardGameCatalogOptions>(input: {
     config: CardGameConfig;
@@ -43,57 +43,67 @@ function createConfiguredCatalogEntry<TSnapshot, TOptions extends CardGameCatalo
         getViewModel: ((snapshot: TSnapshot, viewerId?: string | null) => {
             const toViewModel = definition.toViewModel;
             if (!toViewModel) {
-                throw new Error(config.label + " game definition is missing a view model adapter.");
+                throw new Error(config.label + ' game definition is missing a view model adapter.');
             }
 
             return toViewModel(snapshot, viewerId);
         }) as CardGameViewModelFactory<TSnapshot>,
         createActor: (playerNames, options) => {
-            return createActor(createMachine(playerNames, options)) as CardGameActorRuntime<TSnapshot>;
-        }
+            return createActor(
+                createMachine(playerNames, options),
+            ) as CardGameActorRuntime<TSnapshot>;
+        },
     });
 }
 
-const pokerLiteCatalogEntry = createConfiguredCatalogEntry<PokerLiteViewSnapshot, PokerLiteOptions>({
-    config: pokerLiteConfig,
-    definition: pokerLiteGameDefinition,
-    createMachine: createPokerLiteMachine
-});
+const pokerLiteCatalogEntry = createConfiguredCatalogEntry<PokerLiteViewSnapshot, PokerLiteOptions>(
+    {
+        config: pokerLiteConfig,
+        definition: pokerLiteGameDefinition,
+        createMachine: createPokerLiteMachine,
+    },
+);
 
 const warLiteCatalogEntry = createConfiguredCatalogEntry<WarLiteViewSnapshot, WarLiteOptions>({
     config: warLiteConfig,
     definition: warLiteGameDefinition,
-    createMachine: createWarLiteMachine
+    createMachine: createWarLiteMachine,
 });
 
-const briscaLiteCatalogEntry = createConfiguredCatalogEntry<BriscaLiteViewSnapshot, BriscaLiteOptions>({
+const briscaLiteCatalogEntry = createConfiguredCatalogEntry<
+    BriscaLiteViewSnapshot,
+    BriscaLiteOptions
+>({
     config: briscaLiteConfig,
     definition: briscaLiteGameDefinition,
-    createMachine: createBriscaLiteMachine
+    createMachine: createBriscaLiteMachine,
 });
 
 export const gameCatalog = {
-    "poker-lite": pokerLiteCatalogEntry,
-    "war-lite": warLiteCatalogEntry,
-    "brisca-lite": briscaLiteCatalogEntry
+    'poker-lite': pokerLiteCatalogEntry,
+    'war-lite': warLiteCatalogEntry,
+    'brisca-lite': briscaLiteCatalogEntry,
 } satisfies Record<string, AnyGameCatalogEntry>;
 
 export type GameCatalogId = keyof typeof gameCatalog;
 
-export const DEFAULT_GAME_ID: GameCatalogId = "poker-lite";
+export const DEFAULT_GAME_ID: GameCatalogId = 'poker-lite';
 
 export const gameCatalogEntries = Object.values(gameCatalog);
 
 const legacyGameCatalogAliases: Record<string, GameCatalogId> = {
-    "draw-poker": "poker-lite"
+    'draw-poker': 'poker-lite',
 };
 
-export function getGameCatalogEntryById(gameId: string | null | undefined): AnyGameCatalogEntry | null {
+export function getGameCatalogEntryById(
+    gameId: string | null | undefined,
+): AnyGameCatalogEntry | null {
     if (!gameId) {
         return null;
     }
 
     const normalizedGameId = gameId.toLowerCase();
-    const resolvedGameId = legacyGameCatalogAliases[normalizedGameId] ?? (normalizedGameId as GameCatalogId);
+    const resolvedGameId =
+        legacyGameCatalogAliases[normalizedGameId] ?? (normalizedGameId as GameCatalogId);
     return gameCatalog[resolvedGameId] ?? null;
 }

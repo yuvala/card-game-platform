@@ -1,19 +1,19 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
-import { supportedDeckDefinitions } from "@engine/engine/cards/deckDefinitions";
-import { getCardSkinById } from "@engine/engine/cards/skinPacks";
-import type { CardGameSession } from "@engine/engine/game/session";
+import { supportedDeckDefinitions } from '@engine/engine/cards/deckDefinitions';
+import { getCardSkinById } from '@engine/engine/cards/skinPacks';
+import type { CardGameSession } from '@engine/engine/game/session';
 import type {
     CardGameViewCard,
     CardGameViewTableCard,
-    CardGameViewModel
-} from "@engine/engine/game/viewModel";
+    CardGameViewModel,
+} from '@engine/engine/game/viewModel';
 import {
     ensureDeckTextures,
     getCardBackTextureKey,
-    getCardFaceTextureKey
-} from "../cards/CardTextureFactory";
-import { TABLE_WIDTH } from "../layout";
+    getCardFaceTextureKey,
+} from '../cards/CardTextureFactory';
+import { TABLE_WIDTH } from '../layout';
 import {
     CARD_HEIGHT,
     CARD_WIDTH,
@@ -24,16 +24,16 @@ import {
     TABLE_FELT_DARK,
     TABLE_GOLD,
     TABLE_CREAM,
-    TABLE_CREAM_DIM
-} from "./layout/constants";
-import { createSeatBadge, type SeatBadge } from "./factories/createSeatBadge";
-import { createTableCardVisual, type TableCardVisual } from "./factories/createTableCardVisual";
-import { createCardAnimationLayer, type CardAnimationLayer } from "./animations/cardAnimationLayer";
-import { animateRiffleShuffle } from "./animations/cardMotionAnimations";
-import { playShuffleSound } from "./audio/cardSoundEffects";
-import { getSeatLayouts } from "./layout/seatLayouts";
-import type { SeatLayout } from "./layout/types";
-import { syncHandPresentation, type HandSlotVisual } from "./presenters/handPresenter";
+    TABLE_CREAM_DIM,
+} from './layout/constants';
+import { createSeatBadge, type SeatBadge } from './factories/createSeatBadge';
+import { createTableCardVisual, type TableCardVisual } from './factories/createTableCardVisual';
+import { createCardAnimationLayer, type CardAnimationLayer } from './animations/cardAnimationLayer';
+import { animateRiffleShuffle } from './animations/cardMotionAnimations';
+import { playShuffleSound } from './audio/cardSoundEffects';
+import { getSeatLayouts } from './layout/seatLayouts';
+import type { SeatLayout } from './layout/types';
+import { syncHandPresentation, type HandSlotVisual } from './presenters/handPresenter';
 import {
     createOwnedPileVisual,
     createPrimaryPileVisuals,
@@ -43,17 +43,17 @@ import {
     syncSupplementalPilePresentation,
     type OwnedPileVisual,
     type PrimaryPileVisuals,
-    type SupplementalPileVisual
-} from "./presenters/pilePresenter";
-import { runViewEffects } from "./presenters/effectPresenter";
-import { runPlayedCardAnimation, syncTableCardPresentation } from "./presenters/tableCardPresenter";
+    type SupplementalPileVisual,
+} from './presenters/pilePresenter';
+import { runViewEffects } from './presenters/effectPresenter';
+import { runPlayedCardAnimation, syncTableCardPresentation } from './presenters/tableCardPresenter';
 import {
     createPlayerDeckVisual,
     syncPlayerDeckPresentation,
-    type PlayerDeckVisual
-} from "./presenters/playerDeckPresenter";
-import { drawDebugZoneOverlay } from "./debug/debugZoneOverlay";
-import type { DebugOverlay } from "./debug/debugZoneOverlay";
+    type PlayerDeckVisual,
+} from './presenters/playerDeckPresenter';
+import { drawDebugZoneOverlay } from './debug/debugZoneOverlay';
+import type { DebugOverlay } from './debug/debugZoneOverlay';
 
 interface CardDisplaySize {
     width: number;
@@ -72,18 +72,18 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private readonly seatLayouts = new Map<string, SeatLayout>();
     private readonly supplementalPileVisuals = new Map<string, SupplementalPileVisual>();
     private readonly tableCardVisuals: TableCardVisual[] = [];
-    private activeAnimationKey = "";
-    private activeTableCardFlipKey = "";
-    private activeEffectBatchKey = "";
-    private activeShuffleAnimationKey = "";
+    private activeAnimationKey = '';
+    private activeTableCardFlipKey = '';
+    private activeEffectBatchKey = '';
+    private activeShuffleAnimationKey = '';
     private shuffleAnimationLayer!: CardAnimationLayer;
-    private seatLayoutKey = "";
-    private activeDeckId = "";
-    private activeCardSkinId = "";
+    private seatLayoutKey = '';
+    private activeDeckId = '';
+    private activeCardSkinId = '';
     private debugOverlay?: DebugOverlay;
 
     constructor(session: CardGameSession<TSnapshot>, viewerId?: string | null) {
-        super("rewrite-table");
+        super('rewrite-table');
         this.session = session;
         this.viewerId = viewerId ?? null;
     }
@@ -91,17 +91,27 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     create(): void {
         const { height } = this.scale;
 
-        if (this.textures.exists("rewrite-table-bg")) {
-            this.add.image(TABLE_WIDTH / 2, height / 2, "rewrite-table-bg")
+        if (this.textures.exists('rewrite-table-bg')) {
+            this.add
+                .image(TABLE_WIDTH / 2, height / 2, 'rewrite-table-bg')
                 .setDisplaySize(TABLE_WIDTH + 60, height + 60)
                 .setAlpha(0.24);
         }
 
         this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH, height, TABLE_FELT_DARK, 0.78);
-        this.add.ellipse(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH * 0.76, height * 0.7, TABLE_FELT, 0.26);
-        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 42, height - 40, TABLE_FELT, 0.28)
+        this.add.ellipse(
+            TABLE_WIDTH / 2,
+            height / 2,
+            TABLE_WIDTH * 0.76,
+            height * 0.7,
+            TABLE_FELT,
+            0.26,
+        );
+        this.add
+            .rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 42, height - 40, TABLE_FELT, 0.28)
             .setStrokeStyle(2, TABLE_GOLD, 0.12);
-        this.add.rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 84, height - 82, 0x000000, 0)
+        this.add
+            .rectangle(TABLE_WIDTH / 2, height / 2, TABLE_WIDTH - 84, height - 82, 0x000000, 0)
             .setStrokeStyle(1, TABLE_GOLD, 0.08);
 
         this.createPiles();
@@ -113,7 +123,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             if (viewModel.animation) {
                 this.animatePlayedCard(viewModel);
             } else {
-                this.activeAnimationKey = "";
+                this.activeAnimationKey = '';
             }
         });
 
@@ -122,25 +132,28 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             this.subscription = undefined;
         });
 
-        this.input.keyboard?.addKey("D").on("down", () => {
+        this.input.keyboard?.addKey('D').on('down', () => {
             this.toggleDebugOverlay();
         });
 
-        if (localStorage.getItem("debug-zones") === "on") {
+        if (localStorage.getItem('debug-zones') === 'on') {
             this.toggleDebugOverlay();
         }
 
-        globalThis.addEventListener("debug-layer-change", () => {
+        globalThis.addEventListener('debug-layer-change', () => {
             if (this.debugOverlay) {
                 this.redrawDebugOverlay();
             }
         });
 
-        this.add.text(TABLE_WIDTH / 2, height - 6, "[D] zones", {
-            fontFamily: "monospace",
-            fontSize: "10px",
-            color: "rgba(255,255,255,0.18)"
-        }).setOrigin(0.5, 1).setDepth(5000);
+        this.add
+            .text(TABLE_WIDTH / 2, height - 6, '[D] zones', {
+                fontFamily: 'monospace',
+                fontSize: '10px',
+                color: 'rgba(255,255,255,0.18)',
+            })
+            .setOrigin(0.5, 1)
+            .setDepth(5000);
 
         this.syncViewModel(this.session.getViewModel(this.viewerId));
     }
@@ -149,11 +162,11 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         if (this.debugOverlay) {
             this.debugOverlay.destroy();
             this.debugOverlay = undefined;
-            localStorage.removeItem("debug-zones");
+            localStorage.removeItem('debug-zones');
             return;
         }
         this.redrawDebugOverlay();
-        localStorage.setItem("debug-zones", "on");
+        localStorage.setItem('debug-zones', 'on');
     }
 
     private redrawDebugOverlay(): void {
@@ -168,10 +181,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             supplementalPileVisuals: this.supplementalPileVisuals,
             tableCardVisuals: this.tableCardVisuals,
             layers: {
-                origins: localStorage.getItem("debug-layer-origins") === "on",
-                slots: localStorage.getItem("debug-layer-slots") === "on",
-                piles: localStorage.getItem("debug-layer-piles") === "on"
-            }
+                origins: localStorage.getItem('debug-layer-origins') === 'on',
+                slots: localStorage.getItem('debug-layer-slots') === 'on',
+                piles: localStorage.getItem('debug-layer-piles') === 'on',
+            },
         });
     }
 
@@ -182,7 +195,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     private createHandSlots(
         _playerId: string,
         layout: SeatLayout,
-        slotCount: number
+        slotCount: number,
     ): HandSlotVisual[] {
         const slots: HandSlotVisual[] = [];
         const startX = layout.handCenterX - (layout.gapX * (slotCount - 1)) / 2;
@@ -190,34 +203,34 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         for (let i = 0; i < slotCount; i += 1) {
             const stackBacks = [-8, -4].map((offset) => {
-                const back = this.add.image(offset, offset, this.getActiveBackTextureKey())
+                const back = this.add
+                    .image(offset, offset, this.getActiveBackTextureKey())
                     .setDisplaySize(CARD_WIDTH, CARD_HEIGHT)
                     .setVisible(false);
-                back.setData("cardDisplaySize", {
+                back.setData('cardDisplaySize', {
                     width: CARD_WIDTH,
-                    height: CARD_HEIGHT
+                    height: CARD_HEIGHT,
                 } satisfies CardDisplaySize);
                 return back;
             });
-            const image = this.add.image(0, 0, this.getActiveBackTextureKey())
+            const image = this.add
+                .image(0, 0, this.getActiveBackTextureKey())
                 .setDisplaySize(CARD_WIDTH, CARD_HEIGHT);
-            image.setData("cardDisplaySize", {
+            image.setData('cardDisplaySize', {
                 width: CARD_WIDTH,
-                height: CARD_HEIGHT
+                height: CARD_HEIGHT,
             } satisfies CardDisplaySize);
-            const outline = this.add.rectangle(0, 0, CARD_WIDTH + 8, CARD_HEIGHT + 8, 0x000000, 0)
+            const outline = this.add
+                .rectangle(0, 0, CARD_WIDTH + 8, CARD_HEIGHT + 8, 0x000000, 0)
                 .setStrokeStyle(1, 0x17352b, 0.28);
             const slotX = startX + layout.gapX * i;
             const slotY = startY + layout.gapY * i;
-            const container = this.add.container(slotX, slotY, [...stackBacks, image, outline]).setAngle(layout.angle);
-            const hitTarget = this.add.rectangle(
-                slotX,
-                slotY,
-                CARD_WIDTH,
-                CARD_HEIGHT,
-                0x000000,
-                0.001
-            ).setAngle(layout.angle);
+            const container = this.add
+                .container(slotX, slotY, [...stackBacks, image, outline])
+                .setAngle(layout.angle);
+            const hitTarget = this.add
+                .rectangle(slotX, slotY, CARD_WIDTH, CARD_HEIGHT, 0x000000, 0.001)
+                .setAngle(layout.angle);
 
             hitTarget.setInteractive({ useHandCursor: true });
             if (hitTarget.input) {
@@ -228,33 +241,33 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                     return;
                 }
 
-                const cardId = container.getData("cardId");
-                const cardClickAction = container.getData("cardClickAction");
-                if (cardClickAction === "play") {
-                    this.session.send({ type: "PLAY_CARD" });
+                const cardId = container.getData('cardId');
+                const cardClickAction = container.getData('cardClickAction');
+                if (cardClickAction === 'play') {
+                    this.session.send({ type: 'PLAY_CARD' });
                     return;
                 }
 
-                if (typeof cardId === "string") {
-                    this.session.send({ type: "SELECT_CARD", cardId });
+                if (typeof cardId === 'string') {
+                    this.session.send({ type: 'SELECT_CARD', cardId });
                 }
             });
             hitTarget.on(Phaser.Input.Events.POINTER_OVER, () => {
                 if (hitTarget.input?.enabled) {
-                    container.setData("isHovered", true);
-                    const isSelected = container.getData("isSelected") === true;
+                    container.setData('isHovered', true);
+                    const isSelected = container.getData('isSelected') === true;
                     const scale = isSelected ? SELECTED_CARD_SCALE : HOVER_CARD_SCALE;
                     container.setScale(scale);
                 }
             });
             hitTarget.on(Phaser.Input.Events.POINTER_OUT, () => {
-                container.setData("isHovered", false);
+                container.setData('isHovered', false);
                 if (!hitTarget.input?.enabled) {
                     container.setScale(1);
                     return;
                 }
 
-                const isSelected = container.getData("isSelected") === true;
+                const isSelected = container.getData('isSelected') === true;
                 const scale = isSelected ? SELECTED_CARD_SCALE : 1;
                 container.setScale(scale);
             });
@@ -267,7 +280,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
                 originAngle: layout.angle,
                 stackBacks,
                 image,
-                outline
+                outline,
             });
         }
 
@@ -283,10 +296,12 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             visuals: this.primaryPileVisuals,
             textureApi: {
                 getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant),
+                applyCardTexture: (image, card, variant) =>
+                    this.applyCardTexture(image, card, variant),
                 applyCardBackTexture: (image) => this.applyCardBackTexture(image),
-                setCardDisplaySize: (image, width, height) => this.setCardDisplaySize(image, width, height)
-            }
+                setCardDisplaySize: (image, width, height) =>
+                    this.setCardDisplaySize(image, width, height),
+            },
         });
 
         this.updateSeatLabels(viewModel);
@@ -294,8 +309,9 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             viewModel,
             handSlots: this.handSlots,
             textureApi: {
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant)
-            }
+                applyCardTexture: (image, card, variant) =>
+                    this.applyCardTexture(image, card, variant),
+            },
         });
         syncOwnedPilePresentation({
             viewModel,
@@ -303,38 +319,46 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             seatLayouts: this.seatLayouts,
             ownedPileVisuals: this.ownedPileVisuals,
             createOwnedPileVisual: (pileId) => {
-                const visual = createOwnedPileVisual(this, pileId, () => this.getActiveBackTextureKey());
+                const visual = createOwnedPileVisual(this, pileId, () =>
+                    this.getActiveBackTextureKey(),
+                );
                 this.ownedPileVisuals.set(pileId, visual);
                 return visual;
             },
             textureApi: {
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant),
-                applyCardBackTexture: (image) => this.applyCardBackTexture(image)
-            }
+                applyCardTexture: (image, card, variant) =>
+                    this.applyCardTexture(image, card, variant),
+                applyCardBackTexture: (image) => this.applyCardBackTexture(image),
+            },
         });
         syncSupplementalPilePresentation({
             viewModel,
             supplementalPileVisuals: this.supplementalPileVisuals,
             createSupplementalPileVisual: (pileId) => {
-                const visual = createSupplementalPileVisual(this, pileId, () => this.getActiveBackTextureKey());
+                const visual = createSupplementalPileVisual(this, pileId, () =>
+                    this.getActiveBackTextureKey(),
+                );
                 this.supplementalPileVisuals.set(pileId, visual);
                 return visual;
             },
             textureApi: {
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant),
-                applyCardBackTexture: (image) => this.applyCardBackTexture(image)
-            }
+                applyCardTexture: (image, card, variant) =>
+                    this.applyCardTexture(image, card, variant),
+                applyCardBackTexture: (image) => this.applyCardBackTexture(image),
+            },
         });
         this.activeTableCardFlipKey = syncTableCardPresentation({
             scene: this,
             viewModel,
             tableCardVisuals: this.tableCardVisuals,
-            createTableCardVisual: () => createTableCardVisual(this, this.getActiveBackTextureKey()),
+            createTableCardVisual: () =>
+                createTableCardVisual(this, this.getActiveBackTextureKey()),
             activeTableCardFlipKey: this.activeTableCardFlipKey,
             textureApi: {
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant),
-                applyCardBackTexture: (image) => this.applyCardBackTexture(image)
-            }
+                applyCardTexture: (image, card, variant) =>
+                    this.applyCardTexture(image, card, variant),
+                applyCardBackTexture: (image) => this.applyCardBackTexture(image),
+            },
         });
         syncPlayerDeckPresentation({
             viewModel,
@@ -342,17 +366,22 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             seatLayouts: this.seatLayouts,
             createVisual: (playerId) => {
                 const layout = this.seatLayouts.get(playerId)!;
-                return createPlayerDeckVisual(this, layout, {
-                    applyCardBackTexture: (image) => this.applyCardBackTexture(image),
-                    getActiveBackTextureKey: () => this.getActiveBackTextureKey()
-                }, () => {
-                    this.session.send({ type: "PLAY_CARD" });
-                });
+                return createPlayerDeckVisual(
+                    this,
+                    layout,
+                    {
+                        applyCardBackTexture: (image) => this.applyCardBackTexture(image),
+                        getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
+                    },
+                    () => {
+                        this.session.send({ type: 'PLAY_CARD' });
+                    },
+                );
             },
             textureApi: {
                 applyCardBackTexture: (image) => this.applyCardBackTexture(image),
-                getActiveBackTextureKey: () => this.getActiveBackTextureKey()
-            }
+                getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
+            },
         });
         this.activeEffectBatchKey = runViewEffects({
             scene: this,
@@ -365,11 +394,12 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             activeEffectBatchKey: this.activeEffectBatchKey,
             textureApi: {
                 getActiveBackTextureKey: () => this.getActiveBackTextureKey(),
-                applyCardTexture: (image, card, variant) => this.applyCardTexture(image, card, variant)
+                applyCardTexture: (image, card, variant) =>
+                    this.applyCardTexture(image, card, variant),
             },
             onEffectsDone: () => {
-                this.session.send({ type: "ANIMATION_DONE" });
-            }
+                this.session.send({ type: 'ANIMATION_DONE' });
+            },
         });
         this.runShuffleAnimation(viewModel);
         if (this.debugOverlay) {
@@ -378,16 +408,16 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     private runShuffleAnimation(viewModel: CardGameViewModel): void {
-        if (viewModel.phaseLabel !== "SHUFFLING") {
-            this.activeShuffleAnimationKey = "";
+        if (viewModel.phaseLabel !== 'SHUFFLING') {
+            this.activeShuffleAnimationKey = '';
             return;
         }
 
         const shuffleAnimationKey = [
             viewModel.deckId,
             viewModel.cardSkinId,
-            viewModel.roundLabel
-        ].join(":");
+            viewModel.roundLabel,
+        ].join(':');
         if (this.activeShuffleAnimationKey === shuffleAnimationKey) {
             return;
         }
@@ -401,26 +431,30 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             textureKey: this.getActiveBackTextureKey(),
             center: {
                 x: this.primaryPileVisuals.drawPileFrame.x,
-                y: this.primaryPileVisuals.drawPileFrame.y
+                y: this.primaryPileVisuals.drawPileFrame.y,
             },
             size: { width: CARD_WIDTH, height: CARD_HEIGHT },
             count: 10,
             depth: 135,
             onComplete: () => {
                 this.shuffleAnimationLayer.clear();
-            }
+            },
         });
     }
 
     private ensureSeatVisuals(viewModel: CardGameViewModel): void {
         const layoutKey = viewModel.players
             .map((player) => {
-                const slotCount = player.deckPile && player.hand.length === 0
-                    ? 0
-                    : Math.max(player.handSlotCount ?? DEFAULT_HAND_SLOT_COUNT, player.hand.length);
-                return player.id + ":" + String(slotCount);
+                const slotCount =
+                    player.deckPile && player.hand.length === 0
+                        ? 0
+                        : Math.max(
+                              player.handSlotCount ?? DEFAULT_HAND_SLOT_COUNT,
+                              player.hand.length,
+                          );
+                return player.id + ':' + String(slotCount);
             })
-            .join("|");
+            .join('|');
         if (this.seatLayoutKey === layoutKey) {
             return;
         }
@@ -431,9 +465,10 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         viewModel.players.forEach((player, index) => {
             const layout = seatLayouts[index];
             const badge = createSeatBadge(this, layout);
-            const slotCount = player.deckPile && player.hand.length === 0
-                ? 0
-                : Math.max(player.handSlotCount ?? DEFAULT_HAND_SLOT_COUNT, player.hand.length);
+            const slotCount =
+                player.deckPile && player.hand.length === 0
+                    ? 0
+                    : Math.max(player.handSlotCount ?? DEFAULT_HAND_SLOT_COUNT, player.hand.length);
 
             this.seatBadges.set(player.id, badge);
             this.seatLayouts.set(player.id, layout);
@@ -464,15 +499,19 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
         this.playerDeckVisuals.clear();
         this.seatLayouts.clear();
 
-        this.seatLayoutKey = "";
+        this.seatLayoutKey = '';
     }
 
     private ensureCardTextures(viewModel: CardGameViewModel): void {
-        if (this.activeDeckId === viewModel.deckId && this.activeCardSkinId === viewModel.cardSkinId) {
+        if (
+            this.activeDeckId === viewModel.deckId &&
+            this.activeCardSkinId === viewModel.cardSkinId
+        ) {
             return;
         }
 
-        const deckDefinition = supportedDeckDefinitions[viewModel.deckId as keyof typeof supportedDeckDefinitions];
+        const deckDefinition =
+            supportedDeckDefinitions[viewModel.deckId as keyof typeof supportedDeckDefinitions];
         if (!deckDefinition) {
             return;
         }
@@ -482,12 +521,15 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.activeDeckId = deckDefinition.id;
         this.activeCardSkinId = skin.id;
-        this.activeTableCardFlipKey = "";
-        this.activeEffectBatchKey = "";
+        this.activeTableCardFlipKey = '';
+        this.activeEffectBatchKey = '';
     }
 
     private getActiveBackTextureKey(): string {
-        return getCardBackTextureKey(this.activeDeckId || "french", this.activeCardSkinId || "vintage-european");
+        return getCardBackTextureKey(
+            this.activeDeckId || 'french',
+            this.activeCardSkinId || 'vintage-european',
+        );
     }
 
     private updateSeatLabels(viewModel: CardGameViewModel): void {
@@ -503,19 +545,26 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             badge.metaText.setText(player.metaLabel);
 
             badge.iconCircle.setFillStyle(
-                player.isCurrentTurn ? 0xffd166 : (player.isRoundWinner ? 0x93c47d : 0x15382c),
-                0.98
+                player.isCurrentTurn ? 0xffd166 : player.isRoundWinner ? 0x93c47d : 0x15382c,
+                0.98,
             );
-            badge.panel.setFillStyle(player.isCurrentTurn ? 0x1f2f20 : 0x071a13, player.isCurrentTurn ? 0.46 : 0.28);
-            badge.panel.setStrokeStyle(1, player.isCurrentTurn ? TABLE_GOLD : 0x5d7b70, player.isCurrentTurn ? 0.28 : 0.08);
+            badge.panel.setFillStyle(
+                player.isCurrentTurn ? 0x1f2f20 : 0x071a13,
+                player.isCurrentTurn ? 0.46 : 0.28,
+            );
+            badge.panel.setStrokeStyle(
+                1,
+                player.isCurrentTurn ? TABLE_GOLD : 0x5d7b70,
+                player.isCurrentTurn ? 0.28 : 0.08,
+            );
             badge.iconCircle.setStrokeStyle(
                 2,
-                player.isCurrentTurn ? 0xfff1bf : (player.isRoundWinner ? 0xc7e6b6 : 0x5d7b70),
-                0.95
+                player.isCurrentTurn ? 0xfff1bf : player.isRoundWinner ? 0xc7e6b6 : 0x5d7b70,
+                0.95,
             );
-            badge.iconText.setColor(player.isCurrentTurn ? "#10251c" : TABLE_CREAM);
-            badge.nameText.setColor(isHighlighted ? "#ffd166" : TABLE_CREAM);
-            badge.metaText.setColor(isHighlighted ? "rgba(255,209,102,0.82)" : TABLE_CREAM_DIM);
+            badge.iconText.setColor(player.isCurrentTurn ? '#10251c' : TABLE_CREAM);
+            badge.nameText.setColor(isHighlighted ? '#ffd166' : TABLE_CREAM);
+            badge.metaText.setColor(isHighlighted ? 'rgba(255,209,102,0.82)' : TABLE_CREAM_DIM);
         });
     }
 
@@ -527,23 +576,27 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             discardCard: this.primaryPileVisuals.discardCard,
             activeAnimationKey: this.activeAnimationKey,
             onAnimationDone: () => {
-                this.session.send({ type: "ANIMATION_DONE" });
-            }
+                this.session.send({ type: 'ANIMATION_DONE' });
+            },
         });
     }
 
-    private setCardDisplaySize(image: Phaser.GameObjects.Image, width: number, height: number): void {
+    private setCardDisplaySize(
+        image: Phaser.GameObjects.Image,
+        width: number,
+        height: number,
+    ): void {
         image.setDisplaySize(width, height);
-        image.setData("cardDisplaySize", {
+        image.setData('cardDisplaySize', {
             width,
-            height
+            height,
         } satisfies CardDisplaySize);
     }
 
     private applyCardTexture(
         image: Phaser.GameObjects.Image,
         card: CardGameViewCard | CardGameViewTableCard | null,
-        variant: "compact" | "showcase"
+        variant: 'compact' | 'showcase',
     ): void {
         if (!card || !card.isFaceUp) {
             this.applyCardBackTexture(image);
@@ -552,7 +605,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.setImageTexturePreservingDisplaySize(
             image,
-            getCardFaceTextureKey(card.id, this.activeCardSkinId, variant)
+            getCardFaceTextureKey(card.id, this.activeCardSkinId, variant),
         );
     }
 
@@ -562,14 +615,13 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
     private setImageTexturePreservingDisplaySize(
         image: Phaser.GameObjects.Image,
-        textureKey: string
+        textureKey: string,
     ): void {
-        const displaySize = image.getData("cardDisplaySize") as CardDisplaySize | undefined;
+        const displaySize = image.getData('cardDisplaySize') as CardDisplaySize | undefined;
         const displayWidth = displaySize?.width ?? image.displayWidth;
         const displayHeight = displaySize?.height ?? image.displayHeight;
 
         image.setTexture(textureKey);
         image.setDisplaySize(displayWidth, displayHeight);
     }
-
 }

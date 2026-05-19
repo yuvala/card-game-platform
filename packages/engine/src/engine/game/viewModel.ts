@@ -1,5 +1,5 @@
-import type { CardGameEvent } from "./types";
-import type { CardGameEffect } from "./effects";
+import type { CardGameEvent } from './types';
+import type { CardGameEffect } from './effects';
 
 export interface CardGameActor<TSnapshot> {
     getSnapshot(): TSnapshot;
@@ -15,9 +15,7 @@ export interface CardGameViewCard {
     stackBadgeLabel?: string;
 }
 
-export type CardGameViewHandPresentation =
-    | "hand-fan"
-    | "hidden-stack";
+export type CardGameViewHandPresentation = 'hand-fan' | 'hidden-stack';
 
 export interface CardGameViewPlayerDeckPile {
     cardCount: number;
@@ -36,7 +34,7 @@ export interface CardGameViewPlayer {
     isCurrentTurn: boolean;
     isRoundWinner: boolean;
     canInteract: boolean;
-    cardClickAction?: "select" | "play";
+    cardClickAction?: 'select' | 'play';
 }
 
 export interface CardGameViewControls {
@@ -52,14 +50,14 @@ export interface CardGameViewOutcome {
 }
 
 export type CardGameViewActionTarget =
-    | { type: "table" }
-    | { type: "player-hand"; playerId: string }
-    | { type: "pile"; pileId: string };
+    | { type: 'table' }
+    | { type: 'player-hand'; playerId: string }
+    | { type: 'pile'; pileId: string };
 
 export interface CardGameViewPrimaryAction {
     label: string;
     hint: string;
-    eventType: CardGameEvent["type"];
+    eventType: CardGameEvent['type'];
     target?: CardGameViewActionTarget;
 }
 
@@ -75,15 +73,13 @@ export interface CardGameViewTableCard extends CardGameViewCard {
     sourceCardIds?: string[];
 }
 
-export type CardGameViewTablePresentation =
-    | "table-row"
-    | "trick-seats";
+export type CardGameViewTablePresentation = 'table-row' | 'trick-seats';
 
 export type CardGameViewPilePresentation =
-    | "hidden-stack"
-    | "face-up-stack"
-    | "capture-pile"
-    | "single-card";
+    | 'hidden-stack'
+    | 'face-up-stack'
+    | 'capture-pile'
+    | 'single-card';
 
 export interface CardGameViewPile {
     id: string;
@@ -123,5 +119,5 @@ export interface CardGameViewModel {
 
 export type CardGameViewModelFactory<TSnapshot> = (
     snapshot: TSnapshot,
-    viewerId?: string | null
+    viewerId?: string | null,
 ) => CardGameViewModel;

@@ -1,9 +1,9 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import { LobbyRoute } from "./routes/LobbyRoute";
-import { TableAdminRoute } from "./routes/TableAdminRoute";
-import { PlayerRoute } from "./routes/PlayerRoute";
-import { SandboxRoute } from "./routes/SandboxRoute";
+import React from 'react';
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { LobbyRoute } from './routes/LobbyRoute';
+import { TableAdminRoute } from './routes/TableAdminRoute';
+import { PlayerRoute } from './routes/PlayerRoute';
+import { SandboxRoute } from './routes/SandboxRoute';
 
 export function App() {
     return (

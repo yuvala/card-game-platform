@@ -1,10 +1,11 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
-import type { CardGameEffectReason } from "@engine/engine/game/effects";
+import type { CardGameEffectReason } from '@engine/engine/game/effects';
 
-type AudioWindow = Window & typeof globalThis & {
-    webkitAudioContext?: typeof AudioContext;
-};
+type AudioWindow = Window &
+    typeof globalThis & {
+        webkitAudioContext?: typeof AudioContext;
+    };
 
 export interface CardSoundOptions {
     enabled?: boolean;
@@ -15,7 +16,7 @@ let audioContext: AudioContext | null = null;
 let lastPlayedAtByKey = new Map<string, number>();
 
 function getAudioContext(): AudioContext | null {
-    if (typeof window === "undefined") {
+    if (typeof window === 'undefined') {
         return null;
     }
 
@@ -43,7 +44,7 @@ function canPlay(scene: Phaser.Scene, key: string, options: CardSoundOptions = {
         return false;
     }
 
-    if (context.state === "suspended") {
+    if (context.state === 'suspended') {
         void context.resume();
     }
 
@@ -83,7 +84,16 @@ function playNoiseClick(input: {
     playbackRate?: number;
     delay?: number;
 }): void {
-    const { scene, key, duration, volume, frequency, filterType, playbackRate = 1, delay = 0 } = input;
+    const {
+        scene,
+        key,
+        duration,
+        volume,
+        frequency,
+        filterType,
+        playbackRate = 1,
+        delay = 0,
+    } = input;
     if (!canPlay(scene, key, { volume })) {
         return;
     }
@@ -136,9 +146,12 @@ function playToneThump(input: {
     const oscillator = context.createOscillator();
     const gain = context.createGain();
 
-    oscillator.type = "sine";
+    oscillator.type = 'sine';
     oscillator.frequency.setValueAtTime(frequency, startTime);
-    oscillator.frequency.exponentialRampToValueAtTime(Math.max(60, frequency * 0.72), startTime + duration);
+    oscillator.frequency.exponentialRampToValueAtTime(
+        Math.max(60, frequency * 0.72),
+        startTime + duration,
+    );
     gain.gain.setValueAtTime(0.0001, startTime);
     gain.gain.exponentialRampToValueAtTime(Math.max(volume, 0.0001), startTime + 0.01);
     gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
@@ -152,50 +165,50 @@ function playToneThump(input: {
 export function playCardMoveSound(
     scene: Phaser.Scene,
     reason: CardGameEffectReason,
-    options: CardSoundOptions = {}
+    options: CardSoundOptions = {},
 ): void {
     const volume = getMasterVolume(options);
 
     switch (reason) {
-        case "deal":
-        case "draw":
+        case 'deal':
+        case 'draw':
             playNoiseClick({
                 scene,
-                key: "card-move-fast",
+                key: 'card-move-fast',
                 duration: 0.055,
                 volume: volume * 0.34,
                 frequency: 1600,
-                filterType: "bandpass",
-                playbackRate: Phaser.Math.FloatBetween(0.96, 1.08)
+                filterType: 'bandpass',
+                playbackRate: Phaser.Math.FloatBetween(0.96, 1.08),
             });
             return;
-        case "play":
+        case 'play':
             playNoiseClick({
                 scene,
-                key: "card-place",
+                key: 'card-place',
                 duration: 0.07,
                 volume: volume * 0.38,
                 frequency: 900,
-                filterType: "bandpass",
-                playbackRate: Phaser.Math.FloatBetween(0.94, 1.04)
+                filterType: 'bandpass',
+                playbackRate: Phaser.Math.FloatBetween(0.94, 1.04),
             });
             playToneThump({
                 scene,
-                key: "card-place-thump",
+                key: 'card-place-thump',
                 duration: 0.06,
                 volume: volume * 0.08,
-                frequency: Phaser.Math.FloatBetween(120, 150)
+                frequency: Phaser.Math.FloatBetween(120, 150),
             });
             return;
-        case "collect":
+        case 'collect':
             playNoiseClick({
                 scene,
-                key: "card-collect",
+                key: 'card-collect',
                 duration: 0.075,
                 volume: volume * 0.3,
                 frequency: 760,
-                filterType: "lowpass",
-                playbackRate: Phaser.Math.FloatBetween(0.92, 1.03)
+                filterType: 'lowpass',
+                playbackRate: Phaser.Math.FloatBetween(0.92, 1.03),
             });
             return;
     }
@@ -205,19 +218,19 @@ export function playCardFlipSound(scene: Phaser.Scene, options: CardSoundOptions
     const volume = getMasterVolume(options);
     playNoiseClick({
         scene,
-        key: "card-flip",
+        key: 'card-flip',
         duration: 0.075,
         volume: volume * 0.28,
         frequency: 2200,
-        filterType: "highpass",
-        playbackRate: Phaser.Math.FloatBetween(0.97, 1.08)
+        filterType: 'highpass',
+        playbackRate: Phaser.Math.FloatBetween(0.97, 1.08),
     });
 }
 
 export function playShuffleSound(scene: Phaser.Scene, options: CardSoundOptions = {}): void {
     const volume = getMasterVolume(options);
     const context = getAudioContext();
-    if (!context || !canPlay(scene, "deck-shuffle", options)) {
+    if (!context || !canPlay(scene, 'deck-shuffle', options)) {
         return;
     }
 
@@ -225,13 +238,13 @@ export function playShuffleSound(scene: Phaser.Scene, options: CardSoundOptions 
     for (let index = 0; index < 9; index += 1) {
         playNoiseClick({
             scene,
-            key: "deck-shuffle-" + String(index),
+            key: 'deck-shuffle-' + String(index),
             duration: 0.06,
             volume: volume * (0.18 + index * 0.008),
             frequency: 900 + index * 90,
-            filterType: index % 2 === 0 ? "bandpass" : "highpass",
+            filterType: index % 2 === 0 ? 'bandpass' : 'highpass',
             playbackRate: Phaser.Math.FloatBetween(0.92, 1.08),
-            delay: startTime - context.currentTime + index * 0.065
+            delay: startTime - context.currentTime + index * 0.065,
         });
     }
 }
@@ -240,9 +253,9 @@ export function playInvalidMoveSound(scene: Phaser.Scene, options: CardSoundOpti
     const volume = getMasterVolume(options);
     playToneThump({
         scene,
-        key: "invalid-move",
+        key: 'invalid-move',
         duration: 0.12,
         volume: volume * 0.14,
-        frequency: 120
+        frequency: 120,
     });
 }

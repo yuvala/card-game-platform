@@ -1,11 +1,11 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 
 interface Props {
     onSubmit: (nickname: string) => void;
 }
 
 export function NicknameScreen({ onSubmit }: Props) {
-    const [value, setValue] = useState("");
+    const [value, setValue] = useState('');
 
     function submit(e: React.FormEvent) {
         e.preventDefault();
@@ -21,10 +21,12 @@ export function NicknameScreen({ onSubmit }: Props) {
                     autoFocus
                     placeholder="Your nickname"
                     value={value}
-                    onChange={e => setValue(e.target.value)}
+                    onChange={(e) => setValue(e.target.value)}
                     maxLength={20}
                 />
-                <button type="submit" disabled={!value.trim()}>Enter Lobby</button>
+                <button type="submit" disabled={!value.trim()}>
+                    Enter Lobby
+                </button>
             </form>
         </div>
     );

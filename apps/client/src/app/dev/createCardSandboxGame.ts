@@ -1,6 +1,6 @@
-import * as Phaser from "phaser";
+import * as Phaser from 'phaser';
 
-import { CardSandboxScene } from "./scenes/CardSandboxScene";
+import { CardSandboxScene } from './scenes/CardSandboxScene';
 
 const CARD_SANDBOX_WIDTH = 1280;
 const CARD_SANDBOX_HEIGHT = 1760;
@@ -12,7 +12,7 @@ export interface CardSandboxGame {
     replay(): void;
 }
 
-export type CardSandboxSection = "real" | "ghost" | "layer" | "cards";
+export type CardSandboxSection = 'real' | 'ghost' | 'layer' | 'cards';
 
 export function createCardSandboxGame(parent: string, initialDeckId: string): CardSandboxGame {
     const scene = new CardSandboxScene(initialDeckId);
@@ -21,19 +21,19 @@ export function createCardSandboxGame(parent: string, initialDeckId: string): Ca
         parent,
         width: CARD_SANDBOX_WIDTH,
         height: CARD_SANDBOX_HEIGHT,
-        backgroundColor: "#07140f",
+        backgroundColor: '#07140f',
         render: {
             antialias: true,
             antialiasGL: true,
             roundPixels: true,
-            mipmapFilter: "LINEAR"
+            mipmapFilter: 'LINEAR',
         },
         scale: {
             mode: Phaser.Scale.FIT,
             autoRound: true,
-            autoCenter: Phaser.Scale.CENTER_BOTH
+            autoCenter: Phaser.Scale.CENTER_BOTH,
         },
-        scene: [scene]
+        scene: [scene],
     });
 
     return {
@@ -46,6 +46,6 @@ export function createCardSandboxGame(parent: string, initialDeckId: string): Ca
         },
         replay: () => {
             scene.replayAnimations();
-        }
+        },
     };
 }

@@ -1,4 +1,4 @@
-import type { CardGameDefinition, CardGameOptions } from "./types";
+import type { CardGameDefinition, CardGameOptions } from './types';
 
 export interface CardGameSetupInput<TOptions = CardGameOptions> {
     playerNames: string[];
@@ -17,7 +17,7 @@ export interface GameDefinition<
     TEffect = never,
     TOptions = CardGameOptions,
     TActorId = string,
-    TViewSource = TState
+    TViewSource = TState,
 > extends CardGameDefinition {
     setup(input: CardGameSetupInput<TOptions>): TState;
     getLegalMoves(state: TState, actorId?: TActorId | null): readonly TMove[];

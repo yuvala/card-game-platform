@@ -1,6 +1,10 @@
-﻿import type { CardGameViewModel, CardGameViewPlayer } from "@engine/engine/game/viewModel";
+﻿import type { CardGameViewModel, CardGameViewPlayer } from '@engine/engine/game/viewModel';
 
-import { getOpponentSeatLayouts, type PlayerPovSeatLayout, type PlayerPovSeatSide } from "./playerPovLayout";
+import {
+    getOpponentSeatLayouts,
+    type PlayerPovSeatLayout,
+    type PlayerPovSeatSide,
+} from './playerPovLayout';
 
 export interface PlayerPovPlayerCounters {
     cards: number;
@@ -23,31 +27,38 @@ export function getPlayerPovOpponentSeats(viewModel: CardGameViewModel): PlayerP
             return [];
         }
 
-        return [{
-            player,
-            layout,
-            counters: parsePlayerCounters(player.metaLabel)
-        }];
+        return [
+            {
+                player,
+                layout,
+                counters: parsePlayerCounters(player.metaLabel),
+            },
+        ];
     });
 }
 
-export function getPlayerPovSeatSide(viewModel: CardGameViewModel, playerId?: string): PlayerPovSeatSide {
+export function getPlayerPovSeatSide(
+    viewModel: CardGameViewModel,
+    playerId?: string,
+): PlayerPovSeatSide {
     if (!playerId) {
-        return "top";
+        return 'top';
     }
 
     const playerIndex = viewModel.players.findIndex((player) => player.id === playerId);
     if (playerIndex <= 0) {
-        return "bottom";
+        return 'bottom';
     }
 
-    const opponentLayout = getOpponentSeatLayouts(Math.max(viewModel.players.length - 1, 0))[playerIndex - 1];
-    return opponentLayout?.side ?? "top";
+    const opponentLayout = getOpponentSeatLayouts(Math.max(viewModel.players.length - 1, 0))[
+        playerIndex - 1
+    ];
+    return opponentLayout?.side ?? 'top';
 }
 
 export function getPrimaryPileText(viewModel: CardGameViewModel): string {
-    const drawPile = viewModel.piles.find((pile) => pile.role === "draw");
-    const trumpPile = viewModel.piles.find((pile) => pile.role === "trump");
+    const drawPile = viewModel.piles.find((pile) => pile.role === 'draw');
+    const trumpPile = viewModel.piles.find((pile) => pile.role === 'trump');
     if (drawPile && trumpPile) {
         return drawPile.countLabel;
     }
@@ -68,13 +79,13 @@ export function parsePlayerCounters(metaLabel: string): PlayerPovPlayerCounters 
     const numbers = metaLabel.match(/\d+/g)?.map((value) => Number(value)) ?? [];
     return {
         cards: numbers[0] ?? 0,
-        score: numbers[1] ?? 0
+        score: numbers[1] ?? 0,
     };
 }
 
 export function normalizeActionLabel(label: string): string {
-    if (label.toLowerCase() === "play card") {
-        return "PLAY CARD";
+    if (label.toLowerCase() === 'play card') {
+        return 'PLAY CARD';
     }
 
     return label;

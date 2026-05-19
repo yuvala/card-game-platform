@@ -1,12 +1,12 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
 import type {
     CardGameViewCard,
     CardGameViewModel,
     CardGameViewPile,
-    CardGameViewTableCard
-} from "@engine/engine/game/viewModel";
-import { TABLE_CENTER_X, TABLE_CENTER_Y } from "../../layout";
+    CardGameViewTableCard,
+} from '@engine/engine/game/viewModel';
+import { TABLE_CENTER_X, TABLE_CENTER_Y } from '../../layout';
 import {
     CARD_BACK_STROKE,
     DISCARD_CARD_HEIGHT,
@@ -21,14 +21,14 @@ import {
     TABLE_CREAM_DIM,
     TABLE_FONT_FAMILY,
     TABLE_GOLD,
-    TABLE_TEXT_RESOLUTION
-} from "../layout/constants";
+    TABLE_TEXT_RESOLUTION,
+} from '../layout/constants';
 import {
     getOwnedPilePosition,
     getPrimaryPileLayout,
-    getSupplementalPilePosition
-} from "../layout/pileLayouts";
-import type { SeatLayout } from "../layout/types";
+    getSupplementalPilePosition,
+} from '../layout/pileLayouts';
+import type { SeatLayout } from '../layout/types';
 
 interface CardDisplaySize {
     width: number;
@@ -82,7 +82,7 @@ interface CardTextureApi {
     applyCardTexture(
         image: Phaser.GameObjects.Image,
         card: CardGameViewCard | CardGameViewTableCard | null,
-        variant: "compact" | "showcase"
+        variant: 'compact' | 'showcase',
     ): void;
     applyCardBackTexture(image: Phaser.GameObjects.Image): void;
     setCardDisplaySize(image: Phaser.GameObjects.Image, width: number, height: number): void;
@@ -101,21 +101,25 @@ interface OwnedPilePresentationInput {
     seatLayouts: Map<string, SeatLayout>;
     ownedPileVisuals: Map<string, OwnedPileVisual>;
     createOwnedPileVisual: (pileId: string) => OwnedPileVisual;
-    textureApi: Pick<CardTextureApi, "applyCardTexture" | "applyCardBackTexture">;
+    textureApi: Pick<CardTextureApi, 'applyCardTexture' | 'applyCardBackTexture'>;
 }
 
 interface SupplementalPilePresentationInput {
     viewModel: CardGameViewModel;
     supplementalPileVisuals: Map<string, SupplementalPileVisual>;
     createSupplementalPileVisual: (pileId: string) => SupplementalPileVisual;
-    textureApi: Pick<CardTextureApi, "applyCardTexture" | "applyCardBackTexture">;
+    textureApi: Pick<CardTextureApi, 'applyCardTexture' | 'applyCardBackTexture'>;
 }
 
-function setCardImageDisplaySize(image: Phaser.GameObjects.Image, width: number, height: number): void {
+function setCardImageDisplaySize(
+    image: Phaser.GameObjects.Image,
+    width: number,
+    height: number,
+): void {
     image.setDisplaySize(width, height);
-    image.setData("cardDisplaySize", {
+    image.setData('cardDisplaySize', {
         width,
-        height
+        height,
     } satisfies CardDisplaySize);
 }
 
@@ -124,52 +128,62 @@ function getOwnedPileOwner(viewModel: CardGameViewModel, ownerId: string): Owned
 }
 
 function getPrimaryPile(viewModel: CardGameViewModel): CardGameViewPile | null {
-    return viewModel.piles.find((pile) => {
-        return !pile.ownerId && (pile.role === "draw" || pile.role === "stock");
-    }) ?? null;
+    return (
+        viewModel.piles.find((pile) => {
+            return !pile.ownerId && (pile.role === 'draw' || pile.role === 'stock');
+        }) ?? null
+    );
 }
 
 function getSecondaryPile(viewModel: CardGameViewModel): CardGameViewPile | null {
-    return viewModel.piles.find((pile) => {
-        return !pile.ownerId && (pile.role === "discard" || pile.role === "trump");
-    }) ?? null;
+    return (
+        viewModel.piles.find((pile) => {
+            return !pile.ownerId && (pile.role === 'discard' || pile.role === 'trump');
+        }) ?? null
+    );
 }
 
-function getPilePresentation(pile: CardGameViewPile): NonNullable<CardGameViewPile["presentation"]> {
+function getPilePresentation(
+    pile: CardGameViewPile,
+): NonNullable<CardGameViewPile['presentation']> {
     if (pile.presentation) {
         return pile.presentation;
     }
 
-    if (pile.ownerId || pile.role === "capture") {
-        return "capture-pile";
+    if (pile.ownerId || pile.role === 'capture') {
+        return 'capture-pile';
     }
 
-    if (pile.role === "draw" || pile.role === "stock") {
-        return "hidden-stack";
+    if (pile.role === 'draw' || pile.role === 'stock') {
+        return 'hidden-stack';
     }
 
-    if (pile.role === "trump") {
-        return "single-card";
+    if (pile.role === 'trump') {
+        return 'single-card';
     }
 
-    return "face-up-stack";
+    return 'face-up-stack';
 }
 
 function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisuals): void {
     const primaryPile = getPrimaryPile(viewModel);
     const secondaryPile = getSecondaryPile(viewModel);
-    const showTrumpWithDrawPile = secondaryPile?.role === "trump";
-    const showSecondaryTitle = !(viewModel.tableCards.length > 0 && secondaryPile?.role === "discard");
-    const showPrimaryPile = Boolean(primaryPile && primaryPile.cardCount > 0) || viewModel.drawPileLabel.length > 0;
-    const showSecondaryPile = !showTrumpWithDrawPile && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
+    const showTrumpWithDrawPile = secondaryPile?.role === 'trump';
+    const showSecondaryTitle = !(
+        viewModel.tableCards.length > 0 && secondaryPile?.role === 'discard'
+    );
+    const showPrimaryPile =
+        Boolean(primaryPile && primaryPile.cardCount > 0) || viewModel.drawPileLabel.length > 0;
+    const showSecondaryPile =
+        !showTrumpWithDrawPile && (Boolean(secondaryPile) || viewModel.discardPileLabel.length > 0);
 
-    visuals.drawPileTitle.setText(primaryPile?.label ?? "Draw Pile");
+    visuals.drawPileTitle.setText(primaryPile?.label ?? 'Draw Pile');
     visuals.deckText.setText(primaryPile?.countLabel ?? viewModel.drawPileLabel);
     visuals.drawPileFrame.setVisible(showPrimaryPile && !showTrumpWithDrawPile);
     visuals.drawPileTitle.setVisible(showPrimaryPile && !showTrumpWithDrawPile);
     visuals.deckText.setVisible(showPrimaryPile);
 
-    visuals.discardPileTitle.setText(secondaryPile?.label ?? "Discard");
+    visuals.discardPileTitle.setText(secondaryPile?.label ?? 'Discard');
     visuals.discardPileFrame.setVisible(showSecondaryPile);
     visuals.discardPileTitle.setVisible(showSecondaryTitle && showSecondaryPile);
     visuals.discardText.setText(secondaryPile?.countLabel ?? viewModel.discardPileLabel);
@@ -179,7 +193,7 @@ function syncPileSummary(viewModel: CardGameViewModel, visuals: PrimaryPileVisua
 function syncDrawPileCard(
     viewModel: CardGameViewModel,
     visuals: PrimaryPileVisuals,
-    textureApi: Pick<CardTextureApi, "applyCardBackTexture">
+    textureApi: Pick<CardTextureApi, 'applyCardBackTexture'>,
 ): void {
     const primaryPile = getPrimaryPile(viewModel);
     const showDrawDeck = Boolean(primaryPile && primaryPile.cardCount > 0);
@@ -197,7 +211,7 @@ function syncDrawPileCard(
 function syncDiscardPileCard(
     viewModel: CardGameViewModel,
     visuals: PrimaryPileVisuals,
-    textureApi: Pick<CardTextureApi, "applyCardTexture" | "applyCardBackTexture">
+    textureApi: Pick<CardTextureApi, 'applyCardTexture' | 'applyCardBackTexture'>,
 ): void {
     const secondaryPile = getSecondaryPile(viewModel);
     if (!secondaryPile) {
@@ -205,7 +219,7 @@ function syncDiscardPileCard(
         return;
     }
 
-    if (viewModel.tableCards.length > 0 && secondaryPile.role === "discard") {
+    if (viewModel.tableCards.length > 0 && secondaryPile.role === 'discard') {
         visuals.discardCard.setVisible(false);
         return;
     }
@@ -216,22 +230,20 @@ function syncDiscardPileCard(
     }
 
     if (secondaryPile.topCard) {
-        textureApi.applyCardTexture(visuals.discardCardImage, secondaryPile.topCard, "showcase");
-        if (secondaryPile.role === "trump" || getPilePresentation(secondaryPile) === "single-card") {
+        textureApi.applyCardTexture(visuals.discardCardImage, secondaryPile.topCard, 'showcase');
+        if (
+            secondaryPile.role === 'trump' ||
+            getPilePresentation(secondaryPile) === 'single-card'
+        ) {
             visuals.discardCardOutline.setVisible(false);
         } else {
             visuals.discardCardOutline
                 .setVisible(true)
-                .setStrokeStyle(
-                    3,
-                    secondaryPile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE
-                );
+                .setStrokeStyle(3, secondaryPile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE);
         }
     } else {
         textureApi.applyCardBackTexture(visuals.discardCardImage);
-        visuals.discardCardOutline
-            .setVisible(true)
-            .setStrokeStyle(3, CARD_BACK_STROKE);
+        visuals.discardCardOutline.setVisible(true).setStrokeStyle(3, CARD_BACK_STROKE);
     }
 
     visuals.discardCard.setVisible(true);
@@ -240,55 +252,68 @@ function syncDiscardPileCard(
 export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisuals {
     const pileStyle = {
         fontFamily: TABLE_FONT_FAMILY,
-        fontSize: "18px",
-        color: TABLE_CREAM
+        fontSize: '18px',
+        color: TABLE_CREAM,
     };
 
-    const drawPileFrame = scene.add.rectangle(
-        TABLE_CENTER_X,
-        184,
-        PRIMARY_PILE_FRAME_WIDTH,
-        PRIMARY_PILE_FRAME_HEIGHT,
-        0x13372b,
-        0.75
-    )
+    const drawPileFrame = scene.add
+        .rectangle(
+            TABLE_CENTER_X,
+            184,
+            PRIMARY_PILE_FRAME_WIDTH,
+            PRIMARY_PILE_FRAME_HEIGHT,
+            0x13372b,
+            0.75,
+        )
         .setStrokeStyle(3, TABLE_GOLD, 0.25);
-    const drawPileTitle = scene.add.text(TABLE_CENTER_X, 120, "Draw Pile", pileStyle)
+    const drawPileTitle = scene.add
+        .text(TABLE_CENTER_X, 120, 'Draw Pile', pileStyle)
         .setOrigin(0.5, 0.5)
         .setResolution(TABLE_TEXT_RESOLUTION);
-    const deckText = scene.add.text(TABLE_CENTER_X, 184, "", {
-        ...pileStyle,
-        fontSize: "24px"
-    }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
-    const drawCardImage = scene.add.image(0, 0, "__MISSING");
+    const deckText = scene.add
+        .text(TABLE_CENTER_X, 184, '', {
+            ...pileStyle,
+            fontSize: '24px',
+        })
+        .setOrigin(0.5)
+        .setResolution(TABLE_TEXT_RESOLUTION);
+    const drawCardImage = scene.add.image(0, 0, '__MISSING');
     setCardImageDisplaySize(drawCardImage, DISCARD_CARD_WIDTH, DISCARD_CARD_HEIGHT);
-    const drawCardOutline = scene.add.rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
+    const drawCardOutline = scene.add
+        .rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
         .setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
-    const drawCard = scene.add.container(TABLE_CENTER_X, 184, [drawCardImage, drawCardOutline])
+    const drawCard = scene.add
+        .container(TABLE_CENTER_X, 184, [drawCardImage, drawCardOutline])
         .setDepth(62)
         .setVisible(false);
 
-    const discardPileFrame = scene.add.rectangle(
-        TABLE_CENTER_X,
-        392,
-        PRIMARY_PILE_FRAME_WIDTH,
-        PRIMARY_PILE_FRAME_HEIGHT,
-        0x35261a,
-        0.75
-    )
+    const discardPileFrame = scene.add
+        .rectangle(
+            TABLE_CENTER_X,
+            392,
+            PRIMARY_PILE_FRAME_WIDTH,
+            PRIMARY_PILE_FRAME_HEIGHT,
+            0x35261a,
+            0.75,
+        )
         .setStrokeStyle(3, TABLE_GOLD, 0.25);
-    const discardPileTitle = scene.add.text(TABLE_CENTER_X, 318, "Discard", pileStyle)
+    const discardPileTitle = scene.add
+        .text(TABLE_CENTER_X, 318, 'Discard', pileStyle)
         .setOrigin(0.5, 0.5)
         .setResolution(TABLE_TEXT_RESOLUTION);
-    const discardText = scene.add.text(TABLE_CENTER_X, 474, "", pileStyle)
+    const discardText = scene.add
+        .text(TABLE_CENTER_X, 474, '', pileStyle)
         .setOrigin(0.5)
         .setResolution(TABLE_TEXT_RESOLUTION);
 
-    const discardCardImage = scene.add.image(0, 0, "__MISSING");
+    const discardCardImage = scene.add.image(0, 0, '__MISSING');
     setCardImageDisplaySize(discardCardImage, DISCARD_CARD_WIDTH, DISCARD_CARD_HEIGHT);
-    const discardCardOutline = scene.add.rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
+    const discardCardOutline = scene.add
+        .rectangle(0, 0, DISCARD_CARD_WIDTH + 4, DISCARD_CARD_HEIGHT + 4, 0x000000, 0)
         .setStrokeStyle(2, TABLE_GOLD, 0.9);
-    const discardCard = scene.add.container(TABLE_CENTER_X, 392, [discardCardImage, discardCardOutline]).setVisible(false);
+    const discardCard = scene.add
+        .container(TABLE_CENTER_X, 392, [discardCardImage, discardCardOutline])
+        .setVisible(false);
 
     return {
         drawPileFrame,
@@ -302,53 +327,64 @@ export function createPrimaryPileVisuals(scene: Phaser.Scene): PrimaryPileVisual
         discardText,
         discardCard,
         discardCardImage,
-        discardCardOutline
+        discardCardOutline,
     };
 }
 
 export function createOwnedPileVisual(
     scene: Phaser.Scene,
     pileId: string,
-    getActiveBackTextureKey: () => string
+    getActiveBackTextureKey: () => string,
 ): OwnedPileVisual {
     const stackBacks = [
         { x: -7, y: -5, angle: -7 },
         { x: 5, y: -4, angle: 5 },
-        { x: -3, y: 5, angle: -3 }
+        { x: -3, y: 5, angle: -3 },
     ].map((offset) => {
-        const back = scene.add.image(offset.x, offset.y, getActiveBackTextureKey())
+        const back = scene.add
+            .image(offset.x, offset.y, getActiveBackTextureKey())
             .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT)
             .setAlpha(0.8)
             .setAngle(offset.angle);
-        back.setData("cardDisplaySize", {
+        back.setData('cardDisplaySize', {
             width: OWNED_PILE_CARD_WIDTH,
-            height: OWNED_PILE_CARD_HEIGHT
+            height: OWNED_PILE_CARD_HEIGHT,
         } satisfies CardDisplaySize);
         return back;
     });
     const stackBack = stackBacks[0];
-    const image = scene.add.image(0, 0, getActiveBackTextureKey())
+    const image = scene.add
+        .image(0, 0, getActiveBackTextureKey())
         .setDisplaySize(OWNED_PILE_CARD_WIDTH, OWNED_PILE_CARD_HEIGHT);
-    image.setData("cardDisplaySize", {
+    image.setData('cardDisplaySize', {
         width: OWNED_PILE_CARD_WIDTH,
-        height: OWNED_PILE_CARD_HEIGHT
+        height: OWNED_PILE_CARD_HEIGHT,
     } satisfies CardDisplaySize);
-    const outline = scene.add.rectangle(0, 0, OWNED_PILE_CARD_WIDTH + 4, OWNED_PILE_CARD_HEIGHT + 4, 0x000000, 0)
+    const outline = scene.add
+        .rectangle(0, 0, OWNED_PILE_CARD_WIDTH + 4, OWNED_PILE_CARD_HEIGHT + 4, 0x000000, 0)
         .setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
-    const labelText = scene.add.text(0, -42, "", {
-        fontFamily: TABLE_FONT_FAMILY,
-        fontSize: "11px",
-        color: TABLE_CREAM,
-        fontStyle: "bold"
-    }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
-    const countText = scene.add.text(0, 44, "", {
-        fontFamily: TABLE_FONT_FAMILY,
-        fontSize: "11px",
-        color: "rgba(255,209,102,0.86)"
-    }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
-    const container = scene.add.container(0, 0, [labelText, ...stackBacks, image, outline, countText]).setDepth(65);
+    const labelText = scene.add
+        .text(0, -42, '', {
+            fontFamily: TABLE_FONT_FAMILY,
+            fontSize: '11px',
+            color: TABLE_CREAM,
+            fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setResolution(TABLE_TEXT_RESOLUTION);
+    const countText = scene.add
+        .text(0, 44, '', {
+            fontFamily: TABLE_FONT_FAMILY,
+            fontSize: '11px',
+            color: 'rgba(255,209,102,0.86)',
+        })
+        .setOrigin(0.5)
+        .setResolution(TABLE_TEXT_RESOLUTION);
+    const container = scene.add
+        .container(0, 0, [labelText, ...stackBacks, image, outline, countText])
+        .setDepth(65);
 
-    container.setData("pileId", pileId);
+    container.setData('pileId', pileId);
 
     return {
         container,
@@ -357,50 +393,61 @@ export function createOwnedPileVisual(
         image,
         outline,
         labelText,
-        countText
+        countText,
     };
 }
 
 export function createSupplementalPileVisual(
     scene: Phaser.Scene,
     pileId: string,
-    getActiveBackTextureKey: () => string
+    getActiveBackTextureKey: () => string,
 ): SupplementalPileVisual {
-    const image = scene.add.image(0, 0, getActiveBackTextureKey())
+    const image = scene.add
+        .image(0, 0, getActiveBackTextureKey())
         .setDisplaySize(SUPPLEMENTAL_PILE_CARD_WIDTH, SUPPLEMENTAL_PILE_CARD_HEIGHT);
-    image.setData("cardDisplaySize", {
+    image.setData('cardDisplaySize', {
         width: SUPPLEMENTAL_PILE_CARD_WIDTH,
-        height: SUPPLEMENTAL_PILE_CARD_HEIGHT
+        height: SUPPLEMENTAL_PILE_CARD_HEIGHT,
     } satisfies CardDisplaySize);
-    const outline = scene.add.rectangle(
-        0,
-        0,
-        SUPPLEMENTAL_PILE_CARD_WIDTH + 4,
-        SUPPLEMENTAL_PILE_CARD_HEIGHT + 4,
-        0x000000,
-        0
-    ).setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
-    const labelText = scene.add.text(0, -48, "", {
-        fontFamily: TABLE_FONT_FAMILY,
-        fontSize: "12px",
-        color: TABLE_CREAM_DIM,
-        fontStyle: "bold"
-    }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
-    const countText = scene.add.text(0, 52, "", {
-        fontFamily: TABLE_FONT_FAMILY,
-        fontSize: "12px",
-        color: "rgba(255,209,102,0.86)"
-    }).setOrigin(0.5).setResolution(TABLE_TEXT_RESOLUTION);
-    const container = scene.add.container(0, 0, [labelText, image, outline, countText]).setDepth(62);
+    const outline = scene.add
+        .rectangle(
+            0,
+            0,
+            SUPPLEMENTAL_PILE_CARD_WIDTH + 4,
+            SUPPLEMENTAL_PILE_CARD_HEIGHT + 4,
+            0x000000,
+            0,
+        )
+        .setStrokeStyle(2, CARD_BACK_STROKE, 0.9);
+    const labelText = scene.add
+        .text(0, -48, '', {
+            fontFamily: TABLE_FONT_FAMILY,
+            fontSize: '12px',
+            color: TABLE_CREAM_DIM,
+            fontStyle: 'bold',
+        })
+        .setOrigin(0.5)
+        .setResolution(TABLE_TEXT_RESOLUTION);
+    const countText = scene.add
+        .text(0, 52, '', {
+            fontFamily: TABLE_FONT_FAMILY,
+            fontSize: '12px',
+            color: 'rgba(255,209,102,0.86)',
+        })
+        .setOrigin(0.5)
+        .setResolution(TABLE_TEXT_RESOLUTION);
+    const container = scene.add
+        .container(0, 0, [labelText, image, outline, countText])
+        .setDepth(62);
 
-    container.setData("pileId", pileId);
+    container.setData('pileId', pileId);
 
     return {
         container,
         image,
         outline,
         labelText,
-        countText
+        countText,
     };
 }
 
@@ -408,10 +455,9 @@ export function syncPrimaryPilePresentation(input: PrimaryPilePresentationInput)
     const { playerCount, viewModel, visuals, textureApi } = input;
     const layout = getPrimaryPileLayout(playerCount);
     const secondaryPile = getSecondaryPile(viewModel);
-    const showTrumpWithDrawPile = secondaryPile?.role === "trump";
-    const drawCenterY = showTrumpWithDrawPile || !secondaryPile
-        ? TABLE_CENTER_Y
-        : layout.drawCenterY;
+    const showTrumpWithDrawPile = secondaryPile?.role === 'trump';
+    const drawCenterY =
+        showTrumpWithDrawPile || !secondaryPile ? TABLE_CENTER_Y : layout.drawCenterY;
 
     visuals.drawPileFrame
         .setPosition(TABLE_CENTER_X, drawCenterY)
@@ -421,15 +467,19 @@ export function syncPrimaryPilePresentation(input: PrimaryPilePresentationInput)
         .setFontSize(`${layout.titleFontSize}px`);
     visuals.deckText
         .setPosition(TABLE_CENTER_X, drawCenterY + layout.discardTextOffsetY)
-        .setFontSize(`${showTrumpWithDrawPile ? Math.round(layout.deckCountFontSize * 0.5) : layout.deckCountFontSize}px`);
+        .setFontSize(
+            `${showTrumpWithDrawPile ? Math.round(layout.deckCountFontSize * 0.5) : layout.deckCountFontSize}px`,
+        );
     visuals.drawCard.setPosition(TABLE_CENTER_X, drawCenterY);
     visuals.drawCard.setDepth(showTrumpWithDrawPile ? 62 : 60);
-    textureApi.setCardDisplaySize(visuals.drawCardImage, layout.discardCardWidth, layout.discardCardHeight);
+    textureApi.setCardDisplaySize(
+        visuals.drawCardImage,
+        layout.discardCardWidth,
+        layout.discardCardHeight,
+    );
     visuals.drawCardOutline.setSize(layout.discardCardWidth + 4, layout.discardCardHeight + 4);
 
-    const discardCenterY = showTrumpWithDrawPile
-        ? drawCenterY
-        : layout.discardCenterY;
+    const discardCenterY = showTrumpWithDrawPile ? drawCenterY : layout.discardCenterY;
     const discardCenterX = showTrumpWithDrawPile
         ? TABLE_CENTER_X - Math.round(layout.discardCardHeight * 0.34)
         : TABLE_CENTER_X;
@@ -446,7 +496,11 @@ export function syncPrimaryPilePresentation(input: PrimaryPilePresentationInput)
         .setPosition(discardCenterX, discardCenterY)
         .setAngle(showTrumpWithDrawPile ? 90 : 0)
         .setDepth(showTrumpWithDrawPile ? 58 : 60);
-    textureApi.setCardDisplaySize(visuals.discardCardImage, layout.discardCardWidth, layout.discardCardHeight);
+    textureApi.setCardDisplaySize(
+        visuals.discardCardImage,
+        layout.discardCardWidth,
+        layout.discardCardHeight,
+    );
     visuals.discardCardOutline.setSize(layout.discardCardWidth + 4, layout.discardCardHeight + 4);
 
     syncPileSummary(viewModel, visuals);
@@ -461,7 +515,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         seatLayouts,
         ownedPileVisuals,
         createOwnedPileVisual,
-        textureApi
+        textureApi,
     } = input;
 
     const ownedPiles = viewModel.piles.filter((pile) => {
@@ -497,16 +551,19 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
         ownerCounts.set(ownerId, ownerPileIndex + 1);
 
         const layout = seatLayouts.get(ownerId);
-        if (!layout) { return; }
+        if (!layout) {
+            return;
+        }
         const position = getOwnedPilePosition(ownerPileIndex, layout);
         visual.container.setPosition(position.x, position.y);
-        visual.labelText.setText("");
+        visual.labelText.setText('');
         visual.countText.setText(pile.countLabel);
         visual.container.setVisible(true);
         const presentation = getPilePresentation(pile);
-        const visibleStackBackCount = presentation !== "single-card" && pile.cardCount > 1
-            ? Math.min(visual.stackBacks.length, pile.cardCount - 1)
-            : 0;
+        const visibleStackBackCount =
+            presentation !== 'single-card' && pile.cardCount > 1
+                ? Math.min(visual.stackBacks.length, pile.cardCount - 1)
+                : 0;
         visual.stackBacks.forEach((stackBack, index) => {
             textureApi.applyCardBackTexture(stackBack);
             stackBack.setVisible(index < visibleStackBackCount);
@@ -520,7 +577,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
             visual.outline.setVisible(false);
             visual.outline.setAlpha(0);
         } else {
-            const shouldShowEmptyStack = pile.cardCount > 0 || presentation === "hidden-stack";
+            const shouldShowEmptyStack = pile.cardCount > 0 || presentation === 'hidden-stack';
             textureApi.applyCardBackTexture(visual.image);
             visual.image.setVisible(shouldShowEmptyStack);
             visual.image.setAlpha(shouldShowEmptyStack ? 0.96 : 0);
@@ -531,12 +588,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
 }
 
 export function syncSupplementalPilePresentation(input: SupplementalPilePresentationInput): void {
-    const {
-        viewModel,
-        supplementalPileVisuals,
-        createSupplementalPileVisual,
-        textureApi
-    } = input;
+    const { viewModel, supplementalPileVisuals, createSupplementalPileVisual, textureApi } = input;
 
     const primaryPile = getPrimaryPile(viewModel);
     const secondaryPile = getSecondaryPile(viewModel);
@@ -555,7 +607,8 @@ export function syncSupplementalPilePresentation(input: SupplementalPilePresenta
     });
 
     supplementalPiles.forEach((pile, index) => {
-        const visual = supplementalPileVisuals.get(pile.id) ?? createSupplementalPileVisual(pile.id);
+        const visual =
+            supplementalPileVisuals.get(pile.id) ?? createSupplementalPileVisual(pile.id);
         const position = getSupplementalPilePosition(index);
 
         visual.container.setPosition(position.x, position.y);
@@ -565,13 +618,19 @@ export function syncSupplementalPilePresentation(input: SupplementalPilePresenta
         const presentation = getPilePresentation(pile);
 
         if (pile.topCard) {
-            textureApi.applyCardTexture(visual.image, pile.topCard, "compact");
-            visual.outline.setStrokeStyle(2, pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE, 0.9);
+            textureApi.applyCardTexture(visual.image, pile.topCard, 'compact');
+            visual.outline.setStrokeStyle(
+                2,
+                pile.topCard.isFaceUp ? 0xffd166 : CARD_BACK_STROKE,
+                0.9,
+            );
             visual.image.setAlpha(1);
         } else {
             textureApi.applyCardBackTexture(visual.image);
             visual.outline.setStrokeStyle(2, pile.cardCount > 0 ? CARD_BACK_STROKE : 0x355449, 0.9);
-            visual.image.setAlpha(pile.cardCount > 0 || presentation === "hidden-stack" ? 0.96 : 0.32);
+            visual.image.setAlpha(
+                pile.cardCount > 0 || presentation === 'hidden-stack' ? 0.96 : 0.32,
+            );
         }
     });
 }

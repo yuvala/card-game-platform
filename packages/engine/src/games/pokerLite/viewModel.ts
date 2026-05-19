@@ -1,30 +1,33 @@
-import type { CardGameViewModel } from "../../engine/game/viewModel";
-import { DEFAULT_CARD_SKIN_ID } from "../../engine/cards/skinPacks";
-import { getPileCards } from "../../engine/game/piles";
-import { applyPlayerPovViewModel } from "../../engine/game/playerPovViewModel";
+import type { CardGameViewModel } from '../../engine/game/viewModel';
+import { DEFAULT_CARD_SKIN_ID } from '../../engine/cards/skinPacks';
+import { getPileCards } from '../../engine/game/piles';
+import { applyPlayerPovViewModel } from '../../engine/game/playerPovViewModel';
 import {
     POKER_LITE_DISCARD_PILE_ID,
     POKER_LITE_STOCK_PILE_ID,
     getPokerLiteHandPileId,
-    type PokerLiteViewSnapshot
-} from "./types";
+    type PokerLiteViewSnapshot,
+} from './types';
 
 function getPlayerIconLabel(playerName: string): string {
     const initials = playerName
         .split(/\s+/)
         .filter(Boolean)
         .slice(0, 2)
-        .map((part) => part[0]?.toUpperCase() ?? "")
-        .join("");
+        .map((part) => part[0]?.toUpperCase() ?? '')
+        .join('');
 
-    return initials || "P";
+    return initials || 'P';
 }
 
-export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot, viewerId?: string | null): CardGameViewModel {
+export function getPokerLiteViewModel(
+    snapshot: PokerLiteViewSnapshot,
+    viewerId?: string | null,
+): CardGameViewModel {
     const currentPhase = String(snapshot.value);
     const hasSelection = Boolean(snapshot.context.selectedCardId);
-    const isPlayerTurn = snapshot.matches("playerTurn");
-    const isGameOver = snapshot.matches("gameOver");
+    const isPlayerTurn = snapshot.matches('playerTurn');
+    const isGameOver = snapshot.matches('gameOver');
     const currentPlayerId = snapshot.context.players[snapshot.context.turnIndex]?.id ?? null;
     const drawCards = getPileCards(snapshot.context.piles, POKER_LITE_STOCK_PILE_ID);
     const discardCards = getPileCards(snapshot.context.piles, POKER_LITE_DISCARD_PILE_ID);
@@ -32,111 +35,120 @@ export function getPokerLiteViewModel(snapshot: PokerLiteViewSnapshot, viewerId?
         ? getPileCards(snapshot.context.piles, getPokerLiteHandPileId(currentPlayerId))
         : [];
     const discardTopCard =
-        snapshot.matches("animatingPlay") || discardCards.length === 0
+        snapshot.matches('animatingPlay') || discardCards.length === 0
             ? null
             : {
                   id: discardCards[discardCards.length - 1].id,
                   label: discardCards[discardCards.length - 1].displayLabel,
-                  isFaceUp: true
+                  isFaceUp: true,
               };
 
-    return applyPlayerPovViewModel({
-        themeId: "poker",
-        phaseLabel: currentPhase.toUpperCase(),
-        roundLabel: "Round " + snapshot.context.round + " / " + snapshot.context.maxRounds,
-        deckId: snapshot.context.deckDefinition.id,
-        cardSkinId: DEFAULT_CARD_SKIN_ID,
-        deckLabel:
-            snapshot.context.deckDefinition.name +
-            " | " +
-            drawCards.length +
-            " cards left in draw pile",
-        drawPileLabel: String(drawCards.length) + " cards",
-        discardPileLabel: String(discardCards.length) + " cards",
-        discardCardLabel:
-            snapshot.matches("animatingPlay") || discardCards.length === 0
-                ? null
-                : discardCards[discardCards.length - 1].displayLabel,
-        scoreLines: snapshot.context.players.map((player) => {
-            return player.name + ": " + player.score + " pts";
-        }),
-        statusText: snapshot.context.statusText,
-        selectedCardId: snapshot.context.selectedCardId,
-        players: snapshot.context.players.map((player, index) => {
-            const isCurrentTurn = isPlayerTurn && index === snapshot.context.turnIndex;
-            const isRoundWinner = snapshot.context.winningPlayerIds.includes(player.id);
+    return applyPlayerPovViewModel(
+        {
+            themeId: 'poker',
+            phaseLabel: currentPhase.toUpperCase(),
+            roundLabel: 'Round ' + snapshot.context.round + ' / ' + snapshot.context.maxRounds,
+            deckId: snapshot.context.deckDefinition.id,
+            cardSkinId: DEFAULT_CARD_SKIN_ID,
+            deckLabel:
+                snapshot.context.deckDefinition.name +
+                ' | ' +
+                drawCards.length +
+                ' cards left in draw pile',
+            drawPileLabel: String(drawCards.length) + ' cards',
+            discardPileLabel: String(discardCards.length) + ' cards',
+            discardCardLabel:
+                snapshot.matches('animatingPlay') || discardCards.length === 0
+                    ? null
+                    : discardCards[discardCards.length - 1].displayLabel,
+            scoreLines: snapshot.context.players.map((player) => {
+                return player.name + ': ' + player.score + ' pts';
+            }),
+            statusText: snapshot.context.statusText,
+            selectedCardId: snapshot.context.selectedCardId,
+            players: snapshot.context.players.map((player, index) => {
+                const isCurrentTurn = isPlayerTurn && index === snapshot.context.turnIndex;
+                const isRoundWinner = snapshot.context.winningPlayerIds.includes(player.id);
 
-            return {
-                id: player.id,
-                iconLabel: getPlayerIconLabel(player.name),
-                nameLabel: player.name,
-                metaLabel:
-                    String(getPileCards(snapshot.context.piles, getPokerLiteHandPileId(player.id)).length) +
-                    " cards | " +
-                    String(player.score) +
-                    " pts",
-                hand: getPileCards(snapshot.context.piles, getPokerLiteHandPileId(player.id)).map((card) => ({
-                    id: card.id,
-                    label: card.displayLabel,
-                    isFaceUp: true
-                })),
-                handPresentation: "hand-fan",
-                isCurrentTurn,
-                isRoundWinner,
-                canInteract: isCurrentTurn && isPlayerTurn
-            };
-        }),
-        tableCards: [],
-        tablePresentation: "table-row",
-        tablePileIds: [],
-        piles: [
-            {
-                id: "draw-pile",
-                role: "draw",
-                label: "Draw Pile",
-                cardCount: drawCards.length,
-                countLabel: String(drawCards.length) + " cards",
-                topCard: null,
-                presentation: "hidden-stack"
+                return {
+                    id: player.id,
+                    iconLabel: getPlayerIconLabel(player.name),
+                    nameLabel: player.name,
+                    metaLabel:
+                        String(
+                            getPileCards(snapshot.context.piles, getPokerLiteHandPileId(player.id))
+                                .length,
+                        ) +
+                        ' cards | ' +
+                        String(player.score) +
+                        ' pts',
+                    hand: getPileCards(
+                        snapshot.context.piles,
+                        getPokerLiteHandPileId(player.id),
+                    ).map((card) => ({
+                        id: card.id,
+                        label: card.displayLabel,
+                        isFaceUp: true,
+                    })),
+                    handPresentation: 'hand-fan',
+                    isCurrentTurn,
+                    isRoundWinner,
+                    canInteract: isCurrentTurn && isPlayerTurn,
+                };
+            }),
+            tableCards: [],
+            tablePresentation: 'table-row',
+            tablePileIds: [],
+            piles: [
+                {
+                    id: 'draw-pile',
+                    role: 'draw',
+                    label: 'Draw Pile',
+                    cardCount: drawCards.length,
+                    countLabel: String(drawCards.length) + ' cards',
+                    topCard: null,
+                    presentation: 'hidden-stack',
+                },
+                {
+                    id: 'discard-pile',
+                    role: 'discard',
+                    label: 'Discard',
+                    cardCount: discardCards.length,
+                    countLabel: String(discardCards.length) + ' cards',
+                    topCard: discardTopCard,
+                    presentation: 'face-up-stack',
+                },
+            ],
+            controls: {
+                canStart: snapshot.matches('idle'),
+                canPlay: isPlayerTurn && hasSelection,
+                canRestart: snapshot.matches('gameOver'),
             },
-            {
-                id: "discard-pile",
-                role: "discard",
-                label: "Discard",
-                cardCount: discardCards.length,
-                countLabel: String(discardCards.length) + " cards",
-                topCard: discardTopCard,
-                presentation: "face-up-stack"
-            }
-        ],
-        controls: {
-            canStart: snapshot.matches("idle"),
-            canPlay: isPlayerTurn && hasSelection,
-            canRestart: snapshot.matches("gameOver")
+            outcome: isGameOver
+                ? {
+                      title: snapshot.context.winningPlayerIds.length === 1 ? 'Winner' : 'Tie',
+                      detail: snapshot.context.statusText,
+                      winnerPlayerIds: snapshot.context.winningPlayerIds,
+                  }
+                : null,
+            primaryAction: isPlayerTurn
+                ? {
+                      label: hasSelection ? 'Play Card' : 'Select Card',
+                      hint: hasSelection
+                          ? 'Play the selected card.'
+                          : "Select a card from the current player's hand.",
+                      eventType: hasSelection ? 'PLAY_CARD' : 'SELECT_CARD',
+                      target: currentPlayerId
+                          ? {
+                                type: 'player-hand',
+                                playerId: currentPlayerId,
+                            }
+                          : undefined,
+                  }
+                : null,
+            animation: null,
+            effects: snapshot.context.lastEffects,
         },
-        outcome: isGameOver
-            ? {
-                  title: snapshot.context.winningPlayerIds.length === 1 ? "Winner" : "Tie",
-                  detail: snapshot.context.statusText,
-                  winnerPlayerIds: snapshot.context.winningPlayerIds
-              }
-            : null,
-        primaryAction: isPlayerTurn
-            ? {
-                  label: hasSelection ? "Play Card" : "Select Card",
-                  hint: hasSelection
-                      ? "Play the selected card."
-                      : "Select a card from the current player's hand.",
-                  eventType: hasSelection ? "PLAY_CARD" : "SELECT_CARD",
-                  target: currentPlayerId
-                      ? {
-                            type: "player-hand",
-                            playerId: currentPlayerId
-                        }
-                      : undefined
-              }
-            : null,
-        animation: null,
-        effects: snapshot.context.lastEffects
-    }, viewerId);
+        viewerId,
+    );
 }

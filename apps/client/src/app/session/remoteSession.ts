@@ -1,14 +1,14 @@
-﻿import type { CardGameSession } from "@engine/engine/game/session";
-import type { CardGameEvent } from "@engine/engine/game/types";
-import type { CardGameViewModel } from "@engine/engine/game/viewModel";
+﻿import type { CardGameSession } from '@engine/engine/game/session';
+import type { CardGameEvent } from '@engine/engine/game/types';
+import type { CardGameViewModel } from '@engine/engine/game/viewModel';
 import {
     isServerMessage,
     type SessionPlayerSummary,
     type ClientRole,
     type ClientMessage,
     type SessionConfig,
-    type ServerMessage
-} from "@engine/session/protocol";
+    type ServerMessage,
+} from '@engine/session/protocol';
 
 interface RemoteGameSessionInput {
     url: string;
@@ -20,9 +20,9 @@ interface RemoteGameSessionInput {
 type RemoteSessionListener = (snapshot: CardGameViewModel) => void;
 
 export type RemoteSessionStatus =
-    | { type: "connected" }
-    | { type: "error"; message: string }
-    | { type: "closed"; message: string };
+    | { type: 'connected' }
+    | { type: 'error'; message: string }
+    | { type: 'closed'; message: string };
 
 export interface RemoteGameSession extends CardGameSession<CardGameViewModel> {
     getPlayers(): SessionPlayerSummary[];
@@ -33,26 +33,31 @@ export interface RemoteGameSession extends CardGameSession<CardGameViewModel> {
 }
 
 export async function createRemoteGameSession(
-    input: RemoteGameSessionInput
+    input: RemoteGameSessionInput,
 ): Promise<RemoteGameSession> {
     const socket = new WebSocket(input.url);
     const initialMessage = await waitForInitialSessionView(socket, {
         sessionId: input.sessionId,
-        role: input.role
+        role: input.role,
     });
-    return createConnectedRemoteGameSession(socket, initialMessage, input.viewerId ?? null, input.role ?? "admin");
+    return createConnectedRemoteGameSession(
+        socket,
+        initialMessage,
+        input.viewerId ?? null,
+        input.role ?? 'admin',
+    );
 }
 
 function createConnectedRemoteGameSession(
     socket: WebSocket,
-    initialMessage: Extract<ServerMessage, { type: "session-view" }>,
+    initialMessage: Extract<ServerMessage, { type: 'session-view' }>,
     viewerId: string | null,
-    role: ClientRole
+    role: ClientRole,
 ): RemoteGameSession {
     let latestMessage = initialMessage;
     let activeViewerId = viewerId;
     const activeRole = role;
-    let status: RemoteSessionStatus = { type: "connected" };
+    let status: RemoteSessionStatus = { type: 'connected' };
     const listeners = new Set<RemoteSessionListener>();
     const pendingSessionViewResolvers = new Set<() => void>();
 
@@ -63,16 +68,16 @@ function createConnectedRemoteGameSession(
         });
     };
 
-    socket.addEventListener("message", (event) => {
+    socket.addEventListener('message', (event) => {
         const message = parseServerMessage(event.data);
         if (!message) {
             return;
         }
 
-        if (message.type === "error") {
+        if (message.type === 'error') {
             status = {
-                type: "error",
-                message: message.message
+                type: 'error',
+                message: message.message,
             };
             notifyListeners();
             return;
@@ -84,7 +89,7 @@ function createConnectedRemoteGameSession(
 
         latestMessage = message;
         activeViewerId = message.viewerId;
-        status = { type: "connected" };
+        status = { type: 'connected' };
         notifyListeners();
         pendingSessionViewResolvers.forEach((resolve) => {
             resolve();
@@ -92,18 +97,18 @@ function createConnectedRemoteGameSession(
         pendingSessionViewResolvers.clear();
     });
 
-    socket.addEventListener("close", () => {
+    socket.addEventListener('close', () => {
         status = {
-            type: "closed",
-            message: "Connection to the table was closed."
+            type: 'closed',
+            message: 'Connection to the table was closed.',
         };
         notifyListeners();
     });
 
-    socket.addEventListener("error", () => {
+    socket.addEventListener('error', () => {
         status = {
-            type: "error",
-            message: "Connection to the table failed."
+            type: 'error',
+            message: 'Connection to the table failed.',
         };
         notifyListeners();
     });
@@ -124,21 +129,21 @@ function createConnectedRemoteGameSession(
             return {
                 unsubscribe: () => {
                     listeners.delete(listener);
-                }
+                },
             };
         },
         send: (event: CardGameEvent) => {
             sendClientMessage(socket, {
-                type: "game-event",
+                type: 'game-event',
                 expectedSequence: latestMessage.sequence,
-                event
+                event,
             });
         },
         start: () => {
             sendClientMessage(socket, {
-                type: "watch-session",
+                type: 'watch-session',
                 sessionId: latestMessage.sessionId,
-                role: activeRole
+                role: activeRole,
             });
         },
         stop: () => {
@@ -151,35 +156,35 @@ function createConnectedRemoteGameSession(
         configure: (config) => {
             return waitForNextSessionView(socket, pendingSessionViewResolvers, () => {
                 sendClientMessage(socket, {
-                    type: "configure-session",
-                    config
+                    type: 'configure-session',
+                    config,
                 });
             });
         },
         setViewer: (playerId) => {
             activeViewerId = playerId;
             sendClientMessage(socket, {
-                type: "set-viewer",
-                playerId
+                type: 'set-viewer',
+                playerId,
             });
-        }
+        },
     };
 }
 
 function waitForNextSessionView(
     socket: WebSocket,
     resolvers: Set<() => void>,
-    sendMessage: () => void
+    sendMessage: () => void,
 ): Promise<void> {
     if (socket.readyState !== WebSocket.OPEN) {
-        return Promise.reject(new Error("WebSocket is not open."));
+        return Promise.reject(new Error('WebSocket is not open.'));
     }
 
     return new Promise((resolve, reject) => {
         const cleanup = () => {
             resolvers.delete(handleSessionView);
-            socket.removeEventListener("close", handleClose);
-            socket.removeEventListener("error", handleError);
+            socket.removeEventListener('close', handleClose);
+            socket.removeEventListener('error', handleError);
         };
 
         const handleSessionView = () => {
@@ -189,23 +194,23 @@ function waitForNextSessionView(
 
         const handleClose = () => {
             cleanup();
-            reject(new Error("WebSocket closed before session configuration completed."));
+            reject(new Error('WebSocket closed before session configuration completed.'));
         };
 
         const handleError = () => {
             cleanup();
-            reject(new Error("WebSocket failed before session configuration completed."));
+            reject(new Error('WebSocket failed before session configuration completed.'));
         };
 
         resolvers.add(handleSessionView);
-        socket.addEventListener("close", handleClose);
-        socket.addEventListener("error", handleError);
+        socket.addEventListener('close', handleClose);
+        socket.addEventListener('error', handleError);
         sendMessage();
     });
 }
 
 function getLatestViewModel(
-    message: Extract<ServerMessage, { type: "session-view" }>
+    message: Extract<ServerMessage, { type: 'session-view' }>,
 ): CardGameViewModel {
     return message.viewModel as CardGameViewModel;
 }
@@ -215,22 +220,22 @@ function waitForInitialSessionView(
     input: {
         sessionId?: string;
         role?: ClientRole;
-    }
-): Promise<Extract<ServerMessage, { type: "session-view" }>> {
+    },
+): Promise<Extract<ServerMessage, { type: 'session-view' }>> {
     return new Promise((resolve, reject) => {
         const cleanup = () => {
-            socket.removeEventListener("open", handleOpen);
-            socket.removeEventListener("message", handleMessage);
-            socket.removeEventListener("error", handleError);
-            socket.removeEventListener("close", handleClose);
+            socket.removeEventListener('open', handleOpen);
+            socket.removeEventListener('message', handleMessage);
+            socket.removeEventListener('error', handleError);
+            socket.removeEventListener('close', handleClose);
         };
 
         const handleOpen = () => {
-            const role = input.role ?? "admin";
+            const role = input.role ?? 'admin';
             sendClientMessage(socket, {
-                type: "watch-session",
+                type: 'watch-session',
                 sessionId: input.sessionId,
-                role
+                role,
             });
         };
 
@@ -240,7 +245,7 @@ function waitForInitialSessionView(
                 return;
             }
 
-            if (message.type === "error") {
+            if (message.type === 'error') {
                 cleanup();
                 reject(new Error(message.message));
                 return;
@@ -252,23 +257,23 @@ function waitForInitialSessionView(
 
         const handleError = () => {
             cleanup();
-            reject(new Error("WebSocket connection failed."));
+            reject(new Error('WebSocket connection failed.'));
         };
 
         const handleClose = () => {
             cleanup();
-            reject(new Error("WebSocket closed before the first session view."));
+            reject(new Error('WebSocket closed before the first session view.'));
         };
 
-        socket.addEventListener("open", handleOpen);
-        socket.addEventListener("message", handleMessage);
-        socket.addEventListener("error", handleError);
-        socket.addEventListener("close", handleClose);
+        socket.addEventListener('open', handleOpen);
+        socket.addEventListener('message', handleMessage);
+        socket.addEventListener('error', handleError);
+        socket.addEventListener('close', handleClose);
     });
 }
 
 function parseServerMessage(data: unknown): ServerMessage | null {
-    if (typeof data !== "string") {
+    if (typeof data !== 'string') {
         return null;
     }
 

@@ -1,7 +1,7 @@
-import type { CardGameViewModel } from "../../engine/game/viewModel";
-import type { GameDefinition } from "../../engine/game/definition";
-import type { CardGameEffect } from "../../engine/game/effects";
-import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
+import type { CardGameViewModel } from '../../engine/game/viewModel';
+import type { GameDefinition } from '../../engine/game/definition';
+import type { CardGameEffect } from '../../engine/game/effects';
+import { createInitialContext, createShuffledContext, dealOpeningHands } from './setup';
 import {
     advanceToNextRound,
     canRevealBattle,
@@ -11,23 +11,19 @@ import {
     hasPendingBattleAction,
     recycleEmptyPlayerStacks,
     revealBattleWithEffects,
-    setBattleStatus
-} from "./rules";
-import { getWarLiteViewModel } from "./viewModel";
-import {
-    type WarLiteContext,
-    type WarLiteOptions,
-    type WarLiteViewSnapshot
-} from "./types";
+    setBattleStatus,
+} from './rules';
+import { getWarLiteViewModel } from './viewModel';
+import { type WarLiteContext, type WarLiteOptions, type WarLiteViewSnapshot } from './types';
 
 export type WarLiteMove =
-    | { type: "prepare-shuffle"; random?: () => number }
-    | { type: "deal-opening-hands" }
-    | { type: "prepare-battle" }
-    | { type: "reveal-battle" }
-    | { type: "finalize-battle" }
-    | { type: "advance-next-round" }
-    | { type: "finish-game" };
+    | { type: 'prepare-shuffle'; random?: () => number }
+    | { type: 'deal-opening-hands' }
+    | { type: 'prepare-battle' }
+    | { type: 'reveal-battle' }
+    | { type: 'finalize-battle' }
+    | { type: 'advance-next-round' }
+    | { type: 'finish-game' };
 
 function getPlayerNames(context: WarLiteContext): string[] {
     return context.players.map((player) => player.name);
@@ -52,54 +48,54 @@ export const warLiteGameDefinition: GameDefinition<
     string,
     WarLiteViewSnapshot
 > = {
-    id: "rewriteWarLite",
-    name: "War Lite",
+    id: 'rewriteWarLite',
+    name: 'War Lite',
     setup: ({ playerNames, options }) => {
         return createInitialContext(
             playerNames,
             options.deckDefinition,
             options.cardsPerPlayer,
-            options.warFaceDownCount
+            options.warFaceDownCount,
         );
     },
     getLegalMoves: (state) => {
-        return canRevealBattle(state) ? [{ type: "reveal-battle" }] : [];
+        return canRevealBattle(state) ? [{ type: 'reveal-battle' }] : [];
     },
     applyMove: (state, move) => {
         switch (move.type) {
-            case "prepare-shuffle":
+            case 'prepare-shuffle':
                 return {
                     state: createShuffledContext(
                         getPlayerNames(state),
                         state.deckDefinition,
                         state.cardsPerPlayer,
                         state.warFaceDownCount,
-                        move.random
-                    )
+                        move.random,
+                    ),
                 };
-            case "deal-opening-hands":
+            case 'deal-opening-hands':
                 return dealOpeningHands(state);
-            case "prepare-battle": {
+            case 'prepare-battle': {
                 const recycled = recycleEmptyPlayerStacks(state);
                 return {
                     state: setBattleStatus(recycled.context),
-                    effects: recycled.effects.length > 0 ? recycled.effects : undefined
+                    effects: recycled.effects.length > 0 ? recycled.effects : undefined,
                 };
             }
-            case "reveal-battle":
+            case 'reveal-battle':
                 return revealBattleWithEffects(state);
-            case "finalize-battle":
+            case 'finalize-battle':
                 return finalizeBattleWithEffects(state);
-            case "advance-next-round": {
+            case 'advance-next-round': {
                 const recycled = recycleEmptyPlayerStacks(advanceToNextRound(state));
                 return {
                     state: setBattleStatus(recycled.context),
-                    effects: recycled.effects.length > 0 ? recycled.effects : undefined
+                    effects: recycled.effects.length > 0 ? recycled.effects : undefined,
                 };
             }
-            case "finish-game":
+            case 'finish-game':
                 return {
-                    state: finishGame(state)
+                    state: finishGame(state),
                 };
         }
     },
@@ -108,16 +104,16 @@ export const warLiteGameDefinition: GameDefinition<
     },
     getAutomaticMove: (state) => {
         if (hasPendingBattleAction(state) || hasMorePlayersToReveal(state)) {
-            return { type: "prepare-battle" };
+            return { type: 'prepare-battle' };
         }
 
         if (getPlayersWithAvailableCards(state) < 2) {
-            return { type: "finish-game" };
+            return { type: 'finish-game' };
         }
 
-        return { type: "advance-next-round" };
+        return { type: 'advance-next-round' };
     },
     toViewModel: (snapshot, viewerId) => {
         return getWarLiteViewModel(snapshot, viewerId);
-    }
+    },
 };

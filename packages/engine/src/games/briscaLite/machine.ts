@@ -1,14 +1,10 @@
-import { ActorRefFrom, SnapshotFrom } from "xstate";
+import { ActorRefFrom, SnapshotFrom } from 'xstate';
 
-import { spanishDeckDefinition } from "../../engine/cards/deckDefinitions";
-import { createCardGameMachine } from "../../engine/game/machineFactory";
-import { briscaLiteConfig } from "./config";
-import { briscaLiteGameDefinition } from "./definition";
-import type {
-    BriscaLiteContext,
-    BriscaLiteEvent,
-    BriscaLiteOptions
-} from "./types";
+import { spanishDeckDefinition } from '../../engine/cards/deckDefinitions';
+import { createCardGameMachine } from '../../engine/game/machineFactory';
+import { briscaLiteConfig } from './config';
+import { briscaLiteGameDefinition } from './definition';
+import type { BriscaLiteContext, BriscaLiteEvent, BriscaLiteOptions } from './types';
 
 export function createBriscaLiteMachine(playerNames: string[], options?: BriscaLiteOptions) {
     const deckDefinition = options?.deckDefinition ?? spanishDeckDefinition;
@@ -17,59 +13,64 @@ export function createBriscaLiteMachine(playerNames: string[], options?: BriscaL
     const definitionOptions: BriscaLiteOptions = {
         deckDefinition,
         cardsPerPlayer,
-        random
+        random,
     };
 
-    return createCardGameMachine<BriscaLiteContext, BriscaLiteEvent, Parameters<typeof briscaLiteGameDefinition.applyMove>[1], BriscaLiteOptions>({
+    return createCardGameMachine<
+        BriscaLiteContext,
+        BriscaLiteEvent,
+        Parameters<typeof briscaLiteGameDefinition.applyMove>[1],
+        BriscaLiteOptions
+    >({
         definition: briscaLiteGameDefinition,
         playerNames,
         definitionOptions,
         prepareShuffleMove: {
-            type: "prepare-shuffle",
-            random
+            type: 'prepare-shuffle',
+            random,
         },
         prepareDealMove: {
-            type: "deal-opening-hands"
+            type: 'deal-opening-hands',
         },
         getCurrentActorId: (context) => context.players[context.turnIndex]?.id ?? null,
         flow: {
-            readyState: "playerTurn",
-            resolvingState: "resolvingTurn",
+            readyState: 'playerTurn',
+            resolvingState: 'resolvingTurn',
             shuffleDelayMs: 650,
             dealDelayMs: 900,
             resolveDelayMs: 850,
             prepareReadyMove: {
-                type: "begin-trick"
+                type: 'begin-trick',
             },
             selectCardMove: (cardId) => ({
-                type: "select-card",
-                cardId
+                type: 'select-card',
+                cardId,
             }),
             playMove: {
-                type: "queue-play"
+                type: 'queue-play',
             },
-            playGuardMoveType: "queue-play",
+            playGuardMoveType: 'queue-play',
             animation: {
-                kind: "event",
-                state: "animatingPlay",
+                kind: 'event',
+                state: 'animatingPlay',
                 commitMove: {
-                    type: "commit-play"
-                }
+                    type: 'commit-play',
+                },
             },
             finalizeMove: {
-                type: "finalize-turn"
+                type: 'finalize-turn',
             },
             resolutionTargets: [
                 {
-                    automaticMoveType: "advance-next-player",
-                    target: "playerTurn"
+                    automaticMoveType: 'advance-next-player',
+                    target: 'playerTurn',
                 },
                 {
-                    automaticMoveType: "advance-next-trick",
-                    target: "playerTurn"
-                }
-            ]
-        }
+                    automaticMoveType: 'advance-next-trick',
+                    target: 'playerTurn',
+                },
+            ],
+        },
     });
 }
 

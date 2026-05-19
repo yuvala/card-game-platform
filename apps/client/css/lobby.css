@@ -1,6 +1,12 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap');
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
 
 body {
     font-family: 'Crimson Text', Georgia, serif;
@@ -48,7 +54,9 @@ body {
     font-weight: 700;
     letter-spacing: 0.12em;
     color: #c9a84c;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 40px rgba(201,168,76,0.4);
+    text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.9),
+        0 0 40px rgba(201, 168, 76, 0.4);
 }
 
 .nickname-form {
@@ -57,12 +65,14 @@ body {
     border: 1px solid #6b4f28;
     border-radius: 4px;
     overflow: hidden;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6), inset 0 1px 0 rgba(201,168,76,0.15);
+    box-shadow:
+        0 8px 32px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(201, 168, 76, 0.15);
 }
 
 .nickname-form input {
     padding: 14px 20px;
-    background: rgba(255,255,255,0.04);
+    background: rgba(255, 255, 255, 0.04);
     border: none;
     color: #f5ead8;
     font-family: 'Crimson Text', serif;
@@ -71,7 +81,9 @@ body {
     width: 240px;
 }
 
-.nickname-form input::placeholder { color: #a08860; }
+.nickname-form input::placeholder {
+    color: #a08860;
+}
 
 /* ── Buttons ── */
 button {
@@ -84,7 +96,9 @@ button {
     font-weight: 600;
     letter-spacing: 0.08em;
     cursor: pointer;
-    transition: filter 0.15s, transform 0.1s;
+    transition:
+        filter 0.15s,
+        transform 0.1s;
 }
 
 button:hover:not(:disabled) {
@@ -92,7 +106,11 @@ button:hover:not(:disabled) {
     transform: translateY(-1px);
 }
 
-button:disabled { opacity: 0.35; cursor: default; transform: none; }
+button:disabled {
+    opacity: 0.35;
+    cursor: default;
+    transform: none;
+}
 
 /* ── Lobby main ── */
 .lobby-wrap {
@@ -115,7 +133,9 @@ button:disabled { opacity: 0.35; cursor: default; transform: none; }
     font-size: 2.2rem;
     color: #c9a84c;
     letter-spacing: 0.15em;
-    text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 30px rgba(201,168,76,0.3);
+    text-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.9),
+        0 0 30px rgba(201, 168, 76, 0.3);
 }
 
 .lobby-nick {
@@ -124,7 +144,7 @@ button:disabled { opacity: 0.35; cursor: default; transform: none; }
     color: #d4b896;
     margin-top: 8px;
     letter-spacing: 0.05em;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 }
 
 /* ── Section titles ── */
@@ -135,7 +155,7 @@ h2 {
     color: #c9a84c;
     text-transform: uppercase;
     margin-bottom: 16px;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 }
 
 /* ── New room ── */
@@ -153,27 +173,33 @@ h2 {
 }
 
 /* ── Room list ── */
-.room-list { display: flex; flex-direction: column; gap: 10px; }
+.room-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
 
 .room-row {
     display: flex;
     align-items: center;
-    background: rgba(0,0,0,0.45);
-    border: 1px solid rgba(201,168,76,0.2);
+    background: rgba(0, 0, 0, 0.45);
+    border: 1px solid rgba(201, 168, 76, 0.2);
     border-radius: 4px;
     padding: 16px 20px;
     gap: 16px;
     transition: border-color 0.15s;
 }
 
-.room-row:hover { border-color: rgba(201,168,76,0.5); }
+.room-row:hover {
+    border-color: rgba(201, 168, 76, 0.5);
+}
 
 .room-game {
     flex: 1;
     font-size: 1.15rem;
     color: #f0dfc0;
     font-style: italic;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .room-count {
@@ -182,7 +208,7 @@ h2 {
     color: #c9a84c;
     min-width: 40px;
     text-align: center;
-    text-shadow: 0 1px 4px rgba(0,0,0,0.8);
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
 .room-row button {
@@ -192,7 +218,7 @@ h2 {
 }
 
 .room-row--playing {
-    border-color: rgba(201,168,76,0.12);
+    border-color: rgba(201, 168, 76, 0.12);
     opacity: 0.7;
 }
 
@@ -203,7 +229,7 @@ h2 {
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: #a08040;
-    border: 1px solid rgba(160,128,64,0.4);
+    border: 1px solid rgba(160, 128, 64, 0.4);
     border-radius: 3px;
     padding: 4px 10px;
     white-space: nowrap;
@@ -215,7 +241,7 @@ h2 {
     font-size: 1rem;
     padding: 20px 0;
     text-align: center;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 }
 
 /* ── Divider ornament ── */
@@ -224,5 +250,5 @@ h2 {
     color: #c9a84c;
     font-size: 1.2rem;
     letter-spacing: 0.5em;
-    text-shadow: 0 1px 6px rgba(0,0,0,0.9);
+    text-shadow: 0 1px 6px rgba(0, 0, 0, 0.9);
 }

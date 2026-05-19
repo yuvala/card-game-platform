@@ -6,7 +6,7 @@ export interface ScenePoint {
 export interface SeatLayout {
     labelX: number;
     labelY: number;
-    labelAlign: "left" | "center" | "right";
+    labelAlign: 'left' | 'center' | 'right';
     handCenterX: number;
     handCenterY: number;
     gapX: number;

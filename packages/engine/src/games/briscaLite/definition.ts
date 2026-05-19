@@ -1,9 +1,9 @@
-import type { CardGameViewModel } from "../../engine/game/viewModel";
-import type { GameDefinition } from "../../engine/game/definition";
-import type { CardGameEffect } from "../../engine/game/effects";
-import { getPileCards } from "../../engine/game/piles";
-import { briscaLiteConfig } from "./config";
-import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
+import type { CardGameViewModel } from '../../engine/game/viewModel';
+import type { GameDefinition } from '../../engine/game/definition';
+import type { CardGameEffect } from '../../engine/game/effects';
+import { getPileCards } from '../../engine/game/piles';
+import { briscaLiteConfig } from './config';
+import { createInitialContext, createShuffledContext, dealOpeningHands } from './setup';
 import {
     advanceToNextPlayer,
     advanceToNextTrickWithEffects,
@@ -14,27 +14,23 @@ import {
     hasMoreTricksRemaining,
     queuePlayedCardWithEffects,
     selectCard,
-    setTrickStatus
-} from "./rules";
-import { getBriscaLiteViewModel } from "./viewModel";
-import type {
-    BriscaLiteContext,
-    BriscaLiteOptions,
-    BriscaLiteViewSnapshot
-} from "./types";
-import { getBriscaLiteHandPileId } from "./types";
+    setTrickStatus,
+} from './rules';
+import { getBriscaLiteViewModel } from './viewModel';
+import type { BriscaLiteContext, BriscaLiteOptions, BriscaLiteViewSnapshot } from './types';
+import { getBriscaLiteHandPileId } from './types';
 
 export type BriscaLiteMove =
-    | { type: "prepare-shuffle"; random?: () => number }
-    | { type: "deal-opening-hands" }
-    | { type: "begin-trick" }
-    | { type: "select-card"; cardId: string }
-    | { type: "queue-play" }
-    | { type: "commit-play" }
-    | { type: "finalize-turn" }
-    | { type: "advance-next-player" }
-    | { type: "advance-next-trick" }
-    | { type: "finish-game" };
+    | { type: 'prepare-shuffle'; random?: () => number }
+    | { type: 'deal-opening-hands' }
+    | { type: 'begin-trick' }
+    | { type: 'select-card'; cardId: string }
+    | { type: 'queue-play' }
+    | { type: 'commit-play' }
+    | { type: 'finalize-turn' }
+    | { type: 'advance-next-player' }
+    | { type: 'advance-next-trick' }
+    | { type: 'finish-game' };
 
 function getPlayerNames(context: BriscaLiteContext): string[] {
     return context.players.map((player) => player.name);
@@ -53,13 +49,13 @@ export const briscaLiteGameDefinition: GameDefinition<
     string,
     BriscaLiteViewSnapshot
 > = {
-    id: "rewriteBriscaLite",
-    name: "Brisca-lite",
+    id: 'rewriteBriscaLite',
+    name: 'Brisca-lite',
     setup: ({ playerNames, options }) => {
         return createInitialContext(
             playerNames,
             options.deckDefinition,
-            options.cardsPerPlayer ?? briscaLiteConfig.openingHandSize
+            options.cardsPerPlayer ?? briscaLiteConfig.openingHandSize,
         );
     },
     getLegalMoves: (state, actorId) => {
@@ -70,83 +66,79 @@ export const briscaLiteGameDefinition: GameDefinition<
 
         const moves: BriscaLiteMove[] = getPileCards(
             state.piles,
-            getBriscaLiteHandPileId(currentPlayer.id)
+            getBriscaLiteHandPileId(currentPlayer.id),
         ).map((card) => ({
-            type: "select-card",
-            cardId: card.id
+            type: 'select-card',
+            cardId: card.id,
         }));
 
         if (canCurrentPlayerPlay(state)) {
-            moves.push({ type: "queue-play" });
+            moves.push({ type: 'queue-play' });
         }
 
         return moves;
     },
     applyMove: (state, move) => {
         switch (move.type) {
-            case "prepare-shuffle":
+            case 'prepare-shuffle':
                 return {
                     state: createShuffledContext(
                         getPlayerNames(state),
                         state.deckDefinition,
                         state.cardsPerPlayer,
-                        move.random
-                    )
+                        move.random,
+                    ),
                 };
-            case "deal-opening-hands":
+            case 'deal-opening-hands':
                 return dealOpeningHands(state);
-            case "begin-trick":
+            case 'begin-trick':
                 return {
-                    state: setTrickStatus(state)
+                    state: setTrickStatus(state),
                 };
-            case "select-card":
+            case 'select-card':
                 return {
-                    state: selectCard(state, move.cardId)
+                    state: selectCard(state, move.cardId),
                 };
-            case "queue-play":
+            case 'queue-play':
                 return queuePlayedCardWithEffects(state);
-            case "commit-play":
+            case 'commit-play':
                 return {
-                    state: commitPlayedCard(state)
+                    state: commitPlayedCard(state),
                 };
-            case "finalize-turn":
+            case 'finalize-turn':
                 return {
-                    state: finalizeTurn(state)
+                    state: finalizeTurn(state),
                 };
-            case "advance-next-player":
+            case 'advance-next-player':
                 return {
-                    state: setTrickStatus(advanceToNextPlayer(state))
+                    state: setTrickStatus(advanceToNextPlayer(state)),
                 };
-            case "advance-next-trick":
-                {
-                    const transition = advanceToNextTrickWithEffects(state);
-                    return {
-                        state: setTrickStatus(transition.state),
-                        effects: transition.effects
-                    };
-                }
-            case "finish-game":
+            case 'advance-next-trick': {
+                const transition = advanceToNextTrickWithEffects(state);
+                return {
+                    state: setTrickStatus(transition.state),
+                    effects: transition.effects,
+                };
+            }
+            case 'finish-game':
                 return finishGameWithEffects(state);
         }
     },
     isGameOver: (state) => {
-        return (
-            state.roundCards.length === state.players.length &&
-            !hasMoreTricksRemaining(state)
-        );
+        return state.roundCards.length === state.players.length && !hasMoreTricksRemaining(state);
     },
     getAutomaticMove: (state) => {
         if (hasMorePlayersInTrick(state)) {
-            return { type: "advance-next-player" };
+            return { type: 'advance-next-player' };
         }
 
         if (briscaLiteGameDefinition.isGameOver(state)) {
-            return { type: "finish-game" };
+            return { type: 'finish-game' };
         }
 
-        return { type: "advance-next-trick" };
+        return { type: 'advance-next-trick' };
     },
     toViewModel: (snapshot, viewerId) => {
         return getBriscaLiteViewModel(snapshot, viewerId);
-    }
+    },
 };

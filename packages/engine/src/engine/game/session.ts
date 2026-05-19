@@ -1,6 +1,6 @@
-import type { CardGameCatalogOptions, GameCatalogEntry } from "./catalog";
-import type { CardGameEvent } from "./types";
-import type { CardGameActor, CardGameViewModel } from "./viewModel";
+import type { CardGameCatalogOptions, GameCatalogEntry } from './catalog';
+import type { CardGameEvent } from './types';
+import type { CardGameActor, CardGameViewModel } from './viewModel';
 
 export interface CardGameSession<TSnapshot> extends CardGameActor<TSnapshot> {
     readonly id: string;
@@ -11,21 +11,15 @@ export interface CardGameSession<TSnapshot> extends CardGameActor<TSnapshot> {
     getViewModel(viewerId?: string | null): CardGameViewModel;
 }
 
-interface LocalGameSessionInput<
-    TSnapshot,
-    TOptions extends CardGameCatalogOptions
-> {
+interface LocalGameSessionInput<TSnapshot, TOptions extends CardGameCatalogOptions> {
     id: string;
     entry: GameCatalogEntry<TSnapshot, TOptions>;
     playerNames: string[];
     options: TOptions;
 }
 
-export function createLocalGameSession<
-    TSnapshot,
-    TOptions extends CardGameCatalogOptions
->(
-    input: LocalGameSessionInput<TSnapshot, TOptions>
+export function createLocalGameSession<TSnapshot, TOptions extends CardGameCatalogOptions>(
+    input: LocalGameSessionInput<TSnapshot, TOptions>,
 ): CardGameSession<TSnapshot> {
     const { id, entry, playerNames, options } = input;
     const actor = entry.createActor(playerNames, options);
@@ -47,6 +41,6 @@ export function createLocalGameSession<
         },
         getViewModel: (viewerId) => {
             return entry.getViewModel(actor.getSnapshot(), viewerId);
-        }
+        },
     };
 }

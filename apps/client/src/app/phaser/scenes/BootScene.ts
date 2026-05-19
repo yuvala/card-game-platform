@@ -1,19 +1,19 @@
-import * as Phaser from "phaser";
+import * as Phaser from 'phaser';
 
-import { preloadFrenchCardTextures } from "../cards/CardTextureFactory";
+import { preloadFrenchCardTextures } from '../cards/CardTextureFactory';
 
 export class BootScene extends Phaser.Scene {
     constructor() {
-        super("rewrite-boot");
+        super('rewrite-boot');
     }
 
     preload(): void {
-        this.load.image("rewrite-table-bg", "images/map4.jpg");
-        preloadFrenchCardTextures(this, "vintage-european");
+        this.load.image('rewrite-table-bg', 'images/map4.jpg');
+        preloadFrenchCardTextures(this, 'vintage-european');
     }
 
     create(): void {
-        this.scene.start("rewrite-table");
-        this.scene.launch("rewrite-ui");
+        this.scene.start('rewrite-table');
+        this.scene.launch('rewrite-ui');
     }
 }

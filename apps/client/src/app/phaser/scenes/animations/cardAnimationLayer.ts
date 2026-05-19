@@ -1,4 +1,4 @@
-import type * as Phaser from "phaser";
+import type * as Phaser from 'phaser';
 
 export interface CardGhostOptions {
     textureKey: string;
@@ -29,7 +29,8 @@ export function createCardAnimationLayer(scene: Phaser.Scene, depth = 1000): Car
     return {
         container,
         createGhostCard: (options) => {
-            const image = scene.add.image(options.x, options.y, options.textureKey)
+            const image = scene.add
+                .image(options.x, options.y, options.textureKey)
                 .setDisplaySize(options.width, options.height)
                 .setAngle(options.angle ?? 0)
                 .setAlpha(options.alpha ?? 1)
@@ -40,7 +41,7 @@ export function createCardAnimationLayer(scene: Phaser.Scene, depth = 1000): Car
                 image,
                 destroy: () => {
                     image.destroy();
-                }
+                },
             };
         },
         clear: () => {
@@ -48,6 +49,6 @@ export function createCardAnimationLayer(scene: Phaser.Scene, depth = 1000): Car
         },
         destroy: () => {
             container.destroy(true);
-        }
+        },
     };
 }

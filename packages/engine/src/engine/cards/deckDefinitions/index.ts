@@ -1,17 +1,17 @@
-import type { DeckDefinition } from "../types";
-import { frenchDeckDefinition } from "./french";
-import { italianDeckDefinition } from "./italian";
-import { spanishDeckDefinition } from "./spanish";
+import type { DeckDefinition } from '../types';
+import { frenchDeckDefinition } from './french';
+import { italianDeckDefinition } from './italian';
+import { spanishDeckDefinition } from './spanish';
 
 export const supportedDeckDefinitions = {
     french: frenchDeckDefinition,
     spanish: spanishDeckDefinition,
-    italian: italianDeckDefinition
+    italian: italianDeckDefinition,
 } satisfies Record<string, DeckDefinition>;
 
 export type SupportedDeckId = keyof typeof supportedDeckDefinitions;
 
-export const DEFAULT_DECK_ID: SupportedDeckId = "french";
+export const DEFAULT_DECK_ID: SupportedDeckId = 'french';
 
 export function getDeckDefinitionById(deckId: string | null | undefined): DeckDefinition | null {
     if (!deckId) {
@@ -22,8 +22,4 @@ export function getDeckDefinitionById(deckId: string | null | undefined): DeckDe
     return supportedDeckDefinitions[normalizedDeckId] ?? null;
 }
 
-export {
-    frenchDeckDefinition,
-    italianDeckDefinition,
-    spanishDeckDefinition
-};
+export { frenchDeckDefinition, italianDeckDefinition, spanishDeckDefinition };

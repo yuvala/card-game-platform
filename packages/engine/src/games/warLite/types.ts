@@ -1,20 +1,20 @@
-import type { CardInstance } from "../../engine/cards/types";
+import type { CardInstance } from '../../engine/cards/types';
 import type {
     CardGameEvent,
     CardGameOptions,
     CardGamePlayer,
-    CardGameSession
-} from "../../engine/game/types";
+    CardGameSession,
+} from '../../engine/game/types';
 
 export type WarLitePlayer = CardGamePlayer<CardInstance> & {
     score: number;
 };
 
-export const WAR_LITE_STOCK_PILE_ID = "stock";
-export const WAR_LITE_BATTLE_PILE_ID = "battle";
-export const WAR_LITE_DISCARD_PILE_ID = "discard";
-export const WAR_LITE_HAND_PILE_PREFIX = "stack:";
-export const WAR_LITE_CAPTURE_PILE_PREFIX = "won:";
+export const WAR_LITE_STOCK_PILE_ID = 'stock';
+export const WAR_LITE_BATTLE_PILE_ID = 'battle';
+export const WAR_LITE_DISCARD_PILE_ID = 'discard';
+export const WAR_LITE_HAND_PILE_PREFIX = 'stack:';
+export const WAR_LITE_CAPTURE_PILE_PREFIX = 'won:';
 
 export function getWarLiteHandPileId(playerId: string): string {
     return WAR_LITE_HAND_PILE_PREFIX + playerId;
@@ -35,7 +35,7 @@ export interface WarLitePlayedCard {
     warDepth: number;
 }
 
-export type WarLiteWarStage = "face-down" | "reveal";
+export type WarLiteWarStage = 'face-down' | 'reveal';
 
 export interface WarLiteWarState {
     contenders: string[];
@@ -43,8 +43,11 @@ export interface WarLiteWarState {
     stage: WarLiteWarStage;
 }
 
-export interface WarLiteContext
-    extends CardGameSession<CardInstance, WarLitePlayer, WarLitePlayedCard> {
+export interface WarLiteContext extends CardGameSession<
+    CardInstance,
+    WarLitePlayer,
+    WarLitePlayedCard
+> {
     comparisonCards: WarLitePlayedCard[];
     roundCards: WarLitePlayedCard[];
     warFaceDownCount: number;

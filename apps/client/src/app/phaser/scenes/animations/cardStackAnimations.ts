@@ -1,16 +1,16 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
-import type { MoveCardEffect } from "@engine/engine/game/effects";
-import type { CardGameViewCard } from "@engine/engine/game/viewModel";
-import { CARD_HEIGHT, CARD_WIDTH } from "../layout/constants";
+import type { MoveCardEffect } from '@engine/engine/game/effects';
+import type { CardGameViewCard } from '@engine/engine/game/viewModel';
+import { CARD_HEIGHT, CARD_WIDTH } from '../layout/constants';
 import {
     animateCardHoldHighlight,
     animateImageCollectMotions,
     animateImageHorizontalFlip,
     animateImageMove,
     animateTransientShuffleDeck,
-    createCardMotionImage
-} from "./cardMotionAnimations";
+    createCardMotionImage,
+} from './cardMotionAnimations';
 
 export interface CardAnimationPoint {
     x: number;
@@ -41,7 +41,7 @@ export interface CardAnimationTextureApi {
     applyCardTexture(
         image: Phaser.GameObjects.Image,
         card: CardGameViewCard | null,
-        variant: "compact" | "showcase"
+        variant: 'compact' | 'showcase',
     ): void;
 }
 
@@ -51,7 +51,7 @@ interface CardDisplaySize {
 }
 
 function restoreCardDisplaySize(image: Phaser.GameObjects.Image): void {
-    const displaySize = image.getData("cardDisplaySize") as CardDisplaySize | undefined;
+    const displaySize = image.getData('cardDisplaySize') as CardDisplaySize | undefined;
     if (!displaySize) {
         return;
     }
@@ -76,15 +76,15 @@ export function animateShuffleDeck(input: {
         textureKey: textureApi.getActiveBackTextureKey(),
         center: {
             x,
-            y
+            y,
         },
         size: {
             width: CARD_WIDTH,
-            height: CARD_HEIGHT
+            height: CARD_HEIGHT,
         },
         count: 8,
         depth: 132,
-        onComplete
+        onComplete,
     });
 }
 
@@ -92,7 +92,10 @@ export function getCollectedCardMoveDelay(index: number): number {
     return index * 58;
 }
 
-export function getCollectedPileCardPoint(basePoint: CardAnimationPoint, index: number): CardAnimationPoint {
+export function getCollectedPileCardPoint(
+    basePoint: CardAnimationPoint,
+    index: number,
+): CardAnimationPoint {
     const scatterPattern = [
         { x: -12, y: -8, angle: -8 },
         { x: 8, y: -6, angle: 5 },
@@ -101,7 +104,7 @@ export function getCollectedPileCardPoint(basePoint: CardAnimationPoint, index: 
         { x: -2, y: -2, angle: 2 },
         { x: 5, y: 8, angle: -6 },
         { x: -10, y: 2, angle: 6 },
-        { x: 10, y: -1, angle: -3 }
+        { x: 10, y: -1, angle: -3 },
     ];
     const scatter = scatterPattern[index % scatterPattern.length];
     const layer = Math.floor(index / scatterPattern.length);
@@ -110,7 +113,7 @@ export function getCollectedPileCardPoint(basePoint: CardAnimationPoint, index: 
     return {
         x: basePoint.x + scatter.x + (index % 2 === 0 ? -layerOffset : layerOffset),
         y: basePoint.y + scatter.y - layerOffset,
-        angle: basePoint.angle + scatter.angle
+        angle: basePoint.angle + scatter.angle,
     };
 }
 
@@ -126,9 +129,9 @@ export function createCardMoveGhost(input: {
         center: source,
         size: {
             width: CARD_WIDTH,
-            height: CARD_HEIGHT
+            height: CARD_HEIGHT,
         },
-        depth: 140
+        depth: 140,
     });
 }
 
@@ -136,31 +139,34 @@ export function prepareCollectedCardGhostTexture(input: {
     ghost: Phaser.GameObjects.Image;
     textureApi: CardAnimationTextureApi;
 }): void {
-    input.textureApi.applyCardTexture(input.ghost, null, "compact");
+    input.textureApi.applyCardTexture(input.ghost, null, 'compact');
 }
 
 export function shouldRevealFinalCard(effect: MoveCardEffect): boolean {
-    return effect.type === "move-card" && effect.fromFaceUp === false && effect.card.isFaceUp;
+    return effect.type === 'move-card' && effect.fromFaceUp === false && effect.card.isFaceUp;
 }
 
 function getFinalRevealDelay(effect: MoveCardEffect): number {
-    return effect.key.startsWith("war-reveal-") ? 650 : 0;
+    return effect.key.startsWith('war-reveal-') ? 650 : 0;
 }
 
-function getFinalRevealDurations(effect: MoveCardEffect): { revealInDuration: number; revealOutDuration: number } {
-    return effect.key.startsWith("war-reveal-")
+function getFinalRevealDurations(effect: MoveCardEffect): {
+    revealInDuration: number;
+    revealOutDuration: number;
+} {
+    return effect.key.startsWith('war-reveal-')
         ? {
               revealInDuration: 170,
-              revealOutDuration: 230
+              revealOutDuration: 230,
           }
         : {
               revealInDuration: 95,
-              revealOutDuration: 145
+              revealOutDuration: 145,
           };
 }
 
 function isWarRevealEffect(effect: MoveCardEffect): boolean {
-    return effect.key.startsWith("war-reveal-");
+    return effect.key.startsWith('war-reveal-');
 }
 
 export function prepareCardMoveGhostTexture(input: {
@@ -170,7 +176,7 @@ export function prepareCardMoveGhostTexture(input: {
 }): void {
     const { ghost, effect, textureApi } = input;
     if (!shouldRevealFinalCard(effect)) {
-        textureApi.applyCardTexture(ghost, effect.card, "compact");
+        textureApi.applyCardTexture(ghost, effect.card, 'compact');
         restoreCardDisplaySize(ghost);
     }
 }
@@ -191,7 +197,7 @@ export function animateFinalCardReveal(input: {
         image: ghost,
         size: {
             width: CARD_WIDTH,
-            height: CARD_HEIGHT
+            height: CARD_HEIGHT,
         },
         revealInDuration: durations.revealInDuration,
         revealOutDuration: durations.revealOutDuration,
@@ -199,10 +205,10 @@ export function animateFinalCardReveal(input: {
             onReveal?.();
             ghost.setScale(1);
             restoreCardDisplaySize(ghost);
-            textureApi.applyCardTexture(ghost, effect.card, "compact");
+            textureApi.applyCardTexture(ghost, effect.card, 'compact');
             restoreCardDisplaySize(ghost);
         },
-        onComplete
+        onComplete,
     });
 }
 
@@ -217,7 +223,17 @@ export function animateCardToStack(input: {
     onReveal?: () => void;
     onComplete: () => void;
 }): void {
-    const { scene, ghost, effect, destination, profile, textureApi, onLanded, onReveal, onComplete } = input;
+    const {
+        scene,
+        ghost,
+        effect,
+        destination,
+        profile,
+        textureApi,
+        onLanded,
+        onReveal,
+        onComplete,
+    } = input;
     const baseScaleX = ghost.scaleX;
     const baseScaleY = ghost.scaleY;
 
@@ -226,7 +242,7 @@ export function animateCardToStack(input: {
         image: ghost,
         target: {
             x: destination.x,
-            y: destination.y
+            y: destination.y,
         },
         targetAngle: destination.angle,
         scaleX: baseScaleX * profile.peakScale,
@@ -249,7 +265,7 @@ export function animateCardToStack(input: {
                       image: ghost,
                       width: CARD_WIDTH + 18,
                       height: CARD_HEIGHT + 18,
-                      duration: revealDelay
+                      duration: revealDelay,
                   })
                 : null;
             const reveal = () => {
@@ -260,7 +276,7 @@ export function animateCardToStack(input: {
                     effect,
                     textureApi,
                     onReveal,
-                    onComplete
+                    onComplete,
                 });
             };
 
@@ -270,7 +286,7 @@ export function animateCardToStack(input: {
             }
 
             reveal();
-        }
+        },
     });
 }
 
@@ -290,14 +306,14 @@ export function animateCollectCards(input: {
                 image: item.ghost,
                 target: {
                     x: item.destination.x,
-                    y: item.destination.y
+                    y: item.destination.y,
                 },
                 targetAngle: item.destination.angle,
                 delay: item.delay,
                 duration: item.duration,
                 ease: item.ease,
                 peakScale: item.peakScale,
-                landingScale: item.landingScale
+                landingScale: item.landingScale,
             };
         }),
         onItemLanded: (motionItem) => {
@@ -306,6 +322,6 @@ export function animateCollectCards(input: {
                 onCardLanded?.(item);
             }
         },
-        onComplete
+        onComplete,
     });
 }

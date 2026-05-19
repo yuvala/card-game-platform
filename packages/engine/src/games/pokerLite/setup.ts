@@ -1,31 +1,28 @@
-import { createDeck, shuffleDeck } from "../../engine/cards/createDeck";
-import type { DeckDefinition } from "../../engine/cards/types";
-import { createConfiguredPiles } from "../../engine/game/config";
-import { createDealCardEffect, type CardGameEffect } from "../../engine/game/effects";
-import {
-    moveTopCardBetweenPiles,
-    setPileCards
-} from "../../engine/game/piles";
-import { pokerLiteConfig } from "./config";
+import { createDeck, shuffleDeck } from '../../engine/cards/createDeck';
+import type { DeckDefinition } from '../../engine/cards/types';
+import { createConfiguredPiles } from '../../engine/game/config';
+import { createDealCardEffect, type CardGameEffect } from '../../engine/game/effects';
+import { moveTopCardBetweenPiles, setPileCards } from '../../engine/game/piles';
+import { pokerLiteConfig } from './config';
 import {
     POKER_LITE_STOCK_PILE_ID,
     getPokerLiteHandPileId,
     type PokerLiteContext,
-    type PokerLitePlayer
-} from "./types";
+    type PokerLitePlayer,
+} from './types';
 
 function createPlayers(names: string[]): PokerLitePlayer[] {
     return names.map((name, index) => ({
-        id: "p" + (index + 1),
+        id: 'p' + (index + 1),
         name,
-        score: 0
+        score: 0,
     }));
 }
 
 function resolveCardsPerPlayer(
     deckDefinition: DeckDefinition,
     playerCount: number,
-    requestedCardsPerPlayer: number
+    requestedCardsPerPlayer: number,
 ): number {
     const totalCards = deckDefinition.suits.length * deckDefinition.ranks.length;
     const supportedCardsPerPlayer = Math.floor(totalCards / playerCount);
@@ -36,10 +33,14 @@ function resolveCardsPerPlayer(
 export function createInitialContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
-    requestedCardsPerPlayer: number = 5
+    requestedCardsPerPlayer: number = 5,
 ): PokerLiteContext {
     const players = createPlayers(playerNames);
-    const cardsPerPlayer = resolveCardsPerPlayer(deckDefinition, playerNames.length, requestedCardsPerPlayer);
+    const cardsPerPlayer = resolveCardsPerPlayer(
+        deckDefinition,
+        playerNames.length,
+        requestedCardsPerPlayer,
+    );
 
     return {
         deckDefinition,
@@ -53,12 +54,12 @@ export function createInitialContext(
         maxRounds: cardsPerPlayer,
         cardsPerPlayer,
         statusText:
-            "Press Start Rewrite to deal from the " +
+            'Press Start Rewrite to deal from the ' +
             deckDefinition.name +
-            ". Try ?deck=spanish or ?deck=italian.",
+            '. Try ?deck=spanish or ?deck=italian.',
         lastPlayedCard: null,
         selectedCardId: null,
-        winningPlayerIds: []
+        winningPlayerIds: [],
     };
 }
 
@@ -66,41 +67,46 @@ export function createShuffledContext(
     playerNames: string[],
     deckDefinition: DeckDefinition,
     requestedCardsPerPlayer: number = 5,
-    random: () => number = Math.random
+    random: () => number = Math.random,
 ): PokerLiteContext {
     const baseContext = createInitialContext(playerNames, deckDefinition, requestedCardsPerPlayer);
 
     return {
         ...baseContext,
-        piles: setPileCards(baseContext.piles, POKER_LITE_STOCK_PILE_ID, shuffleDeck(createDeck(deckDefinition), random)),
+        piles: setPileCards(
+            baseContext.piles,
+            POKER_LITE_STOCK_PILE_ID,
+            shuffleDeck(createDeck(deckDefinition), random),
+        ),
         lastEffects: [],
-        statusText: "Shuffling the " + deckDefinition.name + "..."
+        statusText: 'Shuffling the ' + deckDefinition.name + '...',
     };
 }
 
-export function dealOpeningHands(context: PokerLiteContext): { state: PokerLiteContext; effects: CardGameEffect[] } {
+export function dealOpeningHands(context: PokerLiteContext): {
+    state: PokerLiteContext;
+    effects: CardGameEffect[];
+} {
     let piles = context.piles;
     const effects: CardGameEffect[] = [];
 
     for (let cardIndex = 0; cardIndex < context.cardsPerPlayer; cardIndex += 1) {
         context.players.forEach((player) => {
             const toPileId = getPokerLiteHandPileId(player.id);
-            const nextState = moveTopCardBetweenPiles(
-                piles,
-                POKER_LITE_STOCK_PILE_ID,
-                toPileId
-            );
+            const nextState = moveTopCardBetweenPiles(piles, POKER_LITE_STOCK_PILE_ID, toPileId);
             piles = nextState.piles;
             if (nextState.card) {
-                effects.push(createDealCardEffect({
-                    card: nextState.card,
-                    fromPileId: POKER_LITE_STOCK_PILE_ID,
-                    toPileId,
-                    toOwnerId: player.id,
-                    toIndex: cardIndex,
-                    isFaceUp: true,
-                    keyPrefix: "deal-" + String(cardIndex) + "-" + player.id
-                }));
+                effects.push(
+                    createDealCardEffect({
+                        card: nextState.card,
+                        fromPileId: POKER_LITE_STOCK_PILE_ID,
+                        toPileId,
+                        toOwnerId: player.id,
+                        toIndex: cardIndex,
+                        isFaceUp: true,
+                        keyPrefix: 'deal-' + String(cardIndex) + '-' + player.id,
+                    }),
+                );
             }
         });
     }
@@ -117,12 +123,12 @@ export function dealOpeningHands(context: PokerLiteContext): { state: PokerLiteC
             selectedCardId: null,
             winningPlayerIds: [],
             statusText:
-                "Dealing " +
+                'Dealing ' +
                 context.cardsPerPlayer +
-                " cards to each player from the " +
+                ' cards to each player from the ' +
                 context.deckDefinition.name +
-                "."
+                '.',
         },
-        effects
+        effects,
     };
 }

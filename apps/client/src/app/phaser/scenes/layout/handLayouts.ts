@@ -4,9 +4,9 @@ import {
     HOVER_CARD_SHIFT_X,
     SELECTED_CARD_LIFT_Y,
     SELECTED_CARD_SCALE,
-    SELECTED_CARD_SHIFT_X
-} from "./constants";
-import type { HandSlotDisplayState, HandSlotOrigin } from "./types";
+    SELECTED_CARD_SHIFT_X,
+} from './constants';
+import type { HandSlotDisplayState, HandSlotOrigin } from './types';
 
 interface HandCardLike {
     id: string;
@@ -23,7 +23,7 @@ interface GetHandSlotDisplayStatesInput {
 }
 
 export function getHandSlotDisplayStates(
-    input: GetHandSlotDisplayStatesInput
+    input: GetHandSlotDisplayStatesInput,
 ): HandSlotDisplayState[] {
     const {
         slots,
@@ -32,7 +32,7 @@ export function getHandSlotDisplayStates(
         canInteract,
         selectedCardId,
         hoveredSlotIndexes,
-        hasAnimation
+        hasAnimation,
     } = input;
     const visibleCardCount = cards.filter(Boolean).length;
     const baseStartX = slots[0]?.originX ?? 0;
@@ -40,12 +40,14 @@ export function getHandSlotDisplayStates(
     const baseGapX = slots.length > 1 ? slots[1].originX - slots[0].originX : 0;
     const baseGapY = slots.length > 1 ? slots[1].originY - slots[0].originY : 0;
     const visibleSlots = slots.slice(0, visibleCardCount);
-    const baseCenterX = visibleSlots.length > 0
-        ? (visibleSlots[0].originX + visibleSlots[visibleSlots.length - 1].originX) / 2
-        : baseStartX;
-    const baseCenterY = visibleSlots.length > 0
-        ? (visibleSlots[0].originY + visibleSlots[visibleSlots.length - 1].originY) / 2
-        : baseStartY;
+    const baseCenterX =
+        visibleSlots.length > 0
+            ? (visibleSlots[0].originX + visibleSlots[visibleSlots.length - 1].originX) / 2
+            : baseStartX;
+    const baseCenterY =
+        visibleSlots.length > 0
+            ? (visibleSlots[0].originY + visibleSlots[visibleSlots.length - 1].originY) / 2
+            : baseStartY;
     let layoutStartX = baseStartX;
     let layoutStartY = baseStartY;
     let layoutGapX = baseGapX;
@@ -77,20 +79,33 @@ export function getHandSlotDisplayStates(
         let position = null;
 
         if (!hasAnimation) {
-            const selectedOffsetX = slot.originAngle === 0
-                ? 0
-                : (slot.originAngle > 0 ? -SELECTED_CARD_SHIFT_X : SELECTED_CARD_SHIFT_X);
+            const selectedOffsetX =
+                slot.originAngle === 0
+                    ? 0
+                    : slot.originAngle > 0
+                      ? -SELECTED_CARD_SHIFT_X
+                      : SELECTED_CARD_SHIFT_X;
             const selectedOffsetY = slot.originAngle === 0 ? SELECTED_CARD_LIFT_Y : 0;
-            const hoverOffsetX = !isSelected && isHovered
-                ? (slot.originAngle > 0 ? -HOVER_CARD_SHIFT_X : (slot.originAngle < 0 ? HOVER_CARD_SHIFT_X : 0))
-                : 0;
-            const hoverOffsetY = !isSelected && isHovered
-                ? (slot.originAngle === 0 ? HOVER_CARD_LIFT_Y : 0)
-                : 0;
+            const hoverOffsetX =
+                !isSelected && isHovered
+                    ? slot.originAngle > 0
+                        ? -HOVER_CARD_SHIFT_X
+                        : slot.originAngle < 0
+                          ? HOVER_CARD_SHIFT_X
+                          : 0
+                    : 0;
+            const hoverOffsetY =
+                !isSelected && isHovered ? (slot.originAngle === 0 ? HOVER_CARD_LIFT_Y : 0) : 0;
 
             position = {
-                x: layoutStartX + layoutGapX * slotIndex + (isSelected ? selectedOffsetX : hoverOffsetX),
-                y: layoutStartY + layoutGapY * slotIndex + (isSelected ? selectedOffsetY : hoverOffsetY)
+                x:
+                    layoutStartX +
+                    layoutGapX * slotIndex +
+                    (isSelected ? selectedOffsetX : hoverOffsetX),
+                y:
+                    layoutStartY +
+                    layoutGapY * slotIndex +
+                    (isSelected ? selectedOffsetY : hoverOffsetY),
             };
         }
 
@@ -100,10 +115,10 @@ export function getHandSlotDisplayStates(
             interactiveEnabled: Boolean(card && canInteract),
             isSelected,
             isHovered,
-            scale: isSelected ? SELECTED_CARD_SCALE : (isHovered ? HOVER_CARD_SCALE : 1),
-            depth: isSelected ? 30 + slotIndex : (isHovered ? 20 + slotIndex : slotIndex),
+            scale: isSelected ? SELECTED_CARD_SCALE : isHovered ? HOVER_CARD_SCALE : 1,
+            depth: isSelected ? 30 + slotIndex : isHovered ? 20 + slotIndex : slotIndex,
             position,
-            angle: hasAnimation ? null : slot.originAngle
+            angle: hasAnimation ? null : slot.originAngle,
         };
     });
 }

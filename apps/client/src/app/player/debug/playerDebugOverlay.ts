@@ -1,6 +1,6 @@
-import * as Phaser from "phaser";
+import * as Phaser from 'phaser';
 
-import type { CardGameViewModel } from "@engine/engine/game/viewModel";
+import type { CardGameViewModel } from '@engine/engine/game/viewModel';
 import {
     getHandCardPoint,
     getOpponentSeatLayouts,
@@ -9,11 +9,11 @@ import {
     getTrickCardPoint,
     playerPovCardSizes,
     playerPovZones,
-    type PlayerPovSeatSide
-} from "../playerPovLayout";
-import { getPlayerPovPresentation } from "../playerPovPresentation";
-import { getPlayerPovOpponentSeats } from "../playerPovUiModel";
-import { PLAYER_GAME_WIDTH } from "../createPlayerGame";
+    type PlayerPovSeatSide,
+} from '../playerPovLayout';
+import { getPlayerPovPresentation } from '../playerPovPresentation';
+import { getPlayerPovOpponentSeats } from '../playerPovUiModel';
+import { PLAYER_GAME_WIDTH } from '../createPlayerGame';
 
 export interface PlayerDebugLayerFlags {
     hand: boolean;
@@ -40,14 +40,18 @@ function fmt(x: number, y: number): string {
 
 function strokeDashedRect(
     g: Phaser.GameObjects.Graphics,
-    x: number, y: number, w: number, h: number,
-    dash = 5, gap = 4
+    x: number,
+    y: number,
+    w: number,
+    h: number,
+    dash = 5,
+    gap = 4,
 ): void {
     const sides = [
-        { x1: x,     y1: y,     x2: x + w, y2: y     },
-        { x1: x + w, y1: y,     x2: x + w, y2: y + h },
-        { x1: x + w, y1: y + h, x2: x,     y2: y + h },
-        { x1: x,     y1: y + h, x2: x,     y2: y     }
+        { x1: x, y1: y, x2: x + w, y2: y },
+        { x1: x + w, y1: y, x2: x + w, y2: y + h },
+        { x1: x + w, y1: y + h, x2: x, y2: y + h },
+        { x1: x, y1: y + h, x2: x, y2: y },
     ];
     sides.forEach(({ x1, y1, x2, y2 }) => {
         const len = Math.hypot(x2 - x1, y2 - y1);
@@ -59,8 +63,10 @@ function strokeDashedRect(
             const segLen = Math.min(drawing ? dash : gap, len - drawn);
             if (drawing) {
                 g.lineBetween(
-                    x1 + nx * drawn, y1 + ny * drawn,
-                    x1 + nx * (drawn + segLen), y1 + ny * (drawn + segLen)
+                    x1 + nx * drawn,
+                    y1 + ny * drawn,
+                    x1 + nx * (drawn + segLen),
+                    y1 + ny * (drawn + segLen),
                 );
             }
             drawn += segLen;
@@ -81,11 +87,12 @@ function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlag
             const pt = getHandCardPoint({ cardCount: count, index: i });
             zones.push({
                 label: `hand[${i}] ${fmt(pt.x, pt.y)}`,
-                x: pt.x, y: pt.y,
+                x: pt.x,
+                y: pt.y,
                 w: playerPovCardSizes.hand.width,
                 h: playerPovCardSizes.hand.height,
                 angle: pt.angle,
-                color: 0xffd166
+                color: 0xffd166,
             });
         }
     }
@@ -93,17 +100,18 @@ function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlag
     if (layers.table) {
         const tableCards = viewModel.tableCards;
         const count = Math.max(tableCards.length, 1);
-        if (presentation.centerArea === "trick") {
-            const sides: PlayerPovSeatSide[] = ["bottom", "top", "left", "right"];
+        if (presentation.centerArea === 'trick') {
+            const sides: PlayerPovSeatSide[] = ['bottom', 'top', 'left', 'right'];
             sides.slice(0, viewModel.players.length).forEach((side, i) => {
                 const pt = getTrickCardPoint(side);
                 zones.push({
                     label: `trick[${i}]:${side} ${fmt(pt.x, pt.y)}`,
-                    x: pt.x, y: pt.y,
+                    x: pt.x,
+                    y: pt.y,
                     w: playerPovCardSizes.table.width,
                     h: playerPovCardSizes.table.height,
                     angle: pt.angle,
-                    color: 0xff6666
+                    color: 0xff6666,
                 });
             });
         } else {
@@ -111,11 +119,12 @@ function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlag
                 const pt = getTableRowCardPoint({ cardCount: count, index: i });
                 zones.push({
                     label: `table[${i}] ${fmt(pt.x, pt.y)}`,
-                    x: pt.x, y: pt.y,
+                    x: pt.x,
+                    y: pt.y,
                     w: playerPovCardSizes.table.width,
                     h: playerPovCardSizes.table.height,
                     angle: pt.angle,
-                    color: 0xff6666
+                    color: 0xff6666,
                 });
             }
         }
@@ -125,19 +134,21 @@ function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlag
         const stockPt = getStockTrumpPoint();
         zones.push({
             label: `stock ${fmt(stockPt.x, stockPt.y)}`,
-            x: stockPt.x, y: stockPt.y,
+            x: stockPt.x,
+            y: stockPt.y,
             w: playerPovCardSizes.stockTrump.width,
             h: playerPovCardSizes.stockTrump.height,
-            color: 0x44ddff
+            color: 0x44ddff,
         });
         zones.push({
             label: `trump ${fmt(stockPt.x + 24, stockPt.y + 8)}`,
-            x: stockPt.x + 24, y: stockPt.y + 8,
+            x: stockPt.x + 24,
+            y: stockPt.y + 8,
             w: playerPovCardSizes.stockTrump.width,
             h: playerPovCardSizes.stockTrump.height,
             angle: 90,
             color: 0x88eeff,
-            dashed: true
+            dashed: true,
         });
     }
 
@@ -147,25 +158,65 @@ function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlag
         seatLayouts.forEach((layout, i) => {
             zones.push({
                 label: `seat[${i}]:${layout.side} ${fmt(layout.x, layout.y)}`,
-                x: layout.x, y: layout.y,
+                x: layout.x,
+                y: layout.y,
                 w: playerPovCardSizes.opponent.width,
                 h: playerPovCardSizes.opponent.height,
                 angle: layout.angle,
-                color: 0x66ff99
+                color: 0x66ff99,
             });
         });
     }
 
     if (layers.zones) {
-        const zoneEntries: Array<{ key: string; y: number; w: number; h: number; color: number }> = [
-            { key: "topBar",     y: playerPovZones.topBarY,        w: PLAYER_GAME_WIDTH, h: 30,  color: 0xcc88ff },
-            { key: "gameInfo",   y: playerPovZones.gameInfoY,      w: PLAYER_GAME_WIDTH, h: 56,  color: 0xcc88ff },
-            { key: "playerHud",  y: playerPovZones.playerHudY,     w: PLAYER_GAME_WIDTH, h: 40,  color: 0xffaa44 },
-            { key: "actionBtn",  y: playerPovZones.actionButtonY,  w: PLAYER_GAME_WIDTH, h: 48,  color: 0xffaa44 },
-            { key: "actionText", y: playerPovZones.actionStatusY,  w: PLAYER_GAME_WIDTH, h: 24,  color: 0xffdd88 }
-        ];
+        const zoneEntries: Array<{ key: string; y: number; w: number; h: number; color: number }> =
+            [
+                {
+                    key: 'topBar',
+                    y: playerPovZones.topBarY,
+                    w: PLAYER_GAME_WIDTH,
+                    h: 30,
+                    color: 0xcc88ff,
+                },
+                {
+                    key: 'gameInfo',
+                    y: playerPovZones.gameInfoY,
+                    w: PLAYER_GAME_WIDTH,
+                    h: 56,
+                    color: 0xcc88ff,
+                },
+                {
+                    key: 'playerHud',
+                    y: playerPovZones.playerHudY,
+                    w: PLAYER_GAME_WIDTH,
+                    h: 40,
+                    color: 0xffaa44,
+                },
+                {
+                    key: 'actionBtn',
+                    y: playerPovZones.actionButtonY,
+                    w: PLAYER_GAME_WIDTH,
+                    h: 48,
+                    color: 0xffaa44,
+                },
+                {
+                    key: 'actionText',
+                    y: playerPovZones.actionStatusY,
+                    w: PLAYER_GAME_WIDTH,
+                    h: 24,
+                    color: 0xffdd88,
+                },
+            ];
         zoneEntries.forEach(({ key, y, w, h, color }) => {
-            zones.push({ label: `${key} y=${y}`, x: PLAYER_GAME_WIDTH / 2, y, w, h, color, dashed: true });
+            zones.push({
+                label: `${key} y=${y}`,
+                x: PLAYER_GAME_WIDTH / 2,
+                y,
+                w,
+                h,
+                color,
+                dashed: true,
+            });
         });
     }
 
@@ -204,13 +255,17 @@ export function drawPlayerDebugOverlay(input: {
         g.lineBetween(x - 6, y, x + 6, y);
         g.lineBetween(x, y - 6, x, y + 6);
 
-        const text = scene.add.text(x, y - h / 2 - 3, label, {
-            fontSize: "9px",
-            fontFamily: "monospace",
-            color: "#" + color.toString(16).padStart(6, "0"),
-            backgroundColor: "rgba(0,0,0,0.75)",
-            padding: { x: 2, y: 1 }
-        }).setOrigin(0.5, 1).setDepth(10000).setResolution(2);
+        const text = scene.add
+            .text(x, y - h / 2 - 3, label, {
+                fontSize: '9px',
+                fontFamily: 'monospace',
+                color: '#' + color.toString(16).padStart(6, '0'),
+                backgroundColor: 'rgba(0,0,0,0.75)',
+                padding: { x: 2, y: 1 },
+            })
+            .setOrigin(0.5, 1)
+            .setDepth(10000)
+            .setResolution(2);
 
         if (angle !== 0) {
             text.setAngle(angle);
@@ -224,7 +279,9 @@ export function drawPlayerDebugOverlay(input: {
         texts,
         destroy() {
             g.destroy();
-            texts.forEach((t) => { t.destroy(); });
-        }
+            texts.forEach((t) => {
+                t.destroy();
+            });
+        },
     };
 }

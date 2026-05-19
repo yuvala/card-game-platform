@@ -1,6 +1,6 @@
-import { PLAYER_GAME_WIDTH } from "./createPlayerGame";
+import { PLAYER_GAME_WIDTH } from './createPlayerGame';
 
-export type PlayerPovSeatSide = "top" | "left" | "right" | "bottom";
+export type PlayerPovSeatSide = 'top' | 'left' | 'right' | 'bottom';
 
 export interface PlayerPovPoint {
     x: number;
@@ -18,20 +18,20 @@ export interface PlayerPovSeatLayout extends PlayerPovOrientedPoint {
 export const playerPovCardSizes = {
     hand: {
         width: 82,
-        height: 120
+        height: 120,
     },
     opponent: {
         width: 42,
-        height: 62
+        height: 62,
     },
     table: {
         width: 62,
-        height: 91
+        height: 91,
     },
     stockTrump: {
         width: 46,
-        height: 68
-    }
+        height: 68,
+    },
 } as const;
 
 export const playerPovZones = {
@@ -43,7 +43,7 @@ export const playerPovZones = {
     playerHudY: 488,
     handY: 566,
     actionStatusY: 624,
-    actionButtonY: 660
+    actionButtonY: 660,
 } as const;
 
 export function getOpponentSeatLayouts(count: number): PlayerPovSeatLayout[] {
@@ -51,18 +51,18 @@ export function getOpponentSeatLayouts(count: number): PlayerPovSeatLayout[] {
         case 0:
             return [];
         case 1:
-            return [{ side: "top", x: PLAYER_GAME_WIDTH / 2, y: 188, angle: 0 }];
+            return [{ side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 188, angle: 0 }];
         case 2:
             return [
-                { side: "left", x: 44, y: 326, angle: -90 },
-                { side: "right", x: PLAYER_GAME_WIDTH - 44, y: 326, angle: 90 }
+                { side: 'left', x: 44, y: 326, angle: -90 },
+                { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 326, angle: 90 },
             ];
         default: {
             const layouts: PlayerPovSeatLayout[] = [
-                { side: "top", x: PLAYER_GAME_WIDTH / 2, y: 188, angle: 0 },
-                { side: "right", x: PLAYER_GAME_WIDTH - 44, y: 326, angle: 90 },
-                { side: "left", x: 44, y: 326, angle: -90 },
-                { side: "top", x: PLAYER_GAME_WIDTH / 2, y: 232, angle: 0 }
+                { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 188, angle: 0 },
+                { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 326, angle: 90 },
+                { side: 'left', x: 44, y: 326, angle: -90 },
+                { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 232, angle: 0 },
             ];
             return layouts.slice(0, count);
         }
@@ -86,7 +86,7 @@ export function getHandCardPoint(input: {
             playerPovZones.handY -
             Math.abs(slotIndex - (slotCount - 1) / 2) * 6 -
             (input.selected ? 18 : 0),
-        angle
+        angle,
     };
 }
 
@@ -101,35 +101,35 @@ export function getTableRowCardPoint(input: {
     return {
         x: startX + slotIndex * 54,
         y: playerPovZones.tableCardY + (slotIndex % 2) * 8,
-        angle: (slotIndex - (slotCount - 1) / 2) * 4
+        angle: (slotIndex - (slotCount - 1) / 2) * 4,
     };
 }
 
 export function getTrickCardPoint(side: PlayerPovSeatSide): PlayerPovOrientedPoint {
     switch (side) {
-        case "top":
+        case 'top':
             return {
                 x: PLAYER_GAME_WIDTH / 2,
                 y: 282,
-                angle: 0
+                angle: 0,
             };
-        case "left":
+        case 'left':
             return {
                 x: PLAYER_GAME_WIDTH / 2 - 66,
                 y: 352,
-                angle: -7
+                angle: -7,
             };
-        case "right":
+        case 'right':
             return {
                 x: PLAYER_GAME_WIDTH / 2 + 66,
                 y: 352,
-                angle: 7
+                angle: 7,
             };
-        case "bottom":
+        case 'bottom':
             return {
                 x: PLAYER_GAME_WIDTH / 2,
                 y: 420,
-                angle: 0
+                angle: 0,
             };
     }
 }
@@ -138,11 +138,11 @@ export function getTrickCardPoint(side: PlayerPovSeatSide): PlayerPovOrientedPoi
 // Local player (bottom) clusters on the left half; opponent (top) on the right half.
 // Face-down cards form a compact cascading stack; the reveal card floats above.
 export function getWarBattleCardPoint(
-    side: "bottom" | "top",
+    side: 'bottom' | 'top',
     isComparisonCard: boolean,
-    faceDownIndex: number
+    faceDownIndex: number,
 ): PlayerPovOrientedPoint {
-    const baseX = side === "bottom" ? 148 : 242;
+    const baseX = side === 'bottom' ? 148 : 242;
 
     if (isComparisonCard) {
         return { x: baseX, y: 322, angle: 0 };
@@ -151,13 +151,13 @@ export function getWarBattleCardPoint(
     return {
         x: baseX + faceDownIndex * 4,
         y: 368 - faceDownIndex * 2,
-        angle: -6 + faceDownIndex * 4
+        angle: -6 + faceDownIndex * 4,
     };
 }
 
 export function getStockTrumpPoint(): PlayerPovPoint {
     return {
         x: 76,
-        y: playerPovZones.stockTrumpY
+        y: playerPovZones.stockTrumpY,
     };
 }

@@ -1,14 +1,14 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
 import type {
     CardGameViewCard,
     CardGameViewHandPresentation,
-    CardGameViewModel
-} from "@engine/engine/game/viewModel";
-import { CARD_BACK_STROKE, PLAYER_ZONE_LEFT_X, PLAYER_ZONE_RIGHT_X } from "../layout/constants";
-import { getHandSlotDisplayStates } from "../layout/handLayouts";
-import type { HandSlotOrigin } from "../layout/types";
-import { TABLE_CENTER_Y } from "../../layout";
+    CardGameViewModel,
+} from '@engine/engine/game/viewModel';
+import { CARD_BACK_STROKE, PLAYER_ZONE_LEFT_X, PLAYER_ZONE_RIGHT_X } from '../layout/constants';
+import { getHandSlotDisplayStates } from '../layout/handLayouts';
+import type { HandSlotOrigin } from '../layout/types';
+import { TABLE_CENTER_Y } from '../../layout';
 
 export interface HandSlotVisual extends HandSlotOrigin {
     container: Phaser.GameObjects.Container;
@@ -22,7 +22,7 @@ interface HandTextureApi {
     applyCardTexture(
         image: Phaser.GameObjects.Image,
         card: CardGameViewCard | null,
-        variant: "compact" | "showcase"
+        variant: 'compact' | 'showcase',
     ): void;
 }
 
@@ -34,19 +34,19 @@ interface HandPresentationInput {
 
 function getHoveredSlotIndexes(
     slots: readonly HandSlotVisual[],
-    canInteract: boolean
+    canInteract: boolean,
 ): ReadonlySet<number> {
     if (!canInteract) {
         slots.forEach((slot) => {
-            slot.container.setData("isHovered", false);
+            slot.container.setData('isHovered', false);
         });
         return new Set();
     }
 
     return new Set(
         slots.flatMap((slot, slotIndex) => {
-            return slot.container.getData("isHovered") === true ? [slotIndex] : [];
-        })
+            return slot.container.getData('isHovered') === true ? [slotIndex] : [];
+        }),
     );
 }
 
@@ -97,16 +97,17 @@ function syncStackBacks(input: {
 }): void {
     const { card, handPresentation, stackBacks, textureApi } = input;
     const stackCount = card?.stackCount ?? 0;
-    const showsStackDepth = handPresentation === "hidden-stack" || stackCount > 1;
-    const visibleBackCount = showsStackDepth && !card?.isFaceUp && stackCount > 1
-        ? Math.min(stackBacks.length, Math.max(1, Math.floor(stackCount / 8)))
-        : 0;
+    const showsStackDepth = handPresentation === 'hidden-stack' || stackCount > 1;
+    const visibleBackCount =
+        showsStackDepth && !card?.isFaceUp && stackCount > 1
+            ? Math.min(stackBacks.length, Math.max(1, Math.floor(stackCount / 8)))
+            : 0;
 
     stackBacks.forEach((stackBack, index) => {
         const isVisible = index < visibleBackCount;
         stackBack.setVisible(isVisible);
         stackBack.setAlpha(isVisible ? 0.72 - index * 0.14 : 0);
-        textureApi.applyCardTexture(stackBack, null, "compact");
+        textureApi.applyCardTexture(stackBack, null, 'compact');
     });
 }
 
@@ -117,7 +118,7 @@ function getCardForSlot(input: {
     slotIndex: number;
 }): CardGameViewCard | null {
     const { handPresentation, cards, slots, slotIndex } = input;
-    if (handPresentation !== "hidden-stack" || cards.length === 0 || slots.length === 0) {
+    if (handPresentation !== 'hidden-stack' || cards.length === 0 || slots.length === 0) {
         return cards[slotIndex] ?? null;
     }
 
@@ -132,31 +133,33 @@ function getHiddenStackPosition(input: {
     slot: HandSlotVisual;
 }): { x: number; y: number } | null {
     const { handPresentation, card, slot } = input;
-    if (handPresentation !== "hidden-stack" || !card || slot.originAngle !== 0) {
+    if (handPresentation !== 'hidden-stack' || !card || slot.originAngle !== 0) {
         return null;
     }
 
     return {
         x: slot.originY < TABLE_CENTER_Y ? PLAYER_ZONE_RIGHT_X : PLAYER_ZONE_LEFT_X,
-        y: slot.originY
+        y: slot.originY,
     };
 }
-
 
 export function syncHandPresentation(input: HandPresentationInput): void {
     const { viewModel, handSlots, textureApi } = input;
 
     viewModel.players.forEach((player) => {
         const slots = handSlots.get(player.id) || [];
-        const handPresentation = player.handPresentation ?? "hand-fan";
-        const displayCards: Array<CardGameViewCard | null> = handPresentation === "hidden-stack" && player.hand[0] !== undefined
-            ? slots.map((_, slotIndex) => getCardForSlot({
-                  handPresentation,
-                  cards: player.hand,
-                  slots,
-                  slotIndex
-              }))
-            : player.hand;
+        const handPresentation = player.handPresentation ?? 'hand-fan';
+        const displayCards: Array<CardGameViewCard | null> =
+            handPresentation === 'hidden-stack' && player.hand[0] !== undefined
+                ? slots.map((_, slotIndex) =>
+                      getCardForSlot({
+                          handPresentation,
+                          cards: player.hand,
+                          slots,
+                          slotIndex,
+                      }),
+                  )
+                : player.hand;
         const slotStates = getHandSlotDisplayStates({
             slots,
             cards: displayCards,
@@ -164,7 +167,7 @@ export function syncHandPresentation(input: HandPresentationInput): void {
             canInteract: player.canInteract,
             selectedCardId: viewModel.selectedCardId,
             hoveredSlotIndexes: getHoveredSlotIndexes(slots, player.canInteract),
-            hasAnimation: Boolean(viewModel.animation)
+            hasAnimation: Boolean(viewModel.animation),
         });
 
         for (let slotIndex = 0; slotIndex < slots.length; slotIndex += 1) {
@@ -173,12 +176,16 @@ export function syncHandPresentation(input: HandPresentationInput): void {
                 handPresentation,
                 cards: player.hand,
                 slots,
-                slotIndex
+                slotIndex,
             });
             const slotState = slotStates[slotIndex];
 
             if (slotState.position) {
-                const hiddenStackPosition = getHiddenStackPosition({ handPresentation, card, slot });
+                const hiddenStackPosition = getHiddenStackPosition({
+                    handPresentation,
+                    card,
+                    slot,
+                });
                 const nextPosition = hiddenStackPosition ?? slotState.position;
                 slot.container.setPosition(nextPosition.x, nextPosition.y);
                 slot.hitTarget.setPosition(nextPosition.x, nextPosition.y);
@@ -189,11 +196,11 @@ export function syncHandPresentation(input: HandPresentationInput): void {
 
             slot.container.setVisible(slotState.visible);
             slot.hitTarget.setVisible(slotState.visible);
-            slot.container.setData("cardId", slotState.cardId);
-            slot.container.setData("isSelected", slotState.isSelected);
-            slot.container.setData("cardClickAction", player.cardClickAction ?? "select");
+            slot.container.setData('cardId', slotState.cardId);
+            slot.container.setData('isSelected', slotState.isSelected);
+            slot.container.setData('cardClickAction', player.cardClickAction ?? 'select');
             if (!card || !slotState.interactiveEnabled) {
-                slot.container.setData("isHovered", false);
+                slot.container.setData('isHovered', false);
             }
             slot.container.setScale(slotState.scale);
             slot.hitTarget.setScale(1);
@@ -207,18 +214,22 @@ export function syncHandPresentation(input: HandPresentationInput): void {
                 isSelected: slotState.isSelected,
                 isHovered: slotState.interactiveEnabled && slotState.isHovered,
                 isFaceUp: card?.isFaceUp ?? false,
-                isCurrentTurn: player.isCurrentTurn
+                isCurrentTurn: player.isCurrentTurn,
             };
             const outlineStyle = getOutlineStyle(outlineInput);
-            slot.outline.setStrokeStyle(outlineStyle.width, getOutlineColor(outlineInput), outlineStyle.alpha);
+            slot.outline.setStrokeStyle(
+                outlineStyle.width,
+                getOutlineColor(outlineInput),
+                outlineStyle.alpha,
+            );
 
             syncStackBacks({
                 card,
                 handPresentation,
                 stackBacks: slot.stackBacks,
-                textureApi
+                textureApi,
             });
-            textureApi.applyCardTexture(slot.image, card, "compact");
+            textureApi.applyCardTexture(slot.image, card, 'compact');
         }
     });
 }

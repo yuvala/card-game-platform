@@ -1,6 +1,6 @@
-import type { GameDefinition } from "../engine/game/definition";
-import type { CardGameOptions } from "../engine/game/types";
-import { createSeededRandom } from "../engine/game/random";
+import type { GameDefinition } from '../engine/game/definition';
+import type { CardGameOptions } from '../engine/game/types';
+import { createSeededRandom } from '../engine/game/random';
 
 export interface SimulationResult {
     seed: number;
@@ -11,9 +11,13 @@ export interface SimulationResult {
     stuck: boolean;
 }
 
-export interface SimulationOptions<TState, TMove extends { type: string }, TOptions extends CardGameOptions> {
+export interface SimulationOptions<
+    TState,
+    TMove extends { type: string },
+    TOptions extends CardGameOptions,
+> {
     playerNames: string[];
-    gameOptions: Omit<TOptions, "random">;
+    gameOptions: Omit<TOptions, 'random'>;
     /**
      * Moves applied before the main loop (shuffle, deal, etc.).
      * Receives the seeded random so moves like prepare-shuffle can use it.
@@ -44,18 +48,18 @@ type StateWithPiles = { piles: Record<string, { cards: unknown[] }> };
 export function simulateGame<
     TState extends StateWithPiles,
     TMove extends { type: string },
-    TOptions extends CardGameOptions
+    TOptions extends CardGameOptions,
 >(
     definition: GameDefinition<TState, TMove, unknown, unknown, TOptions, string, unknown>,
     options: SimulationOptions<TState, TMove, TOptions>,
-    seed?: number
+    seed?: number,
 ): SimulationResult {
     const resolvedSeed = seed ?? Date.now();
     const random = createSeededRandom(String(resolvedSeed));
 
     let state = definition.setup({
         playerNames: options.playerNames,
-        options: { ...options.gameOptions, random } as TOptions
+        options: { ...options.gameOptions, random } as TOptions,
     });
 
     const startupMoves = options.getStartupMoves?.(random) ?? [];
@@ -78,7 +82,10 @@ export function simulateGame<
         const legal = definition.getLegalMoves(state);
         if (legal.length > 0) {
             const move = legal[Math.floor(random() * legal.length)];
-            if (!move) { stuck = true; break; }
+            if (!move) {
+                stuck = true;
+                break;
+            }
             state = definition.applyMove(state, move).state;
             rounds += 1;
 
@@ -105,6 +112,6 @@ export function simulateGame<
         winnerIds: options.getWinnerIds?.(state) ?? [],
         totalCards,
         cardConservationOk: countAllCards(state.piles) === totalCards,
-        stuck
+        stuck,
     };
 }

@@ -239,7 +239,11 @@ a {
 
 .appGameChoice.is-selected {
     border-color: rgba(255, 209, 102, 0.6);
-    background: linear-gradient(180deg, rgba(255, 209, 102, 0.18) 0%, rgba(255, 209, 102, 0.07) 100%);
+    background: linear-gradient(
+        180deg,
+        rgba(255, 209, 102, 0.18) 0%,
+        rgba(255, 209, 102, 0.07) 100%
+    );
     box-shadow: 0 16px 30px rgba(0, 0, 0, 0.18);
 }
 
@@ -413,7 +417,9 @@ a {
     border-top: 1px solid rgba(255, 209, 102, 0.08);
 }
 
-.playerShell.debug .playerFooter { display: block; }
+.playerShell.debug .playerFooter {
+    display: block;
+}
 
 .playerSettings {
     display: none;
@@ -425,7 +431,9 @@ a {
     padding: 64px 16px 0;
 }
 
-.playerSettings.open { display: flex; }
+.playerSettings.open {
+    display: flex;
+}
 
 .playerSettingsBackdrop {
     position: fixed;
@@ -580,7 +588,9 @@ a {
 }
 
 @keyframes playerSpin {
-    to { transform: rotate(360deg); }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
 .playerStateMsg {

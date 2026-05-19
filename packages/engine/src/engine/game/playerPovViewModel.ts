@@ -1,16 +1,17 @@
-import type { CardGameEffect } from "./effects";
-import type { CardGameViewCard, CardGameViewModel, CardGameViewPile, CardGameViewTableCard } from "./viewModel";
+import type { CardGameEffect } from './effects';
+import type {
+    CardGameViewCard,
+    CardGameViewModel,
+    CardGameViewPile,
+    CardGameViewTableCard,
+} from './viewModel';
 
-function createHiddenCard(
-    card: CardGameViewCard,
-    scope: string,
-    index: number
-): CardGameViewCard {
+function createHiddenCard(card: CardGameViewCard, scope: string, index: number): CardGameViewCard {
     return {
         ...card,
-        id: "hidden:" + scope + ":" + String(index),
-        label: "Hidden card",
-        isFaceUp: false
+        id: 'hidden:' + scope + ':' + String(index),
+        label: 'Hidden card',
+        isFaceUp: false,
     };
 }
 
@@ -22,9 +23,9 @@ function sanitizeTableCards(cards: readonly CardGameViewTableCard[]): CardGameVi
 
         return {
             ...card,
-            id: "hidden:table:" + (card.playerId ?? "shared") + ":" + String(index),
-            label: "Hidden card",
-            isFaceUp: false
+            id: 'hidden:table:' + (card.playerId ?? 'shared') + ':' + String(index),
+            label: 'Hidden card',
+            isFaceUp: false,
         };
     });
 }
@@ -37,33 +38,33 @@ function sanitizePiles(piles: readonly CardGameViewPile[]): CardGameViewPile[] {
 
         return {
             ...pile,
-            topCard: createHiddenCard(pile.topCard, "pile:" + pile.id, 0)
+            topCard: createHiddenCard(pile.topCard, 'pile:' + pile.id, 0),
         };
     });
 }
 
 function sanitizeEffects(effects: readonly CardGameEffect[]): CardGameEffect[] {
     return effects.map((effect, index) => {
-        if (effect.type !== "move-card" || effect.card.isFaceUp) {
+        if (effect.type !== 'move-card' || effect.card.isFaceUp) {
             return effect;
         }
 
         return {
             ...effect,
-            key: "hidden-effect:" + effect.reason + ":" + String(index),
+            key: 'hidden-effect:' + effect.reason + ':' + String(index),
             card: {
                 ...effect.card,
-                id: "hidden:effect:" + String(index),
-                label: "Hidden card",
-                isFaceUp: false
-            }
+                id: 'hidden:effect:' + String(index),
+                label: 'Hidden card',
+                isFaceUp: false,
+            },
         };
     });
 }
 
 export function applyPlayerPovViewModel(
     viewModel: CardGameViewModel,
-    viewerId?: string | null
+    viewerId?: string | null,
 ): CardGameViewModel {
     if (!viewerId) {
         return viewModel;
@@ -76,7 +77,7 @@ export function applyPlayerPovViewModel(
 
     const orderedPlayers = [
         ...viewModel.players.slice(viewerIndex),
-        ...viewModel.players.slice(0, viewerIndex)
+        ...viewModel.players.slice(0, viewerIndex),
     ];
     const povPlayers = orderedPlayers.map((player) => {
         if (player.id === viewerId) {
@@ -85,9 +86,11 @@ export function applyPlayerPovViewModel(
 
         return {
             ...player,
-            hand: player.hand.map((card, cardIndex) => createHiddenCard(card, "hand:" + player.id, cardIndex)),
+            hand: player.hand.map((card, cardIndex) =>
+                createHiddenCard(card, 'hand:' + player.id, cardIndex),
+            ),
             canInteract: false,
-            cardClickAction: undefined
+            cardClickAction: undefined,
         };
     });
     const viewer = povPlayers.find((player) => player.id === viewerId);
@@ -101,9 +104,9 @@ export function applyPlayerPovViewModel(
         piles: sanitizePiles(viewModel.piles),
         controls: {
             ...viewModel.controls,
-            canPlay: viewModel.controls.canPlay && canViewerAct
+            canPlay: viewModel.controls.canPlay && canViewerAct,
         },
         primaryAction: canViewerAct ? viewModel.primaryAction : null,
-        effects: sanitizeEffects(viewModel.effects)
+        effects: sanitizeEffects(viewModel.effects),
     };
 }

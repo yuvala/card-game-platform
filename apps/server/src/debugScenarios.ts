@@ -1,4 +1,4 @@
-﻿import type { CardGameSession } from "@engine/engine/game/session";
+﻿import type { CardGameSession } from '@engine/engine/game/session';
 
 interface DebugSnapshot {
     value: unknown;
@@ -12,14 +12,14 @@ interface DebugSnapshot {
 
 export function runDebugScenario(
     scenarioId: string | undefined,
-    session: CardGameSession<any>
+    session: CardGameSession<any>,
 ): void {
-    if (scenarioId !== "war-animation") {
+    if (scenarioId !== 'war-animation') {
         return;
     }
 
     runWarAnimationScenario(session as CardGameSession<DebugSnapshot>).catch((error) => {
-        console.error("Rewrite server debug scenario failed:", error);
+        console.error('Rewrite server debug scenario failed:', error);
     });
 }
 
@@ -32,13 +32,13 @@ function wait(ms: number): Promise<void> {
 async function waitForSessionSnapshot(
     session: CardGameSession<DebugSnapshot>,
     condition: (snapshot: DebugSnapshot) => boolean,
-    timeoutMs = 15000
+    timeoutMs = 15000,
 ): Promise<void> {
     const startedAt = Date.now();
 
     while (!condition(session.getSnapshot())) {
         if (Date.now() - startedAt > timeoutMs) {
-            throw new Error("Timed out while running server debug scenario.");
+            throw new Error('Timed out while running server debug scenario.');
         }
 
         await wait(25);
@@ -46,24 +46,29 @@ async function waitForSessionSnapshot(
 }
 
 async function settleDealing(session: CardGameSession<DebugSnapshot>): Promise<void> {
-    await waitForSessionSnapshot(session, (snapshot) => snapshot.value === "dealing");
+    await waitForSessionSnapshot(session, (snapshot) => snapshot.value === 'dealing');
     await wait(650);
-    if (session.getSnapshot().value === "dealing") {
-        session.send({ type: "ANIMATION_DONE" });
+    if (session.getSnapshot().value === 'dealing') {
+        session.send({ type: 'ANIMATION_DONE' });
     }
-    await waitForSessionSnapshot(session, (snapshot) => snapshot.value === "battleReady");
+    await waitForSessionSnapshot(session, (snapshot) => snapshot.value === 'battleReady');
 }
 
 async function runWarAnimationScenario(session: CardGameSession<DebugSnapshot>): Promise<void> {
     await settleDealing(session);
 
-    session.send({ type: "PLAY_CARD" });
+    session.send({ type: 'PLAY_CARD' });
     await waitForSessionSnapshot(session, (snapshot) => {
-        return snapshot.value === "battleReady" && (snapshot.context?.comparisonCards?.length ?? 0) === 1;
+        return (
+            snapshot.value === 'battleReady' &&
+            (snapshot.context?.comparisonCards?.length ?? 0) === 1
+        );
     });
 
-    session.send({ type: "PLAY_CARD" });
+    session.send({ type: 'PLAY_CARD' });
     await waitForSessionSnapshot(session, (snapshot) => {
-        return snapshot.value === "battleReady" && snapshot.context?.warState?.stage === "face-down";
+        return (
+            snapshot.value === 'battleReady' && snapshot.context?.warState?.stage === 'face-down'
+        );
     });
 }

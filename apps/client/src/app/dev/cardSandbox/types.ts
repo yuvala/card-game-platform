@@ -1,7 +1,7 @@
-﻿import type * as Phaser from "phaser";
+﻿import type * as Phaser from 'phaser';
 
-import type { CardInstance } from "@engine/engine/cards/types";
-import type { CardAnimationLayer } from "../../phaser/scenes/animations/cardAnimationLayer";
+import type { CardInstance } from '@engine/engine/cards/types';
+import type { CardAnimationLayer } from '../../phaser/scenes/animations/cardAnimationLayer';
 
 export interface CardSandboxExamplePanel {
     x: number;
@@ -25,7 +25,7 @@ export interface CardSandboxExampleContext {
         cream: string;
         dim: string;
     };
-    getFaceTexture(card: CardInstance, variant?: "compact" | "showcase"): string;
+    getFaceTexture(card: CardInstance, variant?: 'compact' | 'showcase'): string;
     getBackTexture(): string;
 }
 

@@ -1,35 +1,35 @@
-﻿import type Phaser from "phaser";
+﻿import type Phaser from 'phaser';
 
-import { createDeck } from "@engine/engine/cards/createDeck";
-import { frenchDeckDefinition } from "@engine/engine/cards/deckDefinitions";
-import type { CardInstance, DeckDefinition } from "@engine/engine/cards/types";
+import { createDeck } from '@engine/engine/cards/createDeck';
+import { frenchDeckDefinition } from '@engine/engine/cards/deckDefinitions';
+import type { CardInstance, DeckDefinition } from '@engine/engine/cards/types';
 import type {
     CardSkinDefinition,
     CardSuitAppearance,
-    SuitEmblemKind
-} from "@engine/engine/cards/skinPacks";
+    SuitEmblemKind,
+} from '@engine/engine/cards/skinPacks';
 
 const FRENCH_SUIT_FILE: Record<string, string> = {
-    hearts: "heart",
-    spades: "spade",
-    diamonds: "diamond",
-    clubs: "club"
+    hearts: 'heart',
+    spades: 'spade',
+    diamonds: 'diamond',
+    clubs: 'club',
 };
 
 const FRENCH_RANK_FILE: Record<string, string> = {
-    ace: "1"
+    ace: '1',
 };
 
 export function preloadFrenchCardTextures(scene: Phaser.Scene, skinId: string): void {
-    const backKey = getCardBackTextureKey("french", skinId);
+    const backKey = getCardBackTextureKey('french', skinId);
     if (!scene.textures.exists(backKey)) {
-        scene.load.image(backKey, "/assets/cards/french/back.png");
+        scene.load.image(backKey, '/assets/cards/french/back.png');
     }
 
     createDeck(frenchDeckDefinition).forEach((card) => {
-        const dashAfterDeckId = card.id.indexOf("-");
+        const dashAfterDeckId = card.id.indexOf('-');
         const rest = card.id.slice(dashAfterDeckId + 1);
-        const secondDash = rest.indexOf("-");
+        const secondDash = rest.indexOf('-');
         const rankId = rest.slice(0, secondDash);
         const suitId = rest.slice(secondDash + 1);
         const fileRank = FRENCH_RANK_FILE[rankId] ?? rankId;
@@ -50,32 +50,36 @@ const TEXTURE_HEIGHT = 264;
 const TEXTURE_SCALE = 3;
 const CANVAS_TEXTURE_WIDTH = TEXTURE_WIDTH * TEXTURE_SCALE;
 const CANVAS_TEXTURE_HEIGHT = TEXTURE_HEIGHT * TEXTURE_SCALE;
-const TEXTURE_VERSION = "v4";
+const TEXTURE_VERSION = 'v4';
 const CORNER_RADIUS = 18;
-const FACE_VARIANTS = ["compact", "showcase"] as const;
+const FACE_VARIANTS = ['compact', 'showcase'] as const;
 
 export type CardTextureVariant = (typeof FACE_VARIANTS)[number];
 
 export function getCardFaceTextureKey(
     cardId: string,
     skinId: string,
-    variant: CardTextureVariant = "showcase"
+    variant: CardTextureVariant = 'showcase',
 ): string {
-    return "rewrite-card-face:" + TEXTURE_VERSION + ":" + skinId + ":" + variant + ":" + cardId;
+    return 'rewrite-card-face:' + TEXTURE_VERSION + ':' + skinId + ':' + variant + ':' + cardId;
 }
 
 export function getCardBackTextureKey(deckId: string, skinId: string): string {
-    return "rewrite-card-back:" + TEXTURE_VERSION + ":" + skinId + ":" + deckId;
+    return 'rewrite-card-back:' + TEXTURE_VERSION + ':' + skinId + ':' + deckId;
 }
 
 export function ensureDeckTextures(
     scene: Phaser.Scene,
     deckDefinition: DeckDefinition,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     const backTextureKey = getCardBackTextureKey(deckDefinition.id, skin.id);
     if (!scene.textures.exists(backTextureKey)) {
-        const texture = scene.textures.createCanvas(backTextureKey, CANVAS_TEXTURE_WIDTH, CANVAS_TEXTURE_HEIGHT);
+        const texture = scene.textures.createCanvas(
+            backTextureKey,
+            CANVAS_TEXTURE_WIDTH,
+            CANVAS_TEXTURE_HEIGHT,
+        );
         if (texture) {
             drawCardBack(texture.getContext(), deckDefinition, skin);
             texture.refresh();
@@ -89,7 +93,11 @@ export function ensureDeckTextures(
                 return;
             }
 
-            const texture = scene.textures.createCanvas(textureKey, CANVAS_TEXTURE_WIDTH, CANVAS_TEXTURE_HEIGHT);
+            const texture = scene.textures.createCanvas(
+                textureKey,
+                CANVAS_TEXTURE_WIDTH,
+                CANVAS_TEXTURE_HEIGHT,
+            );
             if (!texture) {
                 return;
             }
@@ -105,7 +113,7 @@ function drawCardFace(
     card: CardInstance,
     deckDefinition: DeckDefinition,
     skin: CardSkinDefinition,
-    variant: CardTextureVariant
+    variant: CardTextureVariant,
 ): void {
     const suitAppearance = skin.getSuitAppearance(deckDefinition.id, card.suitId);
 
@@ -121,10 +129,10 @@ function drawCardFace(
         suitAppearance,
         skin,
         variant,
-        true
+        true,
     );
 
-    if (variant === "compact") {
+    if (variant === 'compact') {
         drawCompactCenterPanel(context, suitAppearance, skin);
         return;
     }
@@ -135,7 +143,7 @@ function drawCardFace(
 function drawCardBack(
     context: CanvasRenderingContext2D,
     deckDefinition: DeckDefinition,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     clearCanvas(context);
     drawCardShadow(context);
@@ -146,7 +154,7 @@ function drawCardBack(
         TEXTURE_WIDTH - 4,
         TEXTURE_HEIGHT - 4,
         CORNER_RADIUS,
-        skin.backBase
+        skin.backBase,
     );
 
     context.save();
@@ -180,10 +188,10 @@ function drawCardBack(
     context.arc(0, 0, 30, 0, Math.PI * 2);
     context.fill();
 
-    context.fillStyle = "#f7f1de";
-    context.font = "700 20px Georgia";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
+    context.fillStyle = '#f7f1de';
+    context.font = '700 20px Georgia';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
     context.fillText(deckDefinition.name.toUpperCase(), 0, 0, 124);
     context.restore();
 }
@@ -193,7 +201,7 @@ function clearCanvas(context: CanvasRenderingContext2D): void {
     context.clearRect(0, 0, CANVAS_TEXTURE_WIDTH, CANVAS_TEXTURE_HEIGHT);
     context.scale(TEXTURE_SCALE, TEXTURE_SCALE);
     context.imageSmoothingEnabled = true;
-    context.imageSmoothingQuality = "high";
+    context.imageSmoothingQuality = 'high';
 }
 
 function drawCardShadow(context: CanvasRenderingContext2D): void {
@@ -205,7 +213,7 @@ function drawCardShadow(context: CanvasRenderingContext2D): void {
         TEXTURE_WIDTH - 18,
         TEXTURE_HEIGHT - 18,
         CORNER_RADIUS,
-        "rgba(12, 10, 8, 0.18)"
+        'rgba(12, 10, 8, 0.18)',
     );
     context.restore();
 }
@@ -213,22 +221,14 @@ function drawCardShadow(context: CanvasRenderingContext2D): void {
 function drawCardSurface(
     context: CanvasRenderingContext2D,
     skin: CardSkinDefinition,
-    variant: CardTextureVariant
+    variant: CardTextureVariant,
 ): void {
     const gradient = context.createLinearGradient(0, 0, 0, TEXTURE_HEIGHT);
-    gradient.addColorStop(0, "#fffaf0");
+    gradient.addColorStop(0, '#fffaf0');
     gradient.addColorStop(0.35, skin.paperLight);
     gradient.addColorStop(1, skin.paperDark);
 
-    drawRoundedRect(
-        context,
-        2,
-        2,
-        TEXTURE_WIDTH - 4,
-        TEXTURE_HEIGHT - 4,
-        CORNER_RADIUS,
-        gradient
-    );
+    drawRoundedRect(context, 2, 2, TEXTURE_WIDTH - 4, TEXTURE_HEIGHT - 4, CORNER_RADIUS, gradient);
 
     context.save();
     context.strokeStyle = skin.borderDark;
@@ -241,9 +241,10 @@ function drawCardSurface(
     roundRectPath(context, 12, 12, TEXTURE_WIDTH - 24, TEXTURE_HEIGHT - 24, CORNER_RADIUS - 8);
     context.stroke();
 
-    context.strokeStyle = variant === "compact" ? "rgba(75, 54, 33, 0.03)" : "rgba(75, 54, 33, 0.05)";
+    context.strokeStyle =
+        variant === 'compact' ? 'rgba(75, 54, 33, 0.03)' : 'rgba(75, 54, 33, 0.05)';
     context.lineWidth = 1;
-    for (let y = 32; y < TEXTURE_HEIGHT - 32; y += (variant === "compact" ? 26 : 22)) {
+    for (let y = 32; y < TEXTURE_HEIGHT - 32; y += variant === 'compact' ? 26 : 22) {
         context.beginPath();
         context.moveTo(18, y);
         context.lineTo(TEXTURE_WIDTH - 18, y);
@@ -260,7 +261,7 @@ function drawCornerIndex(
     suitAppearance: CardSuitAppearance,
     skin: CardSkinDefinition,
     variant: CardTextureVariant,
-    isRotated: boolean
+    isRotated: boolean,
 ): void {
     context.save();
     context.translate(x, y);
@@ -269,19 +270,19 @@ function drawCornerIndex(
     }
 
     context.fillStyle = suitAppearance.primaryColor;
-    context.font = variant === "compact" ? "700 30px Georgia" : "700 24px Georgia";
-    context.textAlign = "center";
-    context.textBaseline = "top";
+    context.font = variant === 'compact' ? '700 30px Georgia' : '700 24px Georgia';
+    context.textAlign = 'center';
+    context.textBaseline = 'top';
     context.fillText(rankShortLabel, 0, 0, 26);
 
     drawSuitEmblem(
         context,
         suitAppearance.emblem,
         0,
-        variant === "compact" ? 36 : 34,
-        variant === "compact" ? 20 : 18,
+        variant === 'compact' ? 36 : 34,
+        variant === 'compact' ? 20 : 18,
         suitAppearance,
-        skin
+        skin,
     );
     context.restore();
 }
@@ -289,7 +290,7 @@ function drawCornerIndex(
 function drawCompactCenterPanel(
     context: CanvasRenderingContext2D,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     context.save();
     context.translate(TEXTURE_WIDTH / 2, TEXTURE_HEIGHT / 2);
@@ -318,17 +319,23 @@ function drawCompactCenterPanel(
 
 // Face card rank IDs across all supported decks
 const FACE_RANK_IDS = new Set([
-    "jack", "queen", "king",        // French
-    "sota", "caballo", "rey",       // Spanish
-    "fante", "cavallo", "re"        // Italian
+    'jack',
+    'queen',
+    'king', // French
+    'sota',
+    'caballo',
+    'rey', // Spanish
+    'fante',
+    'cavallo',
+    're', // Italian
 ]);
-const ACE_RANK_IDS = new Set(["ace"]);
+const ACE_RANK_IDS = new Set(['ace']);
 
 function drawShowcaseCenterPanel(
     context: CanvasRenderingContext2D,
     card: CardInstance,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     if (ACE_RANK_IDS.has(card.rankId)) {
         drawAceCenterPanel(context, suitAppearance, skin);
@@ -357,9 +364,9 @@ function drawShowcaseCenterPanel(
     drawSuitEmblem(context, suitAppearance.emblem, 0, -20, 44, suitAppearance, skin);
 
     context.fillStyle = skin.inkDark;
-    context.font = "700 13px Georgia";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
+    context.font = '700 13px Georgia';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
     context.fillText(card.rankLabel.toUpperCase(), 0, 50, 96);
 
     context.restore();
@@ -368,7 +375,7 @@ function drawShowcaseCenterPanel(
 function drawAceCenterPanel(
     context: CanvasRenderingContext2D,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     const cx = TEXTURE_WIDTH / 2;
     const cy = TEXTURE_HEIGHT / 2 - 4;
@@ -395,15 +402,16 @@ function drawFaceCenterPanel(
     context: CanvasRenderingContext2D,
     card: CardInstance,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
-    const PX = 18, PY = 56;
-    const PW = TEXTURE_WIDTH - 36;    // 144
-    const PH = TEXTURE_HEIGHT - 112;  // 152
+    const PX = 18,
+        PY = 56;
+    const PW = TEXTURE_WIDTH - 36; // 144
+    const PH = TEXTURE_HEIGHT - 112; // 152
     const PR = 8;
     const CX = TEXTURE_WIDTH / 2;
-    const CE = 15;  // corner emblem size
-    const CI = 19;  // corner emblem inset from panel edge
+    const CE = 15; // corner emblem size
+    const CI = 19; // corner emblem inset from panel edge
 
     context.save();
 
@@ -426,9 +434,9 @@ function drawFaceCenterPanel(
 
     // Large rank letter — upper section of panel
     context.fillStyle = suitAppearance.primaryColor;
-    context.font = "700 54px Georgia";
-    context.textAlign = "center";
-    context.textBaseline = "middle";
+    context.font = '700 54px Georgia';
+    context.textAlign = 'center';
+    context.textBaseline = 'middle';
     context.fillText(card.rankShortLabel, CX, PY + PH * 0.36);
 
     // Divider
@@ -472,7 +480,7 @@ function drawSuitEmblem(
     y: number,
     size: number,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     context.save();
     context.translate(x, y);
@@ -481,28 +489,28 @@ function drawSuitEmblem(
     context.lineWidth = Math.max(2, size * 0.08);
 
     switch (emblem) {
-        case "heart":
+        case 'heart':
             drawHeart(context, size);
             break;
-        case "diamond":
+        case 'diamond':
             drawDiamond(context, size);
             break;
-        case "spade":
+        case 'spade':
             drawSpade(context, size);
             break;
-        case "club":
+        case 'club':
             drawClub(context, size);
             break;
-        case "coin":
+        case 'coin':
             drawCoin(context, size, suitAppearance);
             break;
-        case "cup":
+        case 'cup':
             drawCup(context, size, suitAppearance, skin);
             break;
-        case "sword":
+        case 'sword':
             drawSword(context, size, suitAppearance, skin);
             break;
-        case "baton":
+        case 'baton':
             drawBaton(context, size, suitAppearance);
             break;
     }
@@ -573,7 +581,7 @@ function drawClub(context: CanvasRenderingContext2D, size: number): void {
 function drawCoin(
     context: CanvasRenderingContext2D,
     size: number,
-    suitAppearance: CardSuitAppearance
+    suitAppearance: CardSuitAppearance,
 ): void {
     const radius = size / 2;
 
@@ -596,7 +604,7 @@ function drawCup(
     context: CanvasRenderingContext2D,
     size: number,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     const s = size / 2;
 
@@ -622,7 +630,7 @@ function drawSword(
     context: CanvasRenderingContext2D,
     size: number,
     suitAppearance: CardSuitAppearance,
-    skin: CardSkinDefinition
+    skin: CardSkinDefinition,
 ): void {
     const s = size / 2;
 
@@ -646,7 +654,7 @@ function drawSword(
 function drawBaton(
     context: CanvasRenderingContext2D,
     size: number,
-    suitAppearance: CardSuitAppearance
+    suitAppearance: CardSuitAppearance,
 ): void {
     const s = size / 2;
 
@@ -669,7 +677,7 @@ function roundRectPath(
     y: number,
     width: number,
     height: number,
-    radius: number
+    radius: number,
 ): void {
     context.beginPath();
     context.moveTo(x + radius, y);
@@ -687,7 +695,7 @@ function drawRoundedRect(
     width: number,
     height: number,
     radius: number,
-    fillStyle: string | CanvasGradient
+    fillStyle: string | CanvasGradient,
 ): void {
     context.save();
     roundRectPath(context, x, y, width, height, radius);
@@ -697,10 +705,10 @@ function drawRoundedRect(
 }
 
 function withAlpha(hexColor: string, alpha: number): string {
-    const sanitized = hexColor.replace("#", "");
+    const sanitized = hexColor.replace('#', '');
     const red = Number.parseInt(sanitized.slice(0, 2), 16);
     const green = Number.parseInt(sanitized.slice(2, 4), 16);
     const blue = Number.parseInt(sanitized.slice(4, 6), 16);
 
-    return "rgba(" + red + ", " + green + ", " + blue + ", " + alpha + ")";
+    return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + alpha + ')';
 }

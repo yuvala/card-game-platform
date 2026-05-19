@@ -1,8 +1,8 @@
-import type { CardGameViewModel } from "../../engine/game/viewModel";
-import type { GameDefinition } from "../../engine/game/definition";
-import type { CardGameEffect } from "../../engine/game/effects";
-import { getPileCards } from "../../engine/game/piles";
-import { createInitialContext, createShuffledContext, dealOpeningHands } from "./setup";
+import type { CardGameViewModel } from '../../engine/game/viewModel';
+import type { GameDefinition } from '../../engine/game/definition';
+import type { CardGameEffect } from '../../engine/game/effects';
+import { getPileCards } from '../../engine/game/piles';
+import { createInitialContext, createShuffledContext, dealOpeningHands } from './setup';
 import {
     advanceToNextPlayer,
     advanceToNextRound,
@@ -12,27 +12,23 @@ import {
     finishGame,
     queuePlayedCardWithEffects,
     selectCard,
-    setTurnStatus
-} from "./rules";
-import type {
-    PokerLiteContext,
-    PokerLiteOptions,
-    PokerLiteViewSnapshot
-} from "./types";
-import { getPokerLiteViewModel } from "./viewModel";
-import { getPokerLiteHandPileId } from "./types";
+    setTurnStatus,
+} from './rules';
+import type { PokerLiteContext, PokerLiteOptions, PokerLiteViewSnapshot } from './types';
+import { getPokerLiteViewModel } from './viewModel';
+import { getPokerLiteHandPileId } from './types';
 
 export type PokerLiteMove =
-    | { type: "prepare-shuffle"; random?: () => number }
-    | { type: "deal-opening-hands" }
-    | { type: "begin-turn" }
-    | { type: "select-card"; cardId: string }
-    | { type: "queue-play" }
-    | { type: "commit-play" }
-    | { type: "finalize-turn" }
-    | { type: "advance-next-player" }
-    | { type: "advance-next-round" }
-    | { type: "finish-game" };
+    | { type: 'prepare-shuffle'; random?: () => number }
+    | { type: 'deal-opening-hands' }
+    | { type: 'begin-turn' }
+    | { type: 'select-card'; cardId: string }
+    | { type: 'queue-play' }
+    | { type: 'commit-play' }
+    | { type: 'finalize-turn' }
+    | { type: 'advance-next-player' }
+    | { type: 'advance-next-round' }
+    | { type: 'finish-game' };
 
 function getPlayerNames(context: PokerLiteContext): string[] {
     return context.players.map((player) => player.name);
@@ -57,8 +53,8 @@ export const pokerLiteGameDefinition: GameDefinition<
     string,
     PokerLiteViewSnapshot
 > = {
-    id: "rewritePokerLite",
-    name: "Poker Lite",
+    id: 'rewritePokerLite',
+    name: 'Poker Lite',
     setup: ({ playerNames, options }) => {
         return createInitialContext(playerNames, options.deckDefinition, options.cardsPerPlayer);
     },
@@ -68,59 +64,62 @@ export const pokerLiteGameDefinition: GameDefinition<
             return [];
         }
 
-        const moves: PokerLiteMove[] = getPileCards(state.piles, getPokerLiteHandPileId(currentPlayer.id)).map((card) => ({
-            type: "select-card",
-            cardId: card.id
+        const moves: PokerLiteMove[] = getPileCards(
+            state.piles,
+            getPokerLiteHandPileId(currentPlayer.id),
+        ).map((card) => ({
+            type: 'select-card',
+            cardId: card.id,
         }));
 
         if (canCurrentPlayerPlay(state)) {
-            moves.push({ type: "queue-play" });
+            moves.push({ type: 'queue-play' });
         }
 
         return moves;
     },
     applyMove: (state, move) => {
         switch (move.type) {
-            case "prepare-shuffle":
+            case 'prepare-shuffle':
                 return {
                     state: createShuffledContext(
                         getPlayerNames(state),
                         state.deckDefinition,
                         state.cardsPerPlayer,
-                        move.random
-                    )
+                        move.random,
+                    ),
                 };
-            case "deal-opening-hands":
+            case 'deal-opening-hands':
                 return dealOpeningHands(state);
-            case "begin-turn":
+            case 'begin-turn':
                 return {
-                    state: setTurnStatus(state)
+                    state: setTurnStatus(state),
                 };
-            case "select-card":
+            case 'select-card':
                 return {
-                    state: selectCard(state, move.cardId)
+                    state: selectCard(state, move.cardId),
                 };
-            case "queue-play":
+            case 'queue-play':
                 return queuePlayedCardWithEffects(state);
-            case "commit-play":
+            case 'commit-play':
                 return {
-                    state: commitPlayedCard(state)
+                    state: commitPlayedCard(state),
                 };
-            case "finalize-turn":
+            case 'finalize-turn':
                 return {
-                    state: finalizeTurn(state)
+                    state: finalizeTurn(state),
                 };
-            case "advance-next-player":
+            case 'advance-next-player':
                 return {
-                    state: setTurnStatus(advanceToNextPlayer(state))
+                    state: setTurnStatus(advanceToNextPlayer(state)),
                 };
-            case "advance-next-round":
+            case 'advance-next-round':
                 return {
-                    state: setTurnStatus(advanceToNextRound(state))
+                    state: setTurnStatus(advanceToNextRound(state)),
                 };
-            case "finish-game":
+            case 'finish-game':
                 return {
-                    state: finishGame(state)
+                    state: finishGame(state),
                 };
         }
     },
@@ -129,16 +128,16 @@ export const pokerLiteGameDefinition: GameDefinition<
     },
     getAutomaticMove: (state) => {
         if (hasMorePlayersInRound(state)) {
-            return { type: "advance-next-player" };
+            return { type: 'advance-next-player' };
         }
 
         if (pokerLiteGameDefinition.isGameOver(state)) {
-            return { type: "finish-game" };
+            return { type: 'finish-game' };
         }
 
-        return { type: "advance-next-round" };
+        return { type: 'advance-next-round' };
     },
     toViewModel: (snapshot, viewerId) => {
         return getPokerLiteViewModel(snapshot, viewerId);
-    }
+    },
 };

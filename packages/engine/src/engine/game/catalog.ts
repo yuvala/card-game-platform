@@ -1,7 +1,7 @@
-import type { SupportedDeckId } from "../cards/deckDefinitions";
-import type { DeckDefinition } from "../cards/types";
-import type { GameDefinition } from "./definition";
-import type { CardGameActor, CardGameViewModelFactory } from "./viewModel";
+import type { SupportedDeckId } from '../cards/deckDefinitions';
+import type { DeckDefinition } from '../cards/types';
+import type { GameDefinition } from './definition';
+import type { CardGameActor, CardGameViewModelFactory } from './viewModel';
 
 export interface CardGameActorRuntime<TSnapshot> extends CardGameActor<TSnapshot> {
     start(): void;
@@ -16,7 +16,7 @@ export interface CardGameCatalogOptions {
 
 export interface GameCatalogEntry<
     TSnapshot = unknown,
-    TOptions extends CardGameCatalogOptions = CardGameCatalogOptions
+    TOptions extends CardGameCatalogOptions = CardGameCatalogOptions,
 > {
     id: string;
     label: string;
@@ -36,15 +36,18 @@ export type AnyGameCatalogEntry = GameCatalogEntry<any, any>;
 
 export function defineGameCatalogEntry<
     TSnapshot,
-    TOptions extends CardGameCatalogOptions = CardGameCatalogOptions
+    TOptions extends CardGameCatalogOptions = CardGameCatalogOptions,
 >(entry: GameCatalogEntry<TSnapshot, TOptions>): GameCatalogEntry<TSnapshot, TOptions> {
     return entry;
 }
 
 export function resolvePlayerCount(
-    entry: Pick<GameCatalogEntry, "minPlayers" | "maxPlayers" | "defaultPlayerCount" | "playerCountOptions">,
+    entry: Pick<
+        GameCatalogEntry,
+        'minPlayers' | 'maxPlayers' | 'defaultPlayerCount' | 'playerCountOptions'
+    >,
     requestedPlayerCount: number | null | undefined,
-    availablePlayerCount: number
+    availablePlayerCount: number,
 ): number {
     const availableCount = Math.max(availablePlayerCount, 0);
     if (availableCount === 0) {
@@ -52,7 +55,7 @@ export function resolvePlayerCount(
     }
 
     const normalizedRequested =
-        typeof requestedPlayerCount === "number" && Number.isFinite(requestedPlayerCount)
+        typeof requestedPlayerCount === 'number' && Number.isFinite(requestedPlayerCount)
             ? Math.floor(requestedPlayerCount)
             : null;
 
@@ -89,8 +92,8 @@ export function resolvePlayerCount(
 }
 
 export function resolveDeckId(
-    entry: Pick<GameCatalogEntry, "supportedDeckIds" | "defaultDeckId">,
-    requestedDeckId: string | null | undefined
+    entry: Pick<GameCatalogEntry, 'supportedDeckIds' | 'defaultDeckId'>,
+    requestedDeckId: string | null | undefined,
 ): SupportedDeckId {
     if (requestedDeckId) {
         const normalizedDeckId = requestedDeckId.toLowerCase() as SupportedDeckId;

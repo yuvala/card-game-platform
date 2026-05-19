@@ -1,19 +1,16 @@
-﻿import playersData from "../../../apps/client/data/players.json";
-import { supportedDeckDefinitions } from "@engine/engine/cards/deckDefinitions";
-import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "@engine/engine/game/catalog";
-import { createSeededRandom } from "@engine/engine/game/random";
-import { createLocalGameSession, type CardGameSession } from "@engine/engine/game/session";
-import type { CardGameEvent } from "@engine/engine/game/types";
-import type {
-    ServerMessage,
-    SessionConfig,
-    SessionPlayerSummary
-} from "@engine/session/protocol";
+﻿import playersData from '../../../apps/client/data/players.json';
+import { supportedDeckDefinitions } from '@engine/engine/cards/deckDefinitions';
 import {
-    DEFAULT_GAME_ID,
-    getGameCatalogEntryById
-} from "@engine/games/catalog";
-import { runDebugScenario } from "./debugScenarios";
+    resolveDeckId,
+    resolvePlayerCount,
+    type AnyGameCatalogEntry,
+} from '@engine/engine/game/catalog';
+import { createSeededRandom } from '@engine/engine/game/random';
+import { createLocalGameSession, type CardGameSession } from '@engine/engine/game/session';
+import type { CardGameEvent } from '@engine/engine/game/types';
+import type { ServerMessage, SessionConfig, SessionPlayerSummary } from '@engine/session/protocol';
+import { DEFAULT_GAME_ID, getGameCatalogEntryById } from '@engine/games/catalog';
+import { runDebugScenario } from './debugScenarios';
 
 interface PlayerSeedRecord {
     playerName?: string;
@@ -45,7 +42,7 @@ export class GameSessionHost {
     private botTimer: ReturnType<typeof setTimeout> | null = null;
 
     constructor(options: RewriteSessionHostOptions = {}) {
-        this.sessionId = options.sessionId ?? "main";
+        this.sessionId = options.sessionId ?? 'main';
         this.entry = resolveGame(options.gameId);
         this.session = this.createSession(options);
         this.startSession();
@@ -61,7 +58,7 @@ export class GameSessionHost {
         return {
             unsubscribe: () => {
                 this.listeners.delete(listener);
-            }
+            },
         };
     }
 
@@ -85,15 +82,12 @@ export class GameSessionHost {
     sendClientEvent(
         playerId: string | null | undefined,
         event: CardGameEvent,
-        expectedSequence?: number
+        expectedSequence?: number,
     ): RewriteClientEventResult {
-        if (
-            typeof expectedSequence === "number" &&
-            expectedSequence < this.sequence
-        ) {
+        if (typeof expectedSequence === 'number' && expectedSequence < this.sequence) {
             return {
                 ok: false,
-                message: "Client action is stale. Refreshing table state."
+                message: 'Client action is stale. Refreshing table state.',
             };
         }
 
@@ -113,13 +107,13 @@ export class GameSessionHost {
 
     getSessionView(viewerId: string | null): ServerMessage {
         return {
-            type: "session-view",
+            type: 'session-view',
             sessionId: this.sessionId,
             gameId: this.entry.id,
             sequence: this.sequence,
             players: this.getPlayers(),
             viewerId,
-            viewModel: this.session.getViewModel(viewerId)
+            viewModel: this.session.getViewModel(viewerId),
         };
     }
 
@@ -132,7 +126,7 @@ export class GameSessionHost {
     private getPlayers(): SessionPlayerSummary[] {
         return this.session.getViewModel(null).players.map((player) => ({
             id: player.id,
-            name: player.nameLabel
+            name: player.nameLabel,
         }));
     }
 
@@ -140,7 +134,7 @@ export class GameSessionHost {
         const playerCount = resolvePlayerCount(
             this.entry,
             options.playerCount,
-            getSeedPlayerNames().length
+            getSeedPlayerNames().length,
         );
         const deckId = resolveDeckId(this.entry, options.deckId);
         const deckDefinition = supportedDeckDefinitions[deckId];
@@ -152,8 +146,8 @@ export class GameSessionHost {
             options: {
                 deckDefinition,
                 cardsPerPlayer: options.cardsPerPlayer,
-                random: options.seed ? createSeededRandom(options.seed) : undefined
-            }
+                random: options.seed ? createSeededRandom(options.seed) : undefined,
+            },
         });
     }
 
@@ -162,7 +156,7 @@ export class GameSessionHost {
             this.notify();
         });
         this.session.start();
-        this.session.send({ type: "START" });
+        this.session.send({ type: 'START' });
     }
 
     private notify(): void {
@@ -185,7 +179,7 @@ export class GameSessionHost {
     private runBotMove(): void {
         const viewModel = this.session.getViewModel(null);
         const botPlayer = viewModel.players.find(
-            (p, i) => this.botSeatIndices.has(i) && p.canInteract
+            (p, i) => this.botSeatIndices.has(i) && p.canInteract,
         );
         if (!botPlayer) return;
 
@@ -194,15 +188,15 @@ export class GameSessionHost {
         if (moves.length === 0) return;
 
         // For games that need select-card then queue-play, send both
-        const selectMove = moves.find((m: any) => m.type === "select-card");
-        const playMove = moves.find((m: any) => m.type === "queue-play");
+        const selectMove = moves.find((m: any) => m.type === 'select-card');
+        const playMove = moves.find((m: any) => m.type === 'queue-play');
 
         if (selectMove && !playMove) {
-            const cardMoves = moves.filter((m: any) => m.type === "select-card");
+            const cardMoves = moves.filter((m: any) => m.type === 'select-card');
             const pick = cardMoves[Math.floor(Math.random() * cardMoves.length)];
-            this.session.send({ type: "SELECT_CARD", cardId: pick.cardId });
+            this.session.send({ type: 'SELECT_CARD', cardId: pick.cardId });
         } else if (playMove) {
-            this.session.send({ type: "PLAY_CARD" });
+            this.session.send({ type: 'PLAY_CARD' });
         }
     }
 
@@ -212,47 +206,50 @@ export class GameSessionHost {
         if (!player) {
             return {
                 ok: false,
-                message: "Unknown player for this session."
+                message: 'Unknown player for this session.',
             };
         }
 
         switch (event.type) {
-            case "SELECT_CARD": {
+            case 'SELECT_CARD': {
                 const selectedCard = player.hand.find((card) => card.id === event.cardId);
                 if (
                     !player.canInteract ||
                     !selectedCard?.isFaceUp ||
-                    player.cardClickAction === "play"
+                    player.cardClickAction === 'play'
                 ) {
                     return {
                         ok: false,
-                        message: "Player cannot select that card now."
+                        message: 'Player cannot select that card now.',
                     };
                 }
 
                 return { ok: true };
             }
-            case "PLAY_CARD":
-                if (!viewModel.controls.canPlay || viewModel.primaryAction?.eventType !== "PLAY_CARD") {
+            case 'PLAY_CARD':
+                if (
+                    !viewModel.controls.canPlay ||
+                    viewModel.primaryAction?.eventType !== 'PLAY_CARD'
+                ) {
                     return {
                         ok: false,
-                        message: "Player cannot play now."
+                        message: 'Player cannot play now.',
                     };
                 }
 
                 return { ok: true };
-            case "ANIMATION_DONE":
+            case 'ANIMATION_DONE':
                 return { ok: true };
-            case "START":
-            case "RESTART":
+            case 'START':
+            case 'RESTART':
                 return {
                     ok: false,
-                    message: "Only the admin table can send table control events."
+                    message: 'Only the admin table can send table control events.',
                 };
             default:
                 return {
                     ok: false,
-                    message: "Unsupported player event."
+                    message: 'Unsupported player event.',
                 };
         }
     }
@@ -261,7 +258,7 @@ export class GameSessionHost {
 function resolveGame(gameId: string | null | undefined): AnyGameCatalogEntry {
     const entry = getGameCatalogEntryById(gameId) ?? getGameCatalogEntryById(DEFAULT_GAME_ID);
     if (!entry) {
-        throw new Error("No game is registered in the game catalog.");
+        throw new Error('No game is registered in the game catalog.');
     }
 
     return entry;
@@ -269,5 +266,7 @@ function resolveGame(gameId: string | null | undefined): AnyGameCatalogEntry {
 
 function getSeedPlayerNames(): string[] {
     const records = (playersData as { players?: PlayerSeedRecord[] }).players ?? [];
-    return records.map((player) => player.playerName).filter((name): name is string => Boolean(name));
+    return records
+        .map((player) => player.playerName)
+        .filter((name): name is string => Boolean(name));
 }

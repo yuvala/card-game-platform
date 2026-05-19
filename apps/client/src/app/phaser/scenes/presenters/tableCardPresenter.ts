@@ -1,17 +1,21 @@
-﻿import * as Phaser from "phaser";
+﻿import * as Phaser from 'phaser';
 
-import type { CardGameViewCard, CardGameViewModel, CardGameViewTableCard } from "@engine/engine/game/viewModel";
-import { TABLE_CENTER_X } from "../../layout";
-import { CARD_BACK_STROKE, TABLE_CARD_HEIGHT, TABLE_CARD_WIDTH } from "../layout/constants";
-import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../layout/tableCardLayouts";
-import type { HandSlotVisual } from "./handPresenter";
-import type { TableCardVisual } from "../factories/createTableCardVisual";
+import type {
+    CardGameViewCard,
+    CardGameViewModel,
+    CardGameViewTableCard,
+} from '@engine/engine/game/viewModel';
+import { TABLE_CENTER_X } from '../../layout';
+import { CARD_BACK_STROKE, TABLE_CARD_HEIGHT, TABLE_CARD_WIDTH } from '../layout/constants';
+import { getTableCardDisplayState, getTrickSeatCardDisplayState } from '../layout/tableCardLayouts';
+import type { HandSlotVisual } from './handPresenter';
+import type { TableCardVisual } from '../factories/createTableCardVisual';
 
 interface TableCardTextureApi {
     applyCardTexture(
         image: Phaser.GameObjects.Image,
         card: CardGameViewCard | CardGameViewTableCard | null,
-        variant: "compact" | "showcase"
+        variant: 'compact' | 'showcase',
     ): void;
     applyCardBackTexture(image: Phaser.GameObjects.Image): void;
 }
@@ -52,7 +56,7 @@ function syncTableCardStackDepth(input: {
 }): void {
     const { card, visual, textureApi } = input;
     const stackCount = card.stackCount ?? 0;
-    const stackBadgeLabel = card.stackBadgeLabel ?? "";
+    const stackBadgeLabel = card.stackBadgeLabel ?? '';
     const shouldShowStackDepth = !card.isFaceUp && (stackBadgeLabel.length > 0 || stackCount > 1);
     const visibleBackCount = shouldShowStackDepth
         ? Math.min(visual.stackBacks.length, stackCount - 1)
@@ -67,7 +71,9 @@ function syncTableCardStackDepth(input: {
 
     visual.stackCountBadge.setVisible(shouldShowStackDepth);
     visual.stackCountText.setVisible(shouldShowStackDepth);
-    visual.stackCountText.setText(shouldShowStackDepth ? stackBadgeLabel || "x" + String(stackCount) : "");
+    visual.stackCountText.setText(
+        shouldShowStackDepth ? stackBadgeLabel || 'x' + String(stackCount) : '',
+    );
 }
 
 function drawTableCardContour(input: {
@@ -84,7 +90,7 @@ function drawTableCardContour(input: {
         -TABLE_CARD_HEIGHT / 2 + 1,
         TABLE_CARD_WIDTH - 2,
         TABLE_CARD_HEIGHT - 2,
-        6
+        6,
     );
 }
 
@@ -95,48 +101,49 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
         tableCardVisuals,
         createTableCardVisual,
         activeTableCardFlipKey,
-        textureApi
+        textureApi,
     } = input;
     const tableCards = viewModel.tableCards;
     ensureTableCardVisuals({
         tableCardVisuals,
         cardCount: tableCards.length,
-        createTableCardVisual
+        createTableCardVisual,
     });
 
     if (tableCards.length === 0) {
         tableCardVisuals.forEach((visual) => {
             visual.container.setVisible(false);
         });
-        return "";
+        return '';
     }
 
     const perCardKeys = tableCards.map((card) => {
         return [
             card.id,
-            card.isFaceUp ? "up" : "down",
+            card.isFaceUp ? 'up' : 'down',
             String(card.stackCount ?? 1),
-            card.stackBadgeLabel ?? ""
-        ].join(":");
+            card.stackBadgeLabel ?? '',
+        ].join(':');
     });
-    const flipKey = perCardKeys.join("|");
-    const prevPerCardKeys = activeTableCardFlipKey.split("|");
+    const flipKey = perCardKeys.join('|');
+    const prevPerCardKeys = activeTableCardFlipKey.split('|');
 
     tableCards.forEach((card, index) => {
         const visual = tableCardVisuals[index];
-        const position = viewModel.tablePresentation === "trick-seats"
-            ? getTrickSeatCardDisplayState({
-                  cards: tableCards,
-                  players: viewModel.players,
-                  index
-              })
-            : getTableCardDisplayState(tableCards, index, viewModel.players);
+        const position =
+            viewModel.tablePresentation === 'trick-seats'
+                ? getTrickSeatCardDisplayState({
+                      cards: tableCards,
+                      players: viewModel.players,
+                      index,
+                  })
+                : getTableCardDisplayState(tableCards, index, viewModel.players);
         visual.container.setPosition(position.x, position.y);
         visual.container.setAngle(position.angle);
         visual.container.setDepth(80 + position.stackIndex);
-        visual.caption.setText(position.stackIndex === 0 ? card.caption ?? "" : "");
+        visual.caption.setText(position.stackIndex === 0 ? (card.caption ?? '') : '');
         visual.container.setVisible(true);
-        if (viewModel.tablePresentation === "trick-seats") {
+        if (viewModel.tablePresentation === 'trick-seats') {
             visual.shadow.setVisible(false);
             visual.outline.setVisible(false);
             visual.outline.setAlpha(0);
@@ -148,19 +155,19 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
             drawTableCardContour({
                 visual,
                 color: card.isFaceUp ? 0xffd166 : CARD_BACK_STROKE,
-                alpha: 0.9
+                alpha: 0.9,
             });
         }
         syncTableCardStackDepth({
             card,
             visual,
-            textureApi
+            textureApi,
         });
 
         const cardKeyChanged = perCardKeys[index] !== prevPerCardKeys[index];
         if (!cardKeyChanged || visual.container.alpha === 0) {
             visual.container.setScale(1);
-            textureApi.applyCardTexture(visual.image, card, "showcase");
+            textureApi.applyCardTexture(visual.image, card, 'showcase');
             return;
         }
 
@@ -173,16 +180,16 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
             scaleX: 0.08,
             duration: 110,
             delay: 0,
-            ease: "Sine.easeIn",
+            ease: 'Sine.easeIn',
             onComplete: () => {
-                textureApi.applyCardTexture(visual.image, card, "showcase");
+                textureApi.applyCardTexture(visual.image, card, 'showcase');
                 scene.tweens.add({
                     targets: visual.container,
                     scaleX: 1,
                     duration: 160,
-                    ease: "Sine.easeOut"
+                    ease: 'Sine.easeOut',
                 });
-            }
+            },
         });
     });
 
@@ -194,24 +201,17 @@ export function syncTableCardPresentation(input: TableCardPresentationInput): st
 }
 
 export function runPlayedCardAnimation(input: PlayedCardAnimationInput): string {
-    const {
-        scene,
-        viewModel,
-        handSlots,
-        discardCard,
-        activeAnimationKey,
-        onAnimationDone
-    } = input;
+    const { scene, viewModel, handSlots, discardCard, activeAnimationKey, onAnimationDone } = input;
     const animation = viewModel.animation;
     if (!animation) {
-        return "";
+        return '';
     }
 
     const currentPlayer = viewModel.players.find((player) => player.id === animation.playerId);
     const slots = handSlots.get(animation.playerId);
     if (!slots || !currentPlayer || currentPlayer.hand.length <= 0) {
         onAnimationDone();
-        return "";
+        return '';
     }
 
     const animationKey = animation.key;
@@ -225,7 +225,7 @@ export function runPlayedCardAnimation(input: PlayedCardAnimationInput): string 
     const slot = slots[selectedSlotIndex];
     if (!slot) {
         onAnimationDone();
-        return "";
+        return '';
     }
 
     discardCard.setVisible(false);
@@ -238,11 +238,11 @@ export function runPlayedCardAnimation(input: PlayedCardAnimationInput): string 
         y: 392,
         angle: 0,
         duration: 420,
-        ease: "Cubic.easeInOut",
+        ease: 'Cubic.easeInOut',
         onComplete: () => {
             slot.image.setAlpha(1);
             onAnimationDone();
-        }
+        },
     });
 
     return animationKey;
