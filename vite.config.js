@@ -24,7 +24,7 @@ module.exports = defineConfig({
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                table: resolve(__dirname, "apps/client/rewrite.html"),
+                table: resolve(__dirname, "apps/client/table-admin.html"),
                 player: resolve(__dirname, "apps/client/player.html"),
                 cardSandbox: resolve(__dirname, "apps/client/card-sandbox.html"),
                 lobby: resolve(__dirname, "apps/client/lobby.html")
