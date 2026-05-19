@@ -1,6 +1,6 @@
 ﻿import type { SupportedDeckId } from '@engine/engine/cards/deckDefinitions';
 import type { CardGameActor } from '@engine/engine/game/viewModel';
-import type { GameSelection } from './createGamePanel';
+import type { GameSelection } from './gamePanelTypes';
 
 interface DebugSnapshot {
     value: unknown;

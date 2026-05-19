@@ -9,9 +9,11 @@ export function LobbyRoute() {
             '/assets/lobby/lobby-bg_03.png',
         ];
         const src = images[Math.floor(Math.random() * images.length)];
-        const bg = document.getElementById('lobby-bg');
-        const root = document.getElementById('lobby-root');
-        if (!bg || !root) return;
+        const bgEl = document.getElementById('lobby-bg');
+        const rootEl = document.getElementById('lobby-root');
+        if (!bgEl || !rootEl) return;
+        const bg = bgEl;
+        const root = rootEl;
 
         let removeResize: (() => void) | null = null;
         const img = new Image();

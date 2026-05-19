@@ -15,6 +15,7 @@ import {
 import type { SupportedDeckId } from '@engine/engine/cards/deckDefinitions';
 
 export type { GameSelection, ActiveTableSummary } from './gamePanelTypes';
+import type { GameSelection, ActiveTableSummary } from './gamePanelTypes';
 
 const seedPlayerNames = playersData.players.map((p) => p.playerName);
 
