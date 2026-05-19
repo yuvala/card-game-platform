@@ -348,7 +348,7 @@ a {
     text-align: center;
     background:
         radial-gradient(circle at top, rgba(255, 209, 102, 0.16), transparent 46%),
-        rgba(11, 29, 22, 0.92);
+        rgba(11, 29, 22, 0.55);
     border: 1px solid rgba(255, 209, 102, 0.2);
     box-shadow: inset 0 0 0 1px rgba(247, 239, 224, 0.04);
 }
@@ -660,12 +660,7 @@ a {
     min-height: 100vh;
     display: grid;
     grid-template-rows: auto 1fr auto;
-    grid-template-columns: 1fr 220px;
-}
-
-.adminShell > .adminToolbar,
-.adminShell > .appDevHints {
-    grid-column: 1 / -1;
+    grid-template-columns: 1fr;
 }
 
 .adminRoomSidebar {
@@ -999,4 +994,154 @@ a {
         aspect-ratio: auto;
         height: min(66vh, 680px);
     }
+}
+
+/* ── Operator Dashboard ── */
+.operatorShell {
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr;
+    background: #0a0f0a;
+}
+
+.operatorMain {
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+}
+
+.operatorHeader {
+    display: flex;
+    align-items: baseline;
+    gap: 16px;
+    border-bottom: 1px solid rgba(255, 209, 102, 0.1);
+    padding-bottom: 20px;
+}
+
+.operatorTitle {
+    font-family: 'Cinzel', serif;
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: #ffd166;
+    letter-spacing: 0.12em;
+}
+
+.operatorSubtitle {
+    font-size: 0.85rem;
+    color: #6b7c6b;
+    letter-spacing: 0.05em;
+}
+
+.operatorEmpty {
+    color: #4a5a4a;
+    font-style: italic;
+    font-size: 0.95rem;
+}
+
+.operatorRoomGrid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 16px;
+}
+
+.operatorRoomCard {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 209, 102, 0.12);
+    border-radius: 6px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color 0.15s;
+}
+
+.operatorRoomCard:hover {
+    border-color: rgba(255, 209, 102, 0.28);
+}
+
+.operatorRoomCard--playing {
+    border-color: rgba(255, 209, 102, 0.3);
+}
+
+.operatorRoomCardTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.operatorRoomGame {
+    font-size: 1.1rem;
+    color: #f0dfc0;
+    font-style: italic;
+}
+
+.operatorRoomBadge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 3px 8px;
+    border-radius: 3px;
+    border: 1px solid;
+}
+
+.operatorRoomBadge--waiting {
+    color: #a08860;
+    border-color: rgba(160, 136, 96, 0.4);
+}
+
+.operatorRoomBadge--playing {
+    color: #ffd166;
+    border-color: rgba(255, 209, 102, 0.5);
+}
+
+.operatorRoomInfo {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.operatorRoomCreator {
+    font-size: 0.9rem;
+    color: #d4b896;
+}
+
+.operatorRoomCount {
+    font-size: 0.78rem;
+    color: #6b7c6b;
+}
+
+.operatorRoomActions {
+    display: flex;
+    gap: 8px;
+    margin-top: 4px;
+}
+
+.operatorBtn {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 3px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: filter 0.15s;
+}
+
+.operatorBtn:hover {
+    filter: brightness(1.2);
+}
+
+.operatorBtn--table {
+    background: linear-gradient(135deg, #ffd166 0%, #c9a84c 100%);
+    color: #1a0f00;
+}
+
+.operatorBtn--close {
+    background: rgba(180, 60, 60, 0.2);
+    color: #c84c4c;
+    border: 1px solid rgba(200, 76, 76, 0.3);
 }

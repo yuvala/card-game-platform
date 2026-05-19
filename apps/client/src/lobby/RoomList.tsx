@@ -136,7 +136,7 @@ export function RoomList({ userId, nickname }: Props) {
         const { data } = await supabase
             .from('rooms')
             .select('id, game_id, status, max_players, creator_nickname, players(count)')
-            .in('status', ['waiting', 'playing'])
+            .eq('status', 'waiting')
             .order('created_at', { ascending: false })
             .limit(20);
 
