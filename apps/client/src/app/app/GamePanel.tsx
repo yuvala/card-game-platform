@@ -5,10 +5,12 @@ import { supportedDeckDefinitions } from '@engine/engine/cards/deckDefinitions';
 import {
     resolveDeckId,
     resolvePlayerCount,
+    type AnyGameCatalogEntry,
+} from '@engine/engine/game/catalog';
+import {
     gameCatalogEntries,
     getGameCatalogEntryById,
     DEFAULT_GAME_ID,
-    type AnyGameCatalogEntry,
 } from '@engine/games/catalog';
 import type { SupportedDeckId } from '@engine/engine/cards/deckDefinitions';
 
