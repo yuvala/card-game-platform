@@ -19,6 +19,7 @@ interface ActiveRuntime {
     appSubscription: { unsubscribe(): void };
 }
 
+export function init(): void {
 const seedPlayerNames = playersData.players.map((player) => player.playerName);
 const gameRoot = document.getElementById("game-root");
 const setupMount = document.getElementById("game-setup");
@@ -358,4 +359,5 @@ function syncUrl(
 
     const nextUrl = window.location.pathname + "?" + nextParams.toString();
     window.history.replaceState({}, "", nextUrl);
+}
 }

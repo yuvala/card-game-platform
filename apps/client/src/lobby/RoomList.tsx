@@ -33,7 +33,7 @@ async function tryStartGame(roomId: string) {
 
 function redirectToGame(roomId: string, gameId: string, wsUrl: string, bots = 0) {
     const botsParam = bots > 0 ? `&bots=${bots}` : "";
-    globalThis.location.href = `player.html?room=${roomId}&game=${gameId}&wsUrl=${encodeURIComponent(wsUrl)}${botsParam}`;
+    globalThis.location.href = `/player?room=${roomId}&game=${gameId}&wsUrl=${encodeURIComponent(wsUrl)}${botsParam}`;
 }
 
 const GAME_LABELS: Record<string, string> = {

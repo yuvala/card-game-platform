@@ -1,6 +1,7 @@
 ﻿import { supportedDeckDefinitions } from "@engine/engine/cards/deckDefinitions";
 import { createCardSandboxGame, type CardSandboxSection } from "./createCardSandboxGame";
 
+export function init(): void {
 const rootElement = document.getElementById("card-sandbox-root");
 const deckSelectElement = document.getElementById("card-sandbox-deck");
 const replayButtonElement = document.getElementById("card-sandbox-replay");
@@ -49,3 +50,4 @@ sectionButtonElements.forEach((element) => {
         });
     });
 });
+}

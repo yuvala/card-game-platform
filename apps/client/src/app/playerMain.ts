@@ -1,6 +1,7 @@
 import { createRemoteGameSession, type RemoteGameSession } from "./session/remoteSession";
 import { createPlayerGame } from "./player/createPlayerGame";
 
+export function init(): void {
 const playerRootElement = document.getElementById("player-root");
 const playerSelectElement = document.getElementById("player-viewer-select");
 const playerStatusElement = document.getElementById("player-status");
@@ -127,4 +128,5 @@ function getRequestedWebSocketUrl(params: URLSearchParams): string {
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     return protocol + "//" + window.location.hostname + ":8787/";
+}
 }
