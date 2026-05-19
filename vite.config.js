@@ -12,11 +12,11 @@ module.exports = defineConfig({
         }
     },
     server: {
-        host: "127.0.0.1",
+        host: "localhost",
         port: 8000
     },
     preview: {
-        host: "127.0.0.1",
+        host: "localhost",
         port: 4173
     },
     build: {

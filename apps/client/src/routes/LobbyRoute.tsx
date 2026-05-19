@@ -3,8 +3,10 @@ import { App as LobbyApp } from "../lobby/App";
 
 export function LobbyRoute() {
     return (
-        <div id="lobby-root" className="lobbyShell">
-            <LobbyApp />
+        <div className="lobby-bg">
+            <div id="lobby-root" className="lobbyShell">
+                <LobbyApp />
+            </div>
         </div>
     );
 }
