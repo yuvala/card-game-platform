@@ -68,11 +68,12 @@ const GAME_LABELS: Record<string, string> = {
 export function RoomList({ userId, nickname, onLogout }: Props) {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [creating, setCreating] = useState(false);
-    const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number; isCreator: boolean } | null>(
+    const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number; minPlayers: number; isCreator: boolean } | null>(
         null,
     );
     const [roomPlayers, setRoomPlayers] = useState<string[]>([]);
     const [leftMessage, setLeftMessage] = useState<string | null>(null);
+    const [pendingGame, setPendingGame] = useState<{ id: string; options: number[] } | null>(null);
 
     // Restore room state after page refresh
     useEffect(() => {
@@ -86,7 +87,8 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
             if (!data) return;
             const room = (data.rooms as any);
             if (room?.status === 'waiting') {
-                setMyRoom({ id: data.room_id, gameId: room.game_id, maxPlayers: room.max_players, isCreator: room.creator_nickname === nickname });
+                const entry = getGameCatalogEntryById(room.game_id);
+                setMyRoom({ id: data.room_id, gameId: room.game_id, maxPlayers: room.max_players, minPlayers: entry?.minPlayers ?? 2, isCreator: room.creator_nickname === nickname });
             }
         }
         restoreRoom();
@@ -209,12 +211,22 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
         );
     }
 
-    async function createRoom(gameId: string) {
+    function selectGame(gameId: string) {
+        const entry = getGameCatalogEntryById(gameId);
+        const options = entry?.playerCountOptions ?? [entry?.maxPlayers ?? 2];
+        if (options.length === 1) {
+            createRoom(gameId, options[0]).catch(() => {});
+        } else {
+            setPendingGame({ id: gameId, options: [...options] });
+        }
+    }
+
+    async function createRoom(gameId: string, playerCount: number) {
         setCreating(true);
-        const maxPlayers = getGameCatalogEntryById(gameId)?.maxPlayers ?? 2;
+        setPendingGame(null);
         const { data: room } = await supabase
             .from('rooms')
-            .insert({ game_id: gameId, max_players: maxPlayers, creator_nickname: nickname, creator_user_id: userId })
+            .insert({ game_id: gameId, max_players: playerCount, creator_nickname: nickname, creator_user_id: userId })
             .select()
             .single();
         if (room) await joinRoom(room.id, room.game_id, true);
@@ -233,7 +245,8 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
             .eq('id', roomId)
             .single();
 
-        setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, isCreator });
+        const entry = getGameCatalogEntryById(gameId);
+        setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, minPlayers: entry?.minPlayers ?? 2, isCreator });
     }
 
     async function leaveRoom() {
@@ -282,7 +295,9 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
                     ))}
                 </div>
                 {myRoom.isCreator && (
-                    <button onClick={launchGame}>Launch Game</button>
+                    <button onClick={launchGame} disabled={roomPlayers.length < myRoom.minPlayers}>
+                        Launch Game
+                    </button>
                 )}
                 <button
                     onClick={leaveRoom}
@@ -312,13 +327,32 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
             <section>
                 <h2>New Room</h2>
-                <div className="game-buttons">
-                    {Object.entries(GAME_LABELS).map(([id, label]) => (
-                        <button key={id} onClick={() => createRoom(id)} disabled={creating}>
-                            {label}
-                        </button>
-                    ))}
-                </div>
+                {pendingGame ? (
+                    <div className="game-player-count">
+                        <p className="game-player-count-label">Players:</p>
+                        <div className="game-buttons">
+                            {pendingGame.options.map((count) => (
+                                <button key={count} onClick={() => createRoom(pendingGame.id, count)} disabled={creating}>
+                                    {count}
+                                </button>
+                            ))}
+                            <button
+                                onClick={() => setPendingGame(null)}
+                                style={{ background: 'none', border: '1px solid #6b4f28', color: '#a08860' }}
+                            >
+                                ✕
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className="game-buttons">
+                        {Object.entries(GAME_LABELS).map(([id, label]) => (
+                            <button key={id} onClick={() => selectGame(id)} disabled={creating}>
+                                {label}
+                            </button>
+                        ))}
+                    </div>
+                )}
             </section>
 
             <div className="ornament">· · ·</div>

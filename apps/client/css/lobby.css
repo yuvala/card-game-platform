@@ -197,6 +197,19 @@ h2 {
     font-size: 0.8rem;
 }
 
+/* ── Player count picker ── */
+.game-player-count {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.game-player-count-label {
+    font-size: 0.8rem;
+    color: #a08860;
+    font-style: italic;
+}
+
 /* ── Room list ── */
 .room-list {
     display: flex;
