@@ -43,6 +43,17 @@
 - Replace procedural SFX with curated `mp3`/`ogg` assets if better sounds are needed, while keeping the existing semantic sound API.
 - Continue removing transitional legacy shapes where `piles` already cover the same meaning.
 
+## Future: Card Deck Builder
+
+מנוע עצמאי ליצירת חבילות קלפים מותאמות. דורש:
+- עורך ויזואלי לגב הקלף (canvas/Phaser) + בחירת עיצוב/קימור
+- יצירת `DeckDefinition` מותאמת
+- יצירת card textures דינמית בזמן ריצה (כרגע תמונות סטטיות)
+- אחסון decks (Supabase)
+- route חדש `/deck-builder` + link מה-table-admin header
+
+לא לגעת עד שהמשחק יציב ב-production ויש ביקוש.
+
 ## Priority 3: Optimize
 
 - Reduce rewrite bundle size with code splitting.
