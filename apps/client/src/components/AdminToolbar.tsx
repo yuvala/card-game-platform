@@ -3,12 +3,12 @@ import { Link, useLocation } from 'react-router-dom';
 
 const NAV_LINKS = [
     { to: '/table-admin', label: 'Table Admin', newTab: false },
-    { to: '/sandbox', label: 'Card Sandbox', newTab: false },
+    { to: '/sandbox', label: 'Card Sandbox', newTab: true },
     { to: '/', label: 'Lobby', newTab: true },
 ];
 
 interface AdminToolbarProps {
-    children?: React.ReactNode;
+    readonly children?: React.ReactNode;
 }
 
 export function AdminToolbar({ children }: AdminToolbarProps) {
