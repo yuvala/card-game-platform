@@ -176,7 +176,6 @@ interface CardDisplaySize {
 
 export class PlayerTableScene extends Phaser.Scene {
     private readonly session: CardGameSession<CardGameViewModel>;
-    private readonly dpr: number;
     private subscription?: { unsubscribe(): void };
     private renderLayer?: Phaser.GameObjects.Container;
     private activeDeckId = "";
@@ -190,10 +189,9 @@ export class PlayerTableScene extends Phaser.Scene {
     private flashContainer?: Phaser.GameObjects.Container;
     private lastBattleFlashKey = "";
 
-    constructor(session: CardGameSession<CardGameViewModel>, dpr = 1) {
+    constructor(session: CardGameSession<CardGameViewModel>) {
         super("player-table");
         this.session = session;
-        this.dpr = dpr;
     }
 
     preload(): void {
@@ -203,7 +201,6 @@ export class PlayerTableScene extends Phaser.Scene {
     }
 
     create(): void {
-        this.cameras.main.setZoom(this.dpr);
         this.animationLayer = createCardAnimationLayer(this, 1000);
 
         this.subscription = this.session.subscribe(() => {

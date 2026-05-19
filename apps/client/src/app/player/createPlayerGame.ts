@@ -11,12 +11,11 @@ export function createPlayerGame(
     parent: string,
     session: CardGameSession<CardGameViewModel>
 ): Phaser.Game {
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     return new Phaser.Game({
         type: Phaser.AUTO,
         parent,
-        width: PLAYER_GAME_WIDTH * dpr,
-        height: PLAYER_GAME_HEIGHT * dpr,
+        width: PLAYER_GAME_WIDTH,
+        height: PLAYER_GAME_HEIGHT,
         backgroundColor: "#06140f",
         render: {
             antialias: true,
@@ -27,9 +26,8 @@ export function createPlayerGame(
         scale: {
             mode: Phaser.Scale.FIT,
             autoRound: true,
-            autoCenter: Phaser.Scale.CENTER_BOTH,
-            zoom: 1 / dpr
+            autoCenter: Phaser.Scale.CENTER_BOTH
         },
-        scene: [new PlayerTableScene(session, dpr)]
+        scene: [new PlayerTableScene(session)]
     });
 }
