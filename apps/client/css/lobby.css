@@ -349,6 +349,38 @@ h2 {
     100% { opacity: 0; }
 }
 
+.waiting-player--bot {
+    border-color: rgba(201, 168, 76, 0.2);
+    color: #a08860;
+    font-style: italic;
+}
+
+.waiting-player--bot .waiting-player-suit {
+    color: #7a6030;
+    font-size: 0.85rem;
+}
+
+.bot-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.bot-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    color: #a08860;
+    min-width: 48px;
+    text-align: center;
+}
+
+.bot-btn {
+    padding: 6px 14px;
+    font-size: 1rem;
+    line-height: 1;
+    border-radius: 3px;
+}
+
 .waiting-player-kick {
     all: unset;
     margin-left: auto;

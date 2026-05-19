@@ -74,6 +74,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
     const [roomPlayers, setRoomPlayers] = useState<string[]>([]);
     const [leftMessage, setLeftMessage] = useState<string | null>(null);
     const [pendingGame, setPendingGame] = useState<{ id: string; options: number[] } | null>(null);
+    const [botCount, setBotCount] = useState(0);
 
     // Restore room state after page refresh
     useEffect(() => {
@@ -246,6 +247,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
             .single();
 
         const entry = getGameCatalogEntryById(gameId);
+        setBotCount(0);
         setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, minPlayers: entry?.minPlayers ?? 2, isCreator });
     }
 
@@ -270,8 +272,8 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
     async function launchGame() {
         if (!myRoom) return;
-        const { wsUrl, bots, playerNames } = await startRoom(myRoom.id);
-        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, nickname, bots, playerNames);
+        const { wsUrl, playerNames } = await startRoom(myRoom.id);
+        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, nickname, botCount, playerNames);
     }
 
     if (myRoom) {
@@ -289,13 +291,29 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
                         </div>
                     ))}
                     {Array.from({ length: myRoom.maxPlayers - roomPlayers.length }, (_, i) => (
-                        <div key={`empty-slot-${roomPlayers.length + i}`} className="waiting-player waiting-player--empty">
-                            <span className="waiting-player-suit">·</span>{' '}Waiting…
+                        <div key={`empty-slot-${roomPlayers.length + i}`} className={`waiting-player waiting-player--empty${i < botCount ? ' waiting-player--bot' : ''}`}>
+                            <span className="waiting-player-suit">{i < botCount ? '⚙' : '·'}</span>{' '}
+                            {i < botCount ? 'Bot' : 'Waiting…'}
                         </div>
                     ))}
                 </div>
                 {myRoom.isCreator && (
-                    <button onClick={launchGame} disabled={roomPlayers.length < myRoom.minPlayers}>
+                    <div className="bot-controls">
+                        <button
+                            className="bot-btn"
+                            onClick={() => setBotCount((n) => Math.max(0, n - 1))}
+                            disabled={botCount === 0}
+                        >−</button>
+                        <span className="bot-label">{botCount} {botCount === 1 ? 'Bot' : 'Bots'}</span>
+                        <button
+                            className="bot-btn"
+                            onClick={() => setBotCount((n) => Math.min(myRoom.maxPlayers - roomPlayers.length, n + 1))}
+                            disabled={botCount >= myRoom.maxPlayers - roomPlayers.length}
+                        >+</button>
+                    </div>
+                )}
+                {myRoom.isCreator && (
+                    <button onClick={launchGame} disabled={roomPlayers.length + botCount < myRoom.minPlayers}>
                         Launch Game
                     </button>
                 )}
