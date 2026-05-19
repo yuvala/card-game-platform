@@ -3,6 +3,9 @@ import { WebSocket, WebSocketServer } from 'ws';
 
 import {
     isClientMessage,
+    ROLE_CAN_CONFIGURE,
+    ROLE_CAN_TABLE_EVENTS,
+    ROLE_CAN_GAME_EVENTS,
     type ClientRole,
     type ClientMessage,
     type ServerMessage,
@@ -48,7 +51,7 @@ export function createGameWebSocketServer(
     wss.on('connection', (socket) => {
         const client: RewriteClient = {
             socket,
-            role: 'admin',
+            role: 'spectator',
             viewerId: null,
         };
         clients.add(client);
@@ -100,7 +103,7 @@ function handleClientMessage(
         case 'watch-session':
             if (message.role) {
                 client.role = message.role;
-                if (client.role === 'admin') {
+                if (!ROLE_CAN_GAME_EVENTS.has(client.role)) {
                     client.viewerId = null;
                 }
             }
@@ -111,14 +114,18 @@ function handleClientMessage(
             sendView(gameHost, client);
             return;
         case 'configure-session':
-            if (client.role !== 'admin') {
-                sendError(client, 'Only admin clients can configure the session.');
+            if (!ROLE_CAN_CONFIGURE.has(client.role)) {
+                sendError(client, 'Only operator clients can configure the session.');
                 return;
             }
             gameHost.configure(message.config);
             return;
         case 'game-event':
             {
+                if (!ROLE_CAN_GAME_EVENTS.has(client.role)) {
+                    sendError(client, 'Spectators cannot send game events.');
+                    return;
+                }
                 if (client.role === 'player' && !client.viewerId) {
                     sendError(
                         client,

@@ -11,11 +11,12 @@
     "noEmit": true,
     "skipLibCheck": true,
     "types": ["vite/client"],
+    "jsx": "react-jsx",
     "baseUrl": ".",
     "paths": {
       "@engine": ["packages/engine/src/index.ts"],
       "@engine/*": ["packages/engine/src/*"]
     }
   },
-  "include": ["apps/client/src/**/*.ts", "packages/**/*.ts"]
+  "include": ["apps/client/src/**/*.ts", "apps/client/src/**/*.tsx", "packages/**/*.ts"]
 }

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { AdminToolbar } from '../components/AdminToolbar';
 import { GamePanel } from '../app/app/GamePanel';
+import { AdminRoomList } from '../components/AdminRoomList';
 
 export function TableAdminRoute() {
     useEffect(() => {
@@ -31,6 +32,7 @@ export function TableAdminRoute() {
             </AdminToolbar>
             <GamePanel />
             <div id="game-root" className="appRoot"></div>
+            <AdminRoomList />
             <div className="appDevHints">
                 <kbd>D</kbd>
                 {' — toggle zone overlay '}

@@ -13,6 +13,7 @@ export type RewriteProtocolGameEvent =
 export interface SessionConfig {
     gameId: string;
     playerCount: number;
+    playerNames?: string[];
     deckId: string;
     cardsPerPlayer?: number;
     seed?: string;
@@ -20,7 +21,16 @@ export interface SessionConfig {
     botSeats?: number[];
 }
 
-export type ClientRole = 'admin' | 'player';
+/**
+ * operator — configures sessions, sends START/RESTART (table-admin)
+ * player   — sends game moves within their own seat
+ * spectator — read-only observer, no game events
+ */
+export type ClientRole = 'operator' | 'player' | 'spectator';
+
+export const ROLE_CAN_CONFIGURE: ReadonlySet<ClientRole> = new Set(['operator']);
+export const ROLE_CAN_TABLE_EVENTS: ReadonlySet<ClientRole> = new Set(['operator']);
+export const ROLE_CAN_GAME_EVENTS: ReadonlySet<ClientRole> = new Set(['operator', 'player']);
 
 export type ClientMessage =
     | { type: 'watch-session'; sessionId?: string; role?: ClientRole }
@@ -56,8 +66,9 @@ export function isClientMessage(value: unknown): value is ClientMessage {
     if (message.type === 'watch-session') {
         return (
             typeof message.role === 'undefined' ||
-            message.role === 'admin' ||
-            message.role === 'player'
+            message.role === 'operator' ||
+            message.role === 'player' ||
+            message.role === 'spectator'
         );
     }
 
@@ -127,6 +138,7 @@ function isSessionConfig(value: unknown): value is SessionConfig {
     const config = value as {
         gameId?: unknown;
         playerCount?: unknown;
+        playerNames?: unknown;
         deckId?: unknown;
         cardsPerPlayer?: unknown;
         seed?: unknown;
@@ -139,6 +151,9 @@ function isSessionConfig(value: unknown): value is SessionConfig {
         typeof config.playerCount === 'number' &&
         Number.isFinite(config.playerCount) &&
         typeof config.deckId === 'string' &&
+        (typeof config.playerNames === 'undefined' ||
+            (Array.isArray(config.playerNames) &&
+                config.playerNames.every((n) => typeof n === 'string'))) &&
         (typeof config.cardsPerPlayer === 'undefined' ||
             (typeof config.cardsPerPlayer === 'number' &&
                 Number.isFinite(config.cardsPerPlayer))) &&

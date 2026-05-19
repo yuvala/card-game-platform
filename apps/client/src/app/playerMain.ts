@@ -1,5 +1,6 @@
 import { createRemoteGameSession, type RemoteGameSession } from './session/remoteSession';
 import { createPlayerGame } from './player/createPlayerGame';
+import { getGameCatalogEntryById } from '@engine/games/catalog';
 
 export function init(): void {
     const playerRootElement = document.getElementById('player-root');
@@ -65,30 +66,55 @@ export function init(): void {
 
     async function startPlayerPov(): Promise<void> {
         showLoading();
+
         const botCount = Number.parseInt(requestedParams.get('bots') ?? '0', 10);
+        const myNickname = requestedParams.get('nickname') ?? 'Player 1';
+        const gameId = requestedParams.get('game') ?? 'war-lite';
+        const allPlayerNames = parsePlayerNames(requestedParams);
+
+        // Seat index is deterministic: order from Supabase join time (passed in URL)
+        const myIndex = allPlayerNames.length > 0 ? allPlayerNames.indexOf(myNickname) : 0;
+        const isSessionHost = botCount > 0 || myIndex === 0;
+
         const session = await createRemoteGameSession({
             url: getRequestedWebSocketUrl(requestedParams),
-            role: botCount > 0 ? 'admin' : 'player',
+            role: isSessionHost ? 'operator' : 'player',
             sessionId: requestedParams.get('session') ?? undefined,
         });
 
-        if (botCount > 0) {
-            const gameId = requestedParams.get('game') ?? 'war-lite';
-            const playerCount = botCount + 1;
-            const botSeats = Array.from({ length: botCount }, (_, i) => i + 1);
-            await session.configure({
-                gameId,
-                playerCount,
-                deckId: 'french',
-                botSeats,
-            });
+        if (isSessionHost) {
+            const game = getGameCatalogEntryById(gameId);
+            const deckId = game?.defaultDeckId ?? 'french';
+
+            if (botCount > 0) {
+                const playerCount = botCount + 1;
+                const botSeats = Array.from({ length: botCount }, (_, i) => i + 1);
+                const playerNames = [
+                    myNickname,
+                    ...Array.from({ length: botCount }, (_, i) => `Player ${i + 2}`),
+                ];
+                await session.configure({ gameId, playerCount, playerNames, deckId, botSeats });
+            } else {
+                const playerCount = allPlayerNames.length || 2;
+                await session.configure({
+                    gameId,
+                    playerCount,
+                    playerNames: allPlayerNames.length > 0 ? allPlayerNames : undefined,
+                    deckId,
+                });
+            }
         }
 
         activeSession = session;
         clearState();
         activeGame = createPlayerGame('player-root', session);
+
+        // Set viewer BEFORE renderPlayerOptions so it doesn't override our seat selection
+        const myPlayerId = `p${myIndex + 1}`;
+        session.setViewer(myPlayerId);
+        playerSelect.value = myPlayerId;
         renderPlayerOptions(session);
-        selectInitialViewer(session);
+
         session.start();
 
         session.subscribe(() => {
@@ -132,16 +158,6 @@ export function init(): void {
         }
     }
 
-    function selectInitialViewer(session: RemoteGameSession): void {
-        const requestedViewerId = requestedParams.get('player');
-        const players = session.getPlayers();
-        const selectedPlayerId =
-            players.find((player) => player.id === requestedViewerId)?.id ?? players[0]?.id ?? null;
-
-        playerSelect.value = selectedPlayerId ?? '';
-        session.setViewer(selectedPlayerId);
-    }
-
     function syncStatus(session: RemoteGameSession): void {
         const status = session.getStatus();
         if (status.type !== 'connected') {
@@ -170,5 +186,18 @@ export function init(): void {
 
         const protocol = globalThis.location.protocol === 'https:' ? 'wss:' : 'ws:';
         return protocol + '//' + globalThis.location.hostname + ':8787/';
+    }
+}
+
+function parsePlayerNames(params: URLSearchParams): string[] {
+    const raw = params.get('players');
+    if (!raw) return [];
+    try {
+        const parsed = JSON.parse(raw) as unknown;
+        return Array.isArray(parsed)
+            ? parsed.filter((n): n is string => typeof n === 'string')
+            : [];
+    } catch {
+        return [];
     }
 }

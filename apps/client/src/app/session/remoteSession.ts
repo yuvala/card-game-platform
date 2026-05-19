@@ -44,7 +44,7 @@ export async function createRemoteGameSession(
         socket,
         initialMessage,
         input.viewerId ?? null,
-        input.role ?? 'admin',
+        input.role ?? 'operator',
     );
 }
 
@@ -231,7 +231,7 @@ function waitForInitialSessionView(
         };
 
         const handleOpen = () => {
-            const role = input.role ?? 'admin';
+            const role = input.role ?? 'operator';
             sendClientMessage(socket, {
                 type: 'watch-session',
                 sessionId: input.sessionId,

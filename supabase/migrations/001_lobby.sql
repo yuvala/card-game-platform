@@ -7,6 +7,7 @@ create table public.rooms (
   status text not null default 'waiting'
     check (status in ('waiting', 'playing', 'done')),
   max_players int not null default 2,
+  creator_nickname text,
   ws_url text,
   created_at timestamptz not null default now()
 );

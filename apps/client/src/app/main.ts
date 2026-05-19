@@ -76,6 +76,7 @@ export function init(): void {
             ),
             deckId: resolveDeckId(selectedGame, selection.deckId),
         };
+        const previousPlayerNames = activeRuntime?.session.playerNames.slice() ?? [];
         const playerNames = buildPlayerNames(normalizedSelection.playerCount);
         const deckDefinition = supportedDeckDefinitions[normalizedSelection.deckId];
         const activeDebugScenario = getActiveDebugScenario(
@@ -97,6 +98,7 @@ export function init(): void {
             selectedGame,
             selection: normalizedSelection,
             playerNames,
+            previousPlayerNames,
             deckDefinition,
             requestedCardsPerPlayer,
             requestedSeed,
@@ -264,6 +266,7 @@ export function init(): void {
         selectedGame: AnyGameCatalogEntry;
         selection: GameSelection;
         playerNames: string[];
+        previousPlayerNames: string[];
         deckDefinition: (typeof supportedDeckDefinitions)[keyof typeof supportedDeckDefinitions];
         requestedCardsPerPlayer?: number;
         requestedSeed?: string;
@@ -276,12 +279,16 @@ export function init(): void {
         if (shouldUseWebSocketSession) {
             const session = await createRemoteGameSession({
                 url: getRequestedWebSocketUrl(requestedParams),
-                role: 'admin',
+                role: 'operator',
                 sessionId: requestedParams.get('session') ?? undefined,
             });
+            const resolvedPlayerNames = input.previousPlayerNames.length > 0
+                ? input.previousPlayerNames.slice(0, input.selection.playerCount)
+                : undefined;
             await session.configure({
                 gameId: input.selection.gameId,
                 playerCount: input.selection.playerCount,
+                playerNames: resolvedPlayerNames,
                 deckId: input.selection.deckId,
                 cardsPerPlayer: input.requestedCardsPerPlayer,
                 seed: input.requestedSeed,

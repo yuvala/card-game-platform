@@ -1,4 +1,3 @@
-﻿import playersData from '../../../apps/client/data/players.json';
 import { supportedDeckDefinitions } from '@engine/engine/cards/deckDefinitions';
 import {
     resolveDeckId,
@@ -12,14 +11,11 @@ import type { ServerMessage, SessionConfig, SessionPlayerSummary } from '@engine
 import { DEFAULT_GAME_ID, getGameCatalogEntryById } from '@engine/games/catalog';
 import { runDebugScenario } from './debugScenarios';
 
-interface PlayerSeedRecord {
-    playerName?: string;
-}
-
 export interface RewriteSessionHostOptions {
     sessionId?: string;
     gameId?: string;
     playerCount?: number;
+    playerNames?: string[];
     deckId?: string;
     cardsPerPlayer?: number;
     seed?: string;
@@ -118,6 +114,10 @@ export class GameSessionHost {
     }
 
     stop(): void {
+        if (this.botTimer) {
+            clearTimeout(this.botTimer);
+            this.botTimer = null;
+        }
         this.sessionSubscription?.unsubscribe();
         this.sessionSubscription = null;
         this.session.stop();
@@ -134,15 +134,16 @@ export class GameSessionHost {
         const playerCount = resolvePlayerCount(
             this.entry,
             options.playerCount,
-            getSeedPlayerNames().length,
+            options.playerNames?.length ?? this.entry.maxPlayers,
         );
         const deckId = resolveDeckId(this.entry, options.deckId);
         const deckDefinition = supportedDeckDefinitions[deckId];
+        const playerNames = resolvePlayerNames(options.playerNames, playerCount);
 
         return createLocalGameSession({
             id: this.sessionId,
             entry: this.entry,
-            playerNames: getSeedPlayerNames().slice(0, playerCount),
+            playerNames,
             options: {
                 deckDefinition,
                 cardsPerPlayer: options.cardsPerPlayer,
@@ -187,7 +188,6 @@ export class GameSessionHost {
         const moves = this.entry.definition.getLegalMoves(snapshot.context, botPlayer.id);
         if (moves.length === 0) return;
 
-        // For games that need select-card then queue-play, send both
         const selectMove = moves.find((m: any) => m.type === 'select-card');
         const playMove = moves.find((m: any) => m.type === 'queue-play');
 
@@ -264,9 +264,6 @@ function resolveGame(gameId: string | null | undefined): AnyGameCatalogEntry {
     return entry;
 }
 
-function getSeedPlayerNames(): string[] {
-    const records = (playersData as { players?: PlayerSeedRecord[] }).players ?? [];
-    return records
-        .map((player) => player.playerName)
-        .filter((name): name is string => Boolean(name));
+function resolvePlayerNames(names: string[] | undefined, playerCount: number): string[] {
+    return Array.from({ length: playerCount }, (_, i) => names?.[i] ?? `Player ${i + 1}`);
 }

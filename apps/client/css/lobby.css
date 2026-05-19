@@ -202,6 +202,12 @@ h2 {
     text-shadow: 0 1px 4px rgba(0, 0, 0, 0.8);
 }
 
+.room-host {
+    font-size: 0.85rem;
+    color: #a08860;
+    padding: 0 8px;
+}
+
 .room-count {
     font-family: 'Cinzel', serif;
     font-size: 0.8rem;
