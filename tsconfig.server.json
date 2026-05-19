@@ -21,6 +21,6 @@
   "include": [
     "apps/server/**/*.ts",
     "packages/**/*.ts",
-    "html/data/**/*.json"
+    "apps/client/data/**/*.json"
   ]
 }

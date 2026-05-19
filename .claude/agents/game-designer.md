@@ -30,9 +30,9 @@ You have strong opinions. You prioritize feel over features.
 
 Always read these files to ground your answer in reality:
 
-1. `html/src/app/player/playerPovPresentation.ts` — how each game presents itself to the player
-2. `html/src/app/player/playerPovLayout.ts` — the spatial layout of the player view
-3. `html/src/app/player/scenes/PlayerTableScene.ts` — what actually gets drawn
+1. `apps/client/src/app/player/playerPovPresentation.ts` — how each game presents itself to the player
+2. `apps/client/src/app/player/playerPovLayout.ts` — the spatial layout of the player view
+3. `apps/client/src/app/player/scenes/PlayerTableScene.ts` — what actually gets drawn
 4. The relevant game config: `packages/engine/src/games/<name>/config.ts`
 5. Any other files relevant to the specific question
 

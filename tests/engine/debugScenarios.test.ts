@@ -2,7 +2,7 @@
 
 import { frenchDeckDefinition } from "@engine/engine/cards/deckDefinitions";
 import { createWarLiteMachine } from "@engine/games/warLite/machine";
-import { getDebugScenarioById } from "../../html/src/app/app/debugScenarios";
+import { getDebugScenarioById } from "../../apps/client/src/app/app/debugScenarios";
 
 declare const process: { exitCode?: number };
 

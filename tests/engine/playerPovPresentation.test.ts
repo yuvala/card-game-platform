@@ -1,5 +1,5 @@
 ﻿import type { CardGameViewModel } from "@engine/engine/game/viewModel";
-import { getPlayerPovPresentation } from "../../html/src/app/player/playerPovPresentation";
+import { getPlayerPovPresentation } from "../../apps/client/src/app/player/playerPovPresentation";
 
 declare const process: { exitCode?: number };
 

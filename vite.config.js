@@ -3,7 +3,7 @@ const { defineConfig } = require("vite");
 const react = require("@vitejs/plugin-react");
 
 module.exports = defineConfig({
-    root: "html",
+    root: "apps/client",
     envDir: __dirname,
     plugins: [react()],
     resolve: {
@@ -20,16 +20,14 @@ module.exports = defineConfig({
         port: 4173
     },
     build: {
-        outDir: "../dist",
+        outDir: "../../dist",
         emptyOutDir: true,
         rollupOptions: {
             input: {
-                index: resolve(__dirname, "html/index.html"),
-                game: resolve(__dirname, "html/game.html"),
-                table: resolve(__dirname, "html/rewrite.html"),
-                player: resolve(__dirname, "html/player.html"),
-                cardSandbox: resolve(__dirname, "html/card-sandbox.html"),
-                lobby: resolve(__dirname, "html/lobby.html")
+                table: resolve(__dirname, "apps/client/rewrite.html"),
+                player: resolve(__dirname, "apps/client/player.html"),
+                cardSandbox: resolve(__dirname, "apps/client/card-sandbox.html"),
+                lobby: resolve(__dirname, "apps/client/lobby.html")
             }
         }
     }

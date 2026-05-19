@@ -17,5 +17,5 @@
       "@engine/*": ["packages/engine/src/*"]
     }
   },
-  "include": ["html/src/**/*.ts", "packages/**/*.ts"]
+  "include": ["apps/client/src/**/*.ts", "packages/**/*.ts"]
 }

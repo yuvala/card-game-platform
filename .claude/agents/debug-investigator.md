@@ -17,7 +17,7 @@ You are read-only. You do not fix code — you find root causes.
 
 ```
 rules.ts  →  viewModel.ts  →  presenter  →  animation  →  UI
- engine        engine          html/app      html/app     Phaser
+ engine        engine          client/app    client/app   Phaser
 ```
 
 A symptom at the end of the pipe (wrong visual, wrong position) can originate at any earlier stage.
@@ -42,10 +42,10 @@ A symptom at the end of the pipe (wrong visual, wrong position) can originate at
 | Game rules | `packages/engine/src/games/<name>/rules.ts` | engine-dev |
 | State setup | `packages/engine/src/games/<name>/setup.ts` | engine-dev |
 | ViewModel | `packages/engine/src/games/<name>/viewModel.ts` | engine-dev |
-| Presenter | `html/src/app/phaser/scenes/presenters/` | ui-dev |
-| Table scene | `html/src/app/phaser/scenes/TableScene.ts` | ui-dev |
-| Player scene | `html/src/app/player/scenes/PlayerTableScene.ts` | ui-dev |
-| Animation | `html/src/app/phaser/scenes/animations/` | ui-dev |
+| Presenter | `apps/client/src/app/phaser/scenes/presenters/` | ui-dev |
+| Table scene | `apps/client/src/app/phaser/scenes/TableScene.ts` | ui-dev |
+| Player scene | `apps/client/src/app/player/scenes/PlayerTableScene.ts` | ui-dev |
+| Animation | `apps/client/src/app/phaser/scenes/animations/` | ui-dev |
 | State sync | `apps/server/src/` | engine-dev |
 
 ## Common bug patterns in this codebase

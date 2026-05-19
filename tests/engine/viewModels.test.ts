@@ -10,7 +10,7 @@ import { getPokerLiteHandPileId } from "@engine/games/pokerLite/types";
 import { getPokerLiteViewModel } from "@engine/games/pokerLite/viewModel";
 import { createWarLiteMachine } from "@engine/games/warLite/machine";
 import { getWarLiteViewModel } from "@engine/games/warLite/viewModel";
-import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../../html/src/app/phaser/scenes/layout/tableCardLayouts";
+import { getTableCardDisplayState, getTrickSeatCardDisplayState } from "../../apps/client/src/app/phaser/scenes/layout/tableCardLayouts";
 
 declare const process: { exitCode?: number };
 
