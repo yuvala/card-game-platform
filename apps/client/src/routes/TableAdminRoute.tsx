@@ -2,6 +2,19 @@ import React, { useEffect } from "react";
 
 export function TableAdminRoute() {
     useEffect(() => {
+        const layers: Record<string, string> = {
+            origins: "dbg-origins", slots: "dbg-slots", piles: "dbg-piles"
+        };
+        Object.entries(layers).forEach(([layer, id]) => {
+            const el = document.getElementById(id) as HTMLInputElement | null;
+            if (!el) return;
+            el.checked = localStorage.getItem("debug-layer-" + layer) === "on";
+            el.addEventListener("change", () => {
+                localStorage.setItem("debug-layer-" + layer, el.checked ? "on" : "off");
+                globalThis.dispatchEvent(new Event("debug-layer-change"));
+            });
+        });
+
         import("../app/main").then((m) => m.init());
     }, []);
 
