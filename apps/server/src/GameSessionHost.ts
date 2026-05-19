@@ -190,7 +190,7 @@ export class GameSessionHost {
         if (!botPlayer) return;
 
         const snapshot = this.session.getSnapshot();
-        const moves = this.entry.definition.getLegalMoves(snapshot, botPlayer.id);
+        const moves = this.entry.definition.getLegalMoves(snapshot.context, botPlayer.id);
         if (moves.length === 0) return;
 
         // For games that need select-card then queue-play, send both

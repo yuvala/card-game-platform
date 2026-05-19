@@ -5,7 +5,7 @@ export function init(): void {
 const playerRootElement = document.getElementById("player-root");
 const playerSelectElement = document.getElementById("player-viewer-select");
 const playerStatusElement = document.getElementById("player-status");
-const requestedParams = new URLSearchParams(window.location.search);
+const requestedParams = new URLSearchParams(globalThis.location.search);
 
 if (
     !playerRootElement ||
@@ -21,11 +21,49 @@ const playerStatus = playerStatusElement;
 let activeSession: RemoteGameSession | null = null;
 let activeGame: ReturnType<typeof createPlayerGame> | null = null;
 
+function showLoading(): void {
+    playerRootElement!.innerHTML =
+        `<div class="playerState"><div class="playerStateSpinner"></div><p class="playerStateMsg">Connecting…</p></div>`;
+}
+
+function showError(message: string): void {
+    const wrap = document.createElement("div");
+    wrap.className = "playerState playerState--error";
+    const msg = document.createElement("p");
+    msg.className = "playerStateMsg";
+    msg.textContent = message;
+    const btn = document.createElement("button");
+    btn.className = "playerStateRetry";
+    btn.textContent = "Retry";
+    btn.addEventListener("click", retry);
+    wrap.appendChild(msg);
+    wrap.appendChild(btn);
+    playerRootElement!.replaceChildren(wrap);
+}
+
+function clearState(): void {
+    playerRootElement!.replaceChildren();
+}
+
+function retry(): void {
+    activeGame?.destroy(true);
+    activeGame = null;
+    activeSession?.stop();
+    activeSession = null;
+    startPlayerPov().catch((error) => {
+        showError(error instanceof Error ? error.message : "Failed to connect");
+    });
+}
+
+showLoading();
 startPlayerPov().catch((error) => {
-    playerStatus.textContent = error instanceof Error ? error.message : "Failed to connect to table.";
+    const message = error instanceof Error ? error.message : "Failed to connect to table.";
+    playerStatus.textContent = message;
+    showError(message);
 });
 
 async function startPlayerPov(): Promise<void> {
+    showLoading();
     const botCount = Number.parseInt(requestedParams.get("bots") ?? "0", 10);
     const session = await createRemoteGameSession({
         url: getRequestedWebSocketUrl(requestedParams),
@@ -46,6 +84,7 @@ async function startPlayerPov(): Promise<void> {
     }
 
     activeSession = session;
+    clearState();
     activeGame = createPlayerGame("player-root", session);
     renderPlayerOptions(session);
     selectInitialViewer(session);
@@ -62,7 +101,7 @@ async function startPlayerPov(): Promise<void> {
         syncStatus(session);
     });
 
-    window.addEventListener("beforeunload", () => {
+    globalThis.addEventListener("beforeunload", () => {
         activeGame?.destroy(true);
         activeSession?.stop();
     });
@@ -126,7 +165,7 @@ function getRequestedWebSocketUrl(params: URLSearchParams): string {
         return envUrl;
     }
 
-    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-    return protocol + "//" + window.location.hostname + ":8787/";
+    const protocol = globalThis.location.protocol === "https:" ? "wss:" : "ws:";
+    return protocol + "//" + globalThis.location.hostname + ":8787/";
 }
 }
