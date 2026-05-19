@@ -1,4 +1,5 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 
 export function TableAdminRoute() {
     useEffect(() => {
@@ -25,6 +26,10 @@ export function TableAdminRoute() {
             <div className="appIntro">
                 <p className="appEyebrow">Card Game</p>
                 <h1 id="game-title">Card Game</h1>
+                <nav className="appAdminNav">
+                    <Link to="/sandbox" className="appAdminNavLink">Card Sandbox</Link>
+                    <Link to="/" className="appAdminNavLink">Lobby</Link>
+                </nav>
             </div>
             <div id="game-setup" className="appSetupMount"></div>
             <div id="game-root" className="appRoot"></div>

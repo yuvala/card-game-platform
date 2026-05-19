@@ -358,6 +358,23 @@ a {
     margin: 0 auto;
 }
 
+.appAdminNav {
+    display: flex;
+    gap: 16px;
+    margin-top: 12px;
+}
+
+.appAdminNavLink {
+    font-size: 13px;
+    color: rgba(255, 209, 102, 0.7);
+    text-decoration: none;
+    letter-spacing: 0.04em;
+}
+
+.appAdminNavLink:hover {
+    color: #ffd166;
+}
+
 .appDevHints {
     text-align: center;
     margin-top: 10px;
@@ -427,11 +444,13 @@ a {
     z-index: 100;
     pointer-events: none;
     visibility: hidden;
+    transition: visibility 0s 280ms;
 }
 
 .playerSettings.open {
     pointer-events: auto;
     visibility: visible;
+    transition: visibility 0s;
 }
 
 .playerSettingsBackdrop {
@@ -452,7 +471,9 @@ a {
     right: 0;
     bottom: 0;
     width: min(280px, 80vw);
-    background: #0c2419;
+    background: rgba(12, 36, 25, 0.5);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-left: 1px solid rgba(255, 209, 102, 0.2);
     padding: 56px 20px 32px;
     display: grid;
