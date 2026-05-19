@@ -1,4 +1,4 @@
-﻿import playersData from "../../../html/data/players.json";
+﻿import playersData from "../../../apps/client/data/players.json";
 import { supportedDeckDefinitions } from "@engine/engine/cards/deckDefinitions";
 import { resolveDeckId, resolvePlayerCount, type AnyGameCatalogEntry } from "@engine/engine/game/catalog";
 import { createSeededRandom } from "@engine/engine/game/random";
