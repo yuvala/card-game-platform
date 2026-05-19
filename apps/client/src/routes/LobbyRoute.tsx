@@ -3,16 +3,7 @@ import { App as LobbyApp } from '../lobby/App';
 
 export function LobbyRoute() {
     useEffect(() => {
-        const preferred = [
-            '/assets/lobby/lobby-bg_01.png',
-            '/assets/lobby/lobby-bg_02.png',
-            '/assets/lobby/lobby-bg_03.png',
-        ];
-        const fallbacks = ['/images/bg-brisca.jpg', '/images/map4.jpg'];
-        const candidates = [
-            preferred[Math.floor(Math.random() * preferred.length)],
-            ...fallbacks,
-        ];
+        const candidates = ['/images/bg-brisca.jpg', '/images/map4.jpg'];
 
         const bgEl = document.getElementById('lobby-bg');
         const rootEl = document.getElementById('lobby-root');
