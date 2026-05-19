@@ -15,13 +15,16 @@
     "simulate": "\"%npm_node_execpath%\" .\\scripts\\simulate.cjs",
     "serve:ws": "tsc -p tsconfig.server.json && node .\\scripts\\resolve-engine-aliases.cjs .tmp-server && node .tmp-server/apps/server/src/gameServer.js",
     "preview": "vite preview --config vite.config.js",
-    "serve:legacy": "node node.js/server.js"
+    "serve:legacy": "node node.js/server.js",
+    "format": "prettier --write \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\"",
+    "format:check": "prettier --check \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\""
   },
   "devDependencies": {
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@types/ws": "^8.18.1",
     "@vitejs/plugin-react": "^6.0.2",
+    "prettier": "^3.8.3",
     "typescript": "^6.0.3",
     "vite": "^8.0.10"
   },

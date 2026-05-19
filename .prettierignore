@@ -1,0 +1,5 @@
+dist
+.tmp-server
+node_modules
+*.json
+*.md
