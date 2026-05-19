@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { supabase } from './supabase';
+import { getGameCatalogEntryById } from '@engine/games/catalog';
 
 interface Room {
     id: string;
@@ -16,21 +17,30 @@ interface Props {
     readonly onLogout: () => void;
 }
 
-async function tryStartGame(roomId: string) {
-    const [{ count }, { data: room }] = await Promise.all([
-        supabase.from('players').select('*', { count: 'exact', head: true }).eq('room_id', roomId),
-        supabase.from('rooms').select('max_players, status').eq('id', roomId).single(),
-    ]);
-
-    if (!room || count === null || room.status !== 'waiting') return;
-    if (count < room.max_players) return;
-
+async function startRoom(roomId: string): Promise<{ wsUrl: string; bots: number; playerNames: string[] }> {
     const wsUrl = (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
+    const { data: players } = await supabase
+        .from('players')
+        .select('nickname')
+        .eq('room_id', roomId)
+        .order('joined_at', { ascending: true });
+
+    const { data: room } = await supabase
+        .from('rooms')
+        .select('max_players')
+        .eq('id', roomId)
+        .single();
+
+    const playerNames = players?.map((p: any) => p.nickname as string) ?? [];
+    const bots = Math.max(0, (room?.max_players ?? 2) - playerNames.length);
+
     await supabase
         .from('rooms')
         .update({ status: 'playing', ws_url: wsUrl })
         .eq('id', roomId)
         .eq('status', 'waiting');
+
+    return { wsUrl, bots, playerNames };
 }
 
 function redirectToGame(
@@ -61,6 +71,8 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
     const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number; isCreator: boolean } | null>(
         null,
     );
+    const [roomPlayers, setRoomPlayers] = useState<string[]>([]);
+    const [leftMessage, setLeftMessage] = useState<string | null>(null);
 
     // Restore room state after page refresh
     useEffect(() => {
@@ -95,6 +107,52 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
             supabase.removeChannel(sub);
         };
     }, []);
+
+    // Fetch and subscribe to players in my room
+    useEffect(() => {
+        if (!myRoom) { setRoomPlayers([]); return; }
+
+        let prev: string[] = [];
+
+        async function fetchPlayers() {
+            const { data } = await supabase
+                .from('players')
+                .select('nickname')
+                .eq('room_id', myRoom!.id)
+                .order('joined_at', { ascending: true });
+            const next = data?.map((p: any) => p.nickname as string) ?? [];
+            const left = prev.filter((n) => !next.includes(n));
+            if (left.length > 0) {
+                setLeftMessage(`${left[0]} left the room`);
+                setTimeout(() => setLeftMessage(null), 3000);
+            }
+            prev = next;
+            if (prev.length > 0 && !next.includes(nickname)) {
+                setMyRoom(null);
+                return;
+            }
+            setRoomPlayers(next);
+        }
+
+        fetchPlayers();
+
+        const sub = supabase
+            .channel(`room-players-${myRoom.id}`)
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${myRoom.id}` }, fetchPlayers)
+            .subscribe();
+
+        const handleUnload = () => {
+            const roomId = myRoom.id;
+            const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/players?room_id=eq.${roomId}&user_id=eq.${userId}`;
+            navigator.sendBeacon(url, '');
+        };
+        window.addEventListener('beforeunload', handleUnload);
+
+        return () => {
+            supabase.removeChannel(sub);
+            window.removeEventListener('beforeunload', handleUnload);
+        };
+    }, [myRoom]);
 
     // Subscribe to my specific room once joined
     useEffect(() => {
@@ -153,10 +211,10 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
     async function createRoom(gameId: string) {
         setCreating(true);
-        const maxPlayers = gameId === 'poker-lite' ? 4 : 2;
+        const maxPlayers = getGameCatalogEntryById(gameId)?.maxPlayers ?? 2;
         const { data: room } = await supabase
             .from('rooms')
-            .insert({ game_id: gameId, max_players: maxPlayers, creator_nickname: nickname })
+            .insert({ game_id: gameId, max_players: maxPlayers, creator_nickname: nickname, creator_user_id: userId })
             .select()
             .single();
         if (room) await joinRoom(room.id, room.game_id, true);
@@ -176,47 +234,56 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
             .single();
 
         setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, isCreator });
-        await tryStartGame(roomId);
     }
 
     async function leaveRoom() {
         if (!myRoom) return;
+        await supabase.from('players').delete().eq('room_id', myRoom.id).eq('user_id', userId);
         if (myRoom.isCreator) {
             await supabase.from('rooms').update({ status: 'done' }).eq('id', myRoom.id);
-        } else {
-            await supabase.from('players').delete().eq('room_id', myRoom.id).eq('user_id', userId);
         }
         setMyRoom(null);
         await fetchRooms();
     }
 
-    async function playWithBots() {
+    async function kickPlayer(playerNickname: string) {
         if (!myRoom) return;
-        const wsUrl = (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
         await supabase
-            .from('rooms')
-            .update({ status: 'playing', ws_url: wsUrl })
-            .eq('id', myRoom.id)
-            .eq('status', 'waiting');
-        const bots = myRoom.maxPlayers - 1;
-        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, nickname, bots, [nickname]);
+            .from('players')
+            .delete()
+            .eq('room_id', myRoom.id)
+            .eq('nickname', playerNickname);
+    }
+
+    async function launchGame() {
+        if (!myRoom) return;
+        const { wsUrl, bots, playerNames } = await startRoom(myRoom.id);
+        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, nickname, bots, playerNames);
     }
 
     if (myRoom) {
         return (
             <div className="lobby-center">
-                <h1>Lobby</h1>
-                <p
-                    style={{
-                        color: '#d4b896',
-                        fontStyle: 'italic',
-                        fontSize: '1.2rem',
-                        textShadow: '0 1px 6px rgba(0,0,0,0.9)',
-                    }}
-                >
-                    Waiting for players…
-                </p>
-                <button onClick={playWithBots}>Play vs Computer</button>
+                <h1>{GAME_LABELS[myRoom.gameId] ?? myRoom.gameId}</h1>
+                {leftMessage && <p className="waiting-left-msg">{leftMessage}</p>}
+                <div className="waiting-players">
+                    {roomPlayers.map((name) => (
+                        <div key={name} className="waiting-player">
+                            <span className="waiting-player-suit">♠</span>{' '}{name}
+                            {myRoom.isCreator && name !== nickname && (
+                                <button className="waiting-player-kick" onClick={() => kickPlayer(name)} title="Kick player">✕</button>
+                            )}
+                        </div>
+                    ))}
+                    {Array.from({ length: myRoom.maxPlayers - roomPlayers.length }, (_, i) => (
+                        <div key={`empty-slot-${roomPlayers.length + i}`} className="waiting-player waiting-player--empty">
+                            <span className="waiting-player-suit">·</span>{' '}Waiting…
+                        </div>
+                    ))}
+                </div>
+                {myRoom.isCreator && (
+                    <button onClick={launchGame}>Launch Game</button>
+                )}
                 <button
                     onClick={leaveRoom}
                     style={{
