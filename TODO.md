@@ -45,14 +45,14 @@
 
 ## Future: Card Deck Builder
 
-מנוע עצמאי ליצירת חבילות קלפים מותאמות. דורש:
-- עורך ויזואלי לגב הקלף (canvas/Phaser) + בחירת עיצוב/קימור
-- יצירת `DeckDefinition` מותאמת
-- יצירת card textures דינמית בזמן ריצה (כרגע תמונות סטטיות)
-- אחסון decks (Supabase)
-- route חדש `/deck-builder` + link מה-table-admin header
+Standalone engine for creating custom card decks. Requires:
+- Visual card-back editor (canvas/Phaser) — border radius, artwork, design
+- Custom `DeckDefinition` builder
+- Dynamic card texture generation at runtime (currently static images)
+- Deck storage (Supabase)
+- New route `/deck-builder` + link from table-admin header
 
-לא לגעת עד שהמשחק יציב ב-production ויש ביקוש.
+Do not build until the game is stable in production and there is user demand.
 
 ## Priority 3: Optimize
 
