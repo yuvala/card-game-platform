@@ -21,11 +21,11 @@ node scripts/run-tests.cjs   # runs all; individual tests can't be run in isolat
 Full manual QA flow:
 1. `npm run serve:ws` in one terminal
 2. `npm run dev` in another
-3. Open `http://127.0.0.1:8000/lobby.html` — create a room, play vs computer
+3. Open `http://localhost:8000/` — create a room, play vs computer
 
-Single-player shortcut (no lobby): `player.html?game=war-lite&wsUrl=ws://localhost:8787&bots=1`
-Admin table view: `rewrite.html?autostart=1`
-Fallback (no WebSocket server): `rewrite.html?transport=local&autostart=1`
+Single-player shortcut (no lobby): `http://localhost:8000/player?game=war-lite&wsUrl=ws://localhost:8787&bots=1`
+Admin table view: `http://localhost:8000/table-admin?autostart=1`
+Fallback (no WebSocket server): `http://localhost:8000/table-admin?transport=local&autostart=1`
 
 ## Architecture
 
