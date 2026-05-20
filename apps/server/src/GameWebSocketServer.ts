@@ -11,6 +11,7 @@ import {
     type ServerMessage,
 } from '@engine/session/protocol';
 import { GameSessionHost, type RewriteSessionHostOptions } from './GameSessionHost';
+import { logger } from './logger';
 
 interface RewriteClient {
     socket: WebSocket;
@@ -55,6 +56,7 @@ export function createGameWebSocketServer(
             viewerId: null,
         };
         clients.add(client);
+        logger.info({ clients: clients.size }, 'client connected');
 
         socket.on('message', (payload) => {
             handleSocketMessage(gameHost, client, payload.toString());
@@ -62,6 +64,7 @@ export function createGameWebSocketServer(
 
         socket.on('close', () => {
             clients.delete(client);
+            logger.info({ clients: clients.size }, 'client disconnected');
         });
     });
 
@@ -87,6 +90,7 @@ function handleSocketMessage(
     }
 
     if (!isClientMessage(parsed)) {
+        logger.warn({ raw: rawMessage.slice(0, 200) }, 'rejected invalid client message');
         sendError(client, 'Unsupported client message.');
         return;
     }
@@ -115,9 +119,14 @@ function handleClientMessage(
             return;
         case 'configure-session':
             if (!ROLE_CAN_CONFIGURE.has(client.role)) {
+                logger.warn({ role: client.role }, 'configure-session rejected — not operator');
                 sendError(client, 'Only operator clients can configure the session.');
                 return;
             }
+            logger.info(
+                { gameId: message.config.gameId, playerCount: message.config.playerCount, botSeats: message.config.botSeats, playerNames: message.config.playerNames },
+                'configure-session',
+            );
             gameHost.configure(message.config);
             return;
         case 'game-event':

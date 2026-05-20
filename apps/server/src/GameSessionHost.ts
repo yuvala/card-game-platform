@@ -10,6 +10,7 @@ import type { CardGameEvent } from '@engine/engine/game/types';
 import type { ServerMessage, SessionConfig, SessionPlayerSummary } from '@engine/session/protocol';
 import { DEFAULT_GAME_ID, getGameCatalogEntryById } from '@engine/games/catalog';
 import { runDebugScenario } from './debugScenarios';
+import { logger } from './logger';
 
 export interface RewriteSessionHostOptions {
     sessionId?: string;
@@ -139,6 +140,10 @@ export class GameSessionHost {
         const deckId = resolveDeckId(this.entry, options.deckId);
         const deckDefinition = supportedDeckDefinitions[deckId];
         const playerNames = resolvePlayerNames(options.playerNames, playerCount);
+        logger.info(
+            { gameId: this.entry.id, requestedPlayerCount: options.playerCount, resolvedPlayerCount: playerCount, playerNames, deckId },
+            'session created',
+        );
 
         return createLocalGameSession({
             id: this.sessionId,
