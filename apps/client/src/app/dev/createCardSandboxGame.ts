@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 
+import { buildPhaserConfig } from '../phaser/buildPhaserConfig';
 import { CardSandboxScene } from './scenes/CardSandboxScene';
 
 const CARD_SANDBOX_WIDTH = 1280;
@@ -16,25 +17,15 @@ export type CardSandboxSection = 'real' | 'ghost' | 'layer' | 'cards';
 
 export function createCardSandboxGame(parent: string, initialDeckId: string): CardSandboxGame {
     const scene = new CardSandboxScene(initialDeckId);
-    const game = new Phaser.Game({
-        type: Phaser.AUTO,
+    const game = new Phaser.Game(buildPhaserConfig(CARD_SANDBOX_WIDTH, CARD_SANDBOX_HEIGHT, {
         parent,
-        width: CARD_SANDBOX_WIDTH,
-        height: CARD_SANDBOX_HEIGHT,
         backgroundColor: '#07140f',
-        render: {
-            antialias: true,
-            antialiasGL: true,
-            roundPixels: true,
-            mipmapFilter: 'LINEAR',
-        },
         scale: {
             mode: Phaser.Scale.FIT,
-            autoRound: true,
             autoCenter: Phaser.Scale.CENTER_BOTH,
         },
         scene: [scene],
-    });
+    }));
 
     return {
         game,

@@ -27,6 +27,7 @@ import {
     preloadFrenchCardTextures,
 } from '../../phaser/cards/CardTextureFactory';
 import { sfxPlayer } from '../../../audio/sfxPlayer';
+import { musicPlayer } from '../../../audio/musicPlayer';
 import { PLAYER_GAME_HEIGHT, PLAYER_GAME_WIDTH } from '../createPlayerGame';
 import {
     getHandCardPoint,
@@ -217,6 +218,7 @@ export class PlayerTableScene extends Phaser.Scene {
     }
 
     create(): void {
+        musicPlayer.setMode('game');
         this.animationLayer = createCardAnimationLayer(this, 1000);
 
         this.subscription = this.session.subscribe(() => {

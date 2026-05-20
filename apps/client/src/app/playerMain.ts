@@ -1,8 +1,10 @@
 import { createRemoteGameSession, type RemoteGameSession } from './session/remoteSession';
 import { createPlayerGame } from './player/createPlayerGame';
 import { getGameCatalogEntryById } from '@engine/games/catalog';
+import { audioManager } from '../audio/audioManager';
 
 export function init(): void {
+    audioManager.init();
     const playerRootElement = document.getElementById('player-root');
     const playerSelectElement = document.getElementById('player-viewer-select');
     const requestedParams = new URLSearchParams(globalThis.location.search);
@@ -111,6 +113,10 @@ export function init(): void {
 
         session.subscribe(() => {
             renderPlayerOptions(session);
+            const vm = session.getViewModel();
+            if (vm?.outcome) {
+                globalThis.dispatchEvent(new CustomEvent('player-game-over'));
+            }
         });
 
         playerSelect.addEventListener('change', () => {

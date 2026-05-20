@@ -1,8 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { audioManager } from '../audio/audioManager';
 
 export function PlayerRoute() {
     const [showLeaveDialog, setShowLeaveDialog] = useState(false);
+    const [isGameOver, setIsGameOver] = useState(false);
+    const [sfxEnabled, setSfxEnabled] = useState(() => audioManager.getSettings().sfxEnabled);
+    const [musicEnabled, setMusicEnabled] = useState(() => audioManager.getSettings().musicEnabled);
+    useEffect(() => {
+        const onGameOver = () => setIsGameOver(true);
+        globalThis.addEventListener('player-game-over', onGameOver);
+        return () => globalThis.removeEventListener('player-game-over', onGameOver);
+    }, []);
     useEffect(() => {
         const shell = document.querySelector('.playerShell') as HTMLElement | null;
         const settings = document.getElementById('player-settings');
@@ -69,6 +78,20 @@ export function PlayerRoute() {
                 <div className="playerSettingsPanel">
                     <p className="playerSettingsTitle">Settings</p>
                     <label className="playerSettingsRow">
+                        SFX
+                        <input type="checkbox" checked={sfxEnabled} onChange={(e) => {
+                            setSfxEnabled(e.target.checked);
+                            audioManager.update({ sfxEnabled: e.target.checked });
+                        }} />
+                    </label>
+                    <label className="playerSettingsRow">
+                        Music
+                        <input type="checkbox" checked={musicEnabled} onChange={(e) => {
+                            setMusicEnabled(e.target.checked);
+                            audioManager.update({ musicEnabled: e.target.checked });
+                        }} />
+                    </label>
+                    <label className="playerSettingsRow">
                         Show debug bar
                         <input type="checkbox" id="settings-debug-bar" />
                     </label>
@@ -95,10 +118,10 @@ export function PlayerRoute() {
                 <div className="playerCanvasButtons">
                     <button
                         className="playerLeaveButton"
-                        onClick={() => setShowLeaveDialog(true)}
+                        onClick={() => { if (isGameOver) { location.href = '/'; } else { setShowLeaveDialog(true); } }}
                         aria-label="Leave game"
                     >
-                        ✕ Leave
+                        ←
                     </button>
                     <button
                         className="playerSettingsButton"
