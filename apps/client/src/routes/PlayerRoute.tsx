@@ -83,7 +83,21 @@ export function PlayerRoute() {
                     Viewing Seat
                 </label>
                 <select id="player-viewer-select" className="playerSelect"></select>
-                <div className="playerHeaderActions">
+                <p id="player-status" className="playerStatus">
+                    Connecting to table...
+                </p>
+            </header>
+            <ConfirmDialog
+                open={showLeaveDialog}
+                title="Leave the game?"
+                confirmLabel="Leave"
+                cancelLabel="Stay"
+                onConfirm={() => { location.href = '/'; }}
+                onCancel={() => setShowLeaveDialog(false)}
+            />
+            <main className="playerDeviceFrame">
+                <div id="player-root" className="playerRoot"></div>
+                <div className="playerCanvasButtons">
                     <button
                         className="playerSettingsButton"
                         onClick={() => globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'))}
@@ -99,17 +113,6 @@ export function PlayerRoute() {
                         ✕ Leave
                     </button>
                 </div>
-            </header>
-            <ConfirmDialog
-                open={showLeaveDialog}
-                title="Leave the game?"
-                confirmLabel="Leave"
-                cancelLabel="Stay"
-                onConfirm={() => { location.href = '/'; }}
-                onCancel={() => setShowLeaveDialog(false)}
-            />
-            <main className="playerDeviceFrame">
-                <div id="player-root" className="playerRoot"></div>
             </main>
             <footer className="playerFooter">
                 <kbd>D</kbd> — toggle zone overlay
