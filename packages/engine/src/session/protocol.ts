@@ -1,166 +1,88 @@
-﻿export interface SessionPlayerSummary {
-    id: string;
-    name: string;
-}
+import { z } from 'zod';
 
-export type RewriteProtocolGameEvent =
-    | { type: 'START' }
-    | { type: 'SELECT_CARD'; cardId: string }
-    | { type: 'PLAY_CARD' }
-    | { type: 'ANIMATION_DONE' }
-    | { type: 'RESTART' };
+export const SessionPlayerSummarySchema = z.object({
+    id: z.string(),
+    name: z.string(),
+});
+export type SessionPlayerSummary = z.infer<typeof SessionPlayerSummarySchema>;
 
-export interface SessionConfig {
-    gameId: string;
-    playerCount: number;
-    playerNames?: string[];
-    deckId: string;
-    cardsPerPlayer?: number;
-    seed?: string;
-    debugScenarioId?: string;
-    botSeats?: number[];
-}
+export const RewriteProtocolGameEventSchema = z.discriminatedUnion('type', [
+    z.object({ type: z.literal('START') }),
+    z.object({ type: z.literal('SELECT_CARD'), cardId: z.string() }),
+    z.object({ type: z.literal('PLAY_CARD') }),
+    z.object({ type: z.literal('ANIMATION_DONE') }),
+    z.object({ type: z.literal('RESTART') }),
+]);
+export type RewriteProtocolGameEvent = z.infer<typeof RewriteProtocolGameEventSchema>;
 
-/**
- * operator — configures sessions, sends START/RESTART (table-admin)
- * player   — sends game moves within their own seat
- * spectator — read-only observer, no game events
- */
-export type ClientRole = 'operator' | 'player' | 'spectator';
+export const SessionConfigSchema = z
+    .object({
+        gameId: z.string(),
+        playerCount: z.number().int().min(1).max(8),
+        playerNames: z.array(z.string()).optional(),
+        deckId: z.string(),
+        cardsPerPlayer: z.number().int().positive().optional(),
+        seed: z.string().optional(),
+        debugScenarioId: z.string().optional(),
+        botSeats: z.array(z.number().int().min(0)).optional(),
+    })
+    .refine(
+        (c) => c.playerNames === undefined || c.playerNames.length === c.playerCount,
+        { message: 'playerNames length must equal playerCount', path: ['playerNames'] },
+    )
+    .refine(
+        (c) => c.botSeats === undefined || c.botSeats.every((s) => s < c.playerCount),
+        { message: 'botSeats must be valid seat indices within playerCount', path: ['botSeats'] },
+    );
+export type SessionConfig = z.infer<typeof SessionConfigSchema>;
+
+export const ClientRoleSchema = z.enum(['operator', 'player', 'spectator']);
+export type ClientRole = z.infer<typeof ClientRoleSchema>;
 
 export const ROLE_CAN_CONFIGURE: ReadonlySet<ClientRole> = new Set(['operator']);
 export const ROLE_CAN_TABLE_EVENTS: ReadonlySet<ClientRole> = new Set(['operator']);
 export const ROLE_CAN_GAME_EVENTS: ReadonlySet<ClientRole> = new Set(['operator', 'player']);
 
-export type ClientMessage =
-    | { type: 'watch-session'; sessionId?: string; role?: ClientRole }
-    | { type: 'configure-session'; config: SessionConfig }
-    | { type: 'set-viewer'; playerId: string | null }
-    | { type: 'game-event'; expectedSequence?: number; event: RewriteProtocolGameEvent };
+export const ClientMessageSchema = z.discriminatedUnion('type', [
+    z.object({
+        type: z.literal('watch-session'),
+        sessionId: z.string().optional(),
+        role: ClientRoleSchema.optional(),
+    }),
+    z.object({
+        type: z.literal('configure-session'),
+        config: SessionConfigSchema,
+    }),
+    z.object({
+        type: z.literal('set-viewer'),
+        playerId: z.string().nullable(),
+    }),
+    z.object({
+        type: z.literal('game-event'),
+        expectedSequence: z.number().optional(),
+        event: RewriteProtocolGameEventSchema,
+    }),
+]);
+export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 
-export type ServerMessage =
-    | {
-          type: 'session-view';
-          sessionId: string;
-          gameId: string;
-          sequence: number;
-          players: SessionPlayerSummary[];
-          viewerId: string | null;
-          viewModel: unknown;
-      }
-    | { type: 'error'; message: string };
+export const ServerMessageSchema = z.discriminatedUnion('type', [
+    z.object({
+        type: z.literal('session-view'),
+        sessionId: z.string(),
+        gameId: z.string(),
+        sequence: z.number(),
+        players: z.array(SessionPlayerSummarySchema),
+        viewerId: z.string().nullable(),
+        viewModel: z.unknown(),
+    }),
+    z.object({ type: z.literal('error'), message: z.string() }),
+]);
+export type ServerMessage = z.infer<typeof ServerMessageSchema>;
 
 export function isClientMessage(value: unknown): value is ClientMessage {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const message = value as {
-        type?: unknown;
-        role?: unknown;
-        event?: unknown;
-        config?: unknown;
-        playerId?: unknown;
-        expectedSequence?: unknown;
-    };
-    if (message.type === 'watch-session') {
-        return (
-            typeof message.role === 'undefined' ||
-            message.role === 'operator' ||
-            message.role === 'player' ||
-            message.role === 'spectator'
-        );
-    }
-
-    if (message.type === 'set-viewer') {
-        return typeof message.playerId === 'string' || message.playerId === null;
-    }
-
-    if (message.type === 'configure-session') {
-        return isSessionConfig(message.config);
-    }
-
-    return (
-        message.type === 'game-event' &&
-        typeof message.playerId === 'undefined' &&
-        (typeof message.expectedSequence === 'undefined' ||
-            (typeof message.expectedSequence === 'number' &&
-                Number.isFinite(message.expectedSequence))) &&
-        isRewriteProtocolGameEvent(message.event)
-    );
+    return ClientMessageSchema.safeParse(value).success;
 }
 
 export function isServerMessage(value: unknown): value is ServerMessage {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const message = value as { type?: unknown; viewModel?: unknown; players?: unknown };
-    if (message.type === 'error') {
-        return typeof (message as { message?: unknown }).message === 'string';
-    }
-
-    return (
-        message.type === 'session-view' &&
-        typeof (message as { sessionId?: unknown }).sessionId === 'string' &&
-        typeof (message as { gameId?: unknown }).gameId === 'string' &&
-        typeof (message as { sequence?: unknown }).sequence === 'number' &&
-        Number.isFinite((message as { sequence?: number }).sequence) &&
-        Array.isArray(message.players) &&
-        Boolean(message.viewModel)
-    );
-}
-
-function isRewriteProtocolGameEvent(value: unknown): value is RewriteProtocolGameEvent {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const event = value as { type?: unknown; cardId?: unknown };
-    switch (event.type) {
-        case 'START':
-        case 'PLAY_CARD':
-        case 'ANIMATION_DONE':
-        case 'RESTART':
-            return true;
-        case 'SELECT_CARD':
-            return typeof event.cardId === 'string';
-        default:
-            return false;
-    }
-}
-
-function isSessionConfig(value: unknown): value is SessionConfig {
-    if (!value || typeof value !== 'object') {
-        return false;
-    }
-
-    const config = value as {
-        gameId?: unknown;
-        playerCount?: unknown;
-        playerNames?: unknown;
-        deckId?: unknown;
-        cardsPerPlayer?: unknown;
-        seed?: unknown;
-        debugScenarioId?: unknown;
-        botSeats?: unknown;
-    };
-
-    return (
-        typeof config.gameId === 'string' &&
-        typeof config.playerCount === 'number' &&
-        Number.isFinite(config.playerCount) &&
-        typeof config.deckId === 'string' &&
-        (typeof config.playerNames === 'undefined' ||
-            (Array.isArray(config.playerNames) &&
-                config.playerNames.every((n) => typeof n === 'string'))) &&
-        (typeof config.cardsPerPlayer === 'undefined' ||
-            (typeof config.cardsPerPlayer === 'number' &&
-                Number.isFinite(config.cardsPerPlayer))) &&
-        (typeof config.seed === 'undefined' || typeof config.seed === 'string') &&
-        (typeof config.debugScenarioId === 'undefined' ||
-            typeof config.debugScenarioId === 'string') &&
-        (typeof config.botSeats === 'undefined' ||
-            (Array.isArray(config.botSeats) && config.botSeats.every((s) => typeof s === 'number')))
-    );
+    return ServerMessageSchema.safeParse(value).success;
 }

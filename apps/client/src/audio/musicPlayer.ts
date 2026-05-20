@@ -42,8 +42,12 @@ export const musicPlayer = {
 
         const next = getTrack(state);
         if (!next) return;
-        if (!next.playing()) next.play();
-        next.fade(0, volume, fadeDuration);
+        if (next.playing()) {
+            next.fade(next.volume(), volume, fadeDuration);
+        } else {
+            next.once('play', () => next.fade(0, volume, fadeDuration));
+            next.play();
+        }
     },
 
     setVolume(v: number): void {

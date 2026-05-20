@@ -87,11 +87,12 @@ export function init(): void {
             const deckId = game?.defaultDeckId ?? 'french';
 
             if (botCount > 0) {
-                const playerCount = botCount + 1;
-                const botSeats = Array.from({ length: botCount }, (_, i) => i + 1);
+                const realPlayers = allPlayerNames.length > 0 ? allPlayerNames : [myNickname];
+                const playerCount = realPlayers.length + botCount;
+                const botSeats = Array.from({ length: botCount }, (_, i) => realPlayers.length + i);
                 const playerNames = [
-                    myNickname,
-                    ...Array.from({ length: botCount }, (_, i) => `Player ${i + 2}`),
+                    ...realPlayers,
+                    ...Array.from({ length: botCount }, (_, i) => `Player ${realPlayers.length + i + 1}`),
                 ];
                 await session.configure({ gameId, playerCount, playerNames, deckId, botSeats });
             } else {

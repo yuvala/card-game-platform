@@ -17,31 +17,6 @@ interface Props {
     readonly onLogout: () => void;
 }
 
-async function startRoom(roomId: string): Promise<{ wsUrl: string; bots: number; playerNames: string[] }> {
-    const wsUrl = (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
-    const { data: players } = await supabase
-        .from('players')
-        .select('nickname')
-        .eq('room_id', roomId)
-        .order('joined_at', { ascending: true });
-
-    const { data: room } = await supabase
-        .from('rooms')
-        .select('max_players')
-        .eq('id', roomId)
-        .single();
-
-    const playerNames = players?.map((p: any) => p.nickname as string) ?? [];
-    const bots = Math.max(0, (room?.max_players ?? 2) - playerNames.length);
-
-    await supabase
-        .from('rooms')
-        .update({ status: 'playing', ws_url: wsUrl })
-        .eq('id', roomId)
-        .eq('status', 'waiting');
-
-    return { wsUrl, bots, playerNames };
-}
 
 function redirectToGame(
     roomId: string,
@@ -75,21 +50,28 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
     const [leftMessage, setLeftMessage] = useState<string | null>(null);
     const [pendingGame, setPendingGame] = useState<{ id: string; options: number[] } | null>(null);
     const [botCount, setBotCount] = useState(0);
+    const [joinError, setJoinError] = useState<string | null>(null);
 
-    // Restore room state after page refresh
+    // Restore room state after page refresh (only if same browser session)
     useEffect(() => {
         async function restoreRoom() {
+            const savedRoomId = sessionStorage.getItem('lobby-room-id');
+            if (!savedRoomId) return;
+
             const { data } = await supabase
                 .from('players')
                 .select('room_id, rooms(game_id, max_players, status, creator_nickname)')
                 .eq('user_id', userId)
+                .eq('room_id', savedRoomId)
                 .maybeSingle();
 
-            if (!data) return;
+            if (!data) { sessionStorage.removeItem('lobby-room-id'); return; }
             const room = (data.rooms as any);
             if (room?.status === 'waiting') {
                 const entry = getGameCatalogEntryById(room.game_id);
                 setMyRoom({ id: data.room_id, gameId: room.game_id, maxPlayers: room.max_players, minPlayers: entry?.minPlayers ?? 2, playerCountOptions: entry?.playerCountOptions ? [...entry.playerCountOptions] : [], isCreator: room.creator_nickname === nickname });
+            } else {
+                sessionStorage.removeItem('lobby-room-id');
             }
         }
         restoreRoom();
@@ -235,10 +217,28 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
     }
 
     async function joinRoom(roomId: string, gameId: string, isCreator = false) {
-        const { error } = await supabase
+        const { data: existing } = await supabase
             .from('players')
-            .insert({ room_id: roomId, nickname, user_id: userId });
-        if (error) return;
+            .select('id, nickname')
+            .eq('room_id', roomId)
+            .eq('user_id', userId)
+            .maybeSingle();
+
+        if (!existing) {
+            const { error } = await supabase
+                .from('players')
+                .insert({ room_id: roomId, nickname, user_id: userId });
+            if (error) {
+                setJoinError(error.message);
+                setTimeout(() => setJoinError(null), 4000);
+                return;
+            }
+        } else if ((existing as any).nickname !== nickname) {
+            await supabase
+                .from('players')
+                .update({ nickname })
+                .eq('id', (existing as any).id);
+        }
 
         const { data: room } = await supabase
             .from('rooms')
@@ -248,6 +248,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
         const entry = getGameCatalogEntryById(gameId);
         setBotCount(0);
+        sessionStorage.setItem('lobby-room-id', roomId);
         setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, minPlayers: entry?.minPlayers ?? 2, playerCountOptions: entry?.playerCountOptions ? [...entry.playerCountOptions] : [], isCreator });
     }
 
@@ -257,6 +258,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
         if (myRoom.isCreator) {
             await supabase.from('rooms').update({ status: 'done' }).eq('id', myRoom.id);
         }
+        sessionStorage.removeItem('lobby-room-id');
         setMyRoom(null);
         await fetchRooms();
     }
@@ -272,8 +274,13 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
     async function launchGame() {
         if (!myRoom) return;
-        const { wsUrl, playerNames } = await startRoom(myRoom.id);
-        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, nickname, botCount, playerNames);
+        const wsUrl = (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
+        await supabase
+            .from('rooms')
+            .update({ status: 'playing', ws_url: wsUrl })
+            .eq('id', myRoom.id)
+            .eq('status', 'waiting');
+        redirectToGame(myRoom.id, myRoom.gameId, wsUrl, nickname, botCount, roomPlayers);
     }
 
     if (myRoom) {
@@ -380,6 +387,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
             <section>
                 <h2>Open Rooms</h2>
+                {joinError && <p className="join-error">{joinError}</p>}
                 <div className="room-list">
                     {rooms.length === 0 && (
                         <p className="empty">No open rooms — create one above</p>

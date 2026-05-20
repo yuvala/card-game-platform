@@ -77,12 +77,14 @@ export function getWarLiteViewModel(
             getPileCards(snapshot.context.piles, getWarLiteCapturePileId(player.id)).length
         );
     }, battleCards.length);
+    const potLabel = battleCards.length > 0 ? ' | ' + battleCards.length + ' in pot' : '';
+
     return applyPlayerPovViewModel(
         {
             phaseLabel: currentPhase.toUpperCase(),
             roundLabel: snapshot.context.warState
-                ? 'Battle ' + snapshot.context.round + ' | War ' + snapshot.context.warState.depth
-                : 'Battle ' + snapshot.context.round,
+                ? 'Battle ' + snapshot.context.round + ' | War ' + snapshot.context.warState.depth + potLabel
+                : 'Battle ' + snapshot.context.round + potLabel,
             deckId: snapshot.context.deckDefinition.id,
             cardSkinId: DEFAULT_CARD_SKIN_ID,
             deckLabel:
@@ -104,7 +106,9 @@ export function getWarLiteViewModel(
                 ).length;
                 return player.name + ': ' + stackCount + ' stack | ' + wonCount + ' won';
             }),
-            statusText: snapshot.context.statusText,
+            statusText: isBattleReady && nextRevealPlayer
+                ? 'Next: ' + nextRevealPlayer.name + '\n' + snapshot.context.statusText
+                : snapshot.context.statusText,
             selectedCardId: null,
             players: snapshot.context.players.map((player) => {
                 const stackCards = getPileCards(
