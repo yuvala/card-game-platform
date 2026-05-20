@@ -9,6 +9,8 @@ import type {
     SuitEmblemKind,
 } from '@engine/engine/cards/skinPacks';
 
+import { ensureSpanishTextures } from './SpanishCardSpriteSheet';
+
 const FRENCH_SUIT_FILE: Record<string, string> = {
     hearts: 'heart',
     spades: 'spade',
@@ -73,6 +75,14 @@ export function ensureDeckTextures(
     deckDefinition: DeckDefinition,
     skin: CardSkinDefinition,
 ): void {
+    if (deckDefinition.id === 'spanish') {
+        const loaded = ensureSpanishTextures(scene, skin);
+        if (loaded) {
+            // Face textures from sprite sheet — still generate a Canvas back
+        }
+        // Fall through to generate back + any missing face textures via Canvas
+    }
+
     const backTextureKey = getCardBackTextureKey(deckDefinition.id, skin.id);
     if (!scene.textures.exists(backTextureKey)) {
         const texture = scene.textures.createCanvas(

@@ -26,6 +26,7 @@ import {
     getCardFaceTextureKey,
     preloadFrenchCardTextures,
 } from '../../phaser/cards/CardTextureFactory';
+import { preloadSpanishSheetTexture } from '../../phaser/cards/SpanishCardSpriteSheet';
 import { sfxPlayer } from '../../../audio/sfxPlayer';
 import { musicPlayer } from '../../../audio/musicPlayer';
 import { PLAYER_GAME_HEIGHT, PLAYER_GAME_WIDTH } from '../createPlayerGame';
@@ -214,6 +215,7 @@ export class PlayerTableScene extends Phaser.Scene {
         this.load.image('bg-brisca', 'images/bg-brisca.jpg');
         this.load.image('bg-war', 'images/map4.jpg');
         preloadFrenchCardTextures(this, 'vintage-european');
+        preloadSpanishSheetTexture(this);
     }
 
     create(): void {
