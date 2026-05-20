@@ -26,7 +26,7 @@ import {
     getCardFaceTextureKey,
     preloadFrenchCardTextures,
 } from '../../phaser/cards/CardTextureFactory';
-import { playCardFlipSound, playCardMoveSound } from '../../phaser/scenes/audio/cardSoundEffects';
+import { sfxPlayer } from '../../../audio/sfxPlayer';
 import { PLAYER_GAME_HEIGHT, PLAYER_GAME_WIDTH } from '../createPlayerGame';
 import {
     getHandCardPoint,
@@ -478,7 +478,15 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const isPlayerTurn = viewModel.players[0]?.isCurrentTurn === true;
-        this.renderLayer.add(this.add.circle(36, playerPovZones.topBarY, 20, 0x020806, 0.84));
+        const backBg = this.add
+            .circle(36, playerPovZones.topBarY, 20, 0x020806, 0.84)
+            .setInteractive({ useHandCursor: true })
+            .on(Phaser.Input.Events.POINTER_DOWN, () => {
+                if (confirm('Leave the game and return to lobby?')) {
+                    location.href = '/';
+                }
+            });
+        this.renderLayer.add(backBg);
         this.renderLayer.add(
             this.add
                 .text(36, 31, '‹', {
@@ -486,7 +494,13 @@ export class PlayerTableScene extends Phaser.Scene {
                     fontSize: '28px',
                     color: CREAM,
                 })
-                .setOrigin(0.5),
+                .setOrigin(0.5)
+                .setInteractive({ useHandCursor: true })
+                .on(Phaser.Input.Events.POINTER_DOWN, () => {
+                    if (confirm('Leave the game and return to lobby?')) {
+                        location.href = '/';
+                    }
+                }),
         );
         const hasGameTitle = presentation.gameKind !== 'generic';
         this.renderLayer.add(
@@ -2088,7 +2102,7 @@ export class PlayerTableScene extends Phaser.Scene {
             ease: profile.ease,
             onComplete: () => {
                 ghost.image.setDisplaySize(ghostSize.width, ghostSize.height);
-                playCardMoveSound(this, effect.reason);
+                sfxPlayer.play(effect.reason);
                 if (shouldFlip) {
                     this.animateCardFlip(ghost.image, effect, ghostSize, () => {
                         ghost.destroy();
@@ -2122,7 +2136,7 @@ export class PlayerTableScene extends Phaser.Scene {
             duration: 110,
             ease: 'Sine.easeIn',
             onComplete: () => {
-                playCardFlipSound(this);
+                sfxPlayer.play('flip');
                 image.setTexture(
                     getCardFaceTextureKey(effect.card.id, this.activeCardSkinId, 'compact'),
                 );

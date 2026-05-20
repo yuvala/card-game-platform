@@ -19,7 +19,7 @@ import {
     prepareCollectedCardGhostTexture,
     prepareCardMoveGhostTexture,
 } from '../animations/cardStackAnimations';
-import { playCardFlipSound, playCardMoveSound } from '../audio/cardSoundEffects';
+import { sfxPlayer } from '../../../../audio/sfxPlayer';
 import type { PrimaryPileVisuals } from './pilePresenter';
 import type { OwnedPileVisual } from './pilePresenter';
 import type { HandSlotVisual } from './handPresenter';
@@ -570,7 +570,7 @@ function runCollectEffects(
         items: collectItems,
         textureApi,
         onCardLanded: (item) => {
-            playCardMoveSound(scene, item.effect.reason);
+            sfxPlayer.play(item.effect.reason);
         },
         onComplete: () => {
             warDestinationPileVisuals.forEach((visual) => {
@@ -680,10 +680,10 @@ export function runViewEffects(input: EffectPresentationInput): string {
             },
             textureApi,
             onLanded: () => {
-                playCardMoveSound(scene, effect.reason);
+                sfxPlayer.play(effect.reason);
             },
             onReveal: () => {
-                playCardFlipSound(scene);
+                sfxPlayer.play('flip');
             },
             onComplete: () => {
                 destinationVisual?.container.setAlpha(1);

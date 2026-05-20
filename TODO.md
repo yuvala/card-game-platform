@@ -13,6 +13,11 @@
   - Brisca Lite stock + trump layout
   - crowded 5-6 player tables
 - Add a mute/volume control for the new card SFX layer before adding louder or longer audio assets.
+- Replace the native `confirm()` on the player back arrow (`‹`) with a proper in-game overlay:
+  - dispatch `player-exit-request` CustomEvent from Phaser (same pattern as `player-settings-toggle`)
+  - React renders a small "Leave game? / Keep playing" panel using the existing `playerSettings` overlay
+  - skip confirm if `viewModel.phase === 'gameOver'`
+  - call WebSocket disconnect before `location.href = '/'` to release the seat on the server
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
 - Review UI states manually for crowded tables:
   - `5-6` players

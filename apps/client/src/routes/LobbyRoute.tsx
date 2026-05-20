@@ -1,14 +1,24 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { App as LobbyApp } from '../lobby/App';
+import { audioManager } from '../audio/audioManager';
+import { musicPlayer } from '../audio/musicPlayer';
 
 export function LobbyRoute() {
+    useEffect(() => {
+        audioManager.init();
+    }, []);
+
     useEffect(() => {
         const images = [
             '/assets/lobby/lobby-bg_01.png',
             '/assets/lobby/lobby-bg_02.png',
             '/assets/lobby/lobby-bg_03.png',
-        ];
-        const src = images[Math.floor(Math.random() * images.length)];
+            '/assets/lobby/lobby-bg_04.png',
+            '/assets/lobby/lobby-bg_05.png',
+        ] as const;
+        const index = Math.floor(Math.random() * images.length);
+        const src = images[index];
+        musicPlayer.setMode(`lobby-${index + 1}` as `lobby-${1 | 2 | 3 | 4 | 5}`);
 
         const bgEl = document.getElementById('lobby-bg');
         const rootEl = document.getElementById('lobby-root');

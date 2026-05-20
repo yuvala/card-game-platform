@@ -1,4 +1,5 @@
 ﻿import * as Phaser from 'phaser';
+import { musicPlayer } from '../../../audio/musicPlayer';
 
 import { supportedDeckDefinitions } from '@engine/engine/cards/deckDefinitions';
 import { getCardSkinById } from '@engine/engine/cards/skinPacks';
@@ -30,7 +31,7 @@ import { createSeatBadge, type SeatBadge } from './factories/createSeatBadge';
 import { createTableCardVisual, type TableCardVisual } from './factories/createTableCardVisual';
 import { createCardAnimationLayer, type CardAnimationLayer } from './animations/cardAnimationLayer';
 import { animateRiffleShuffle } from './animations/cardMotionAnimations';
-import { playShuffleSound } from './audio/cardSoundEffects';
+import { sfxPlayer } from '../../../audio/sfxPlayer';
 import { getSeatLayouts } from './layout/seatLayouts';
 import type { SeatLayout } from './layout/types';
 import { syncHandPresentation, type HandSlotVisual } from './presenters/handPresenter';
@@ -89,6 +90,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
     }
 
     create(): void {
+        musicPlayer.setMode('game');
         const { height } = this.scale;
 
         if (this.textures.exists('rewrite-table-bg')) {
@@ -424,7 +426,7 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
 
         this.activeShuffleAnimationKey = shuffleAnimationKey;
         this.shuffleAnimationLayer.clear();
-        playShuffleSound(this);
+        sfxPlayer.play('shuffle');
         animateRiffleShuffle({
             scene: this,
             animationLayer: this.shuffleAnimationLayer,
