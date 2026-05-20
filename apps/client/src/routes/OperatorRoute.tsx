@@ -2,9 +2,20 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AdminToolbar } from '../components/AdminToolbar';
 import { supabase } from '../lobby/supabase';
+import { GamePanel } from '../app/app/GamePanel';
+import type { GameSelection } from '../app/app/GamePanel';
 
 async function closeRoom(roomId: string) {
     await supabase.from('rooms').update({ status: 'done' }).eq('id', roomId);
+}
+
+async function createRoom(selection: GameSelection) {
+    await supabase.from('rooms').insert({
+        game_id: selection.gameId,
+        max_players: selection.playerCount,
+        creator_nickname: 'Operator',
+        creator_user_id: null,
+    });
 }
 
 interface RoomRow {
@@ -59,6 +70,7 @@ export function OperatorRoute() {
         navigate(`/table?game=${room.game_id}&wsUrl=${encodeURIComponent(wsUrl)}&autostart=1`);
     }
 
+
     return (
         <div className="operatorShell">
             <AdminToolbar />
@@ -77,6 +89,14 @@ export function OperatorRoute() {
                         </div>
                     </div>
                 )}
+                <GamePanel
+                    onStart={createRoom}
+                    confirmLabel="Create Room"
+                    defaultOpen={false}
+                    panelTitle="Open a waiting room"
+                    panelDescription="Choose a game and seat count. Players will join from the lobby."
+                    showPlayerPreview={false}
+                />
 
                 <div className="operatorRoomGrid">
                     {rooms.map((room) => (

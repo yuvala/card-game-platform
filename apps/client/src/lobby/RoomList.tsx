@@ -68,7 +68,7 @@ const GAME_LABELS: Record<string, string> = {
 export function RoomList({ userId, nickname, onLogout }: Props) {
     const [rooms, setRooms] = useState<Room[]>([]);
     const [creating, setCreating] = useState(false);
-    const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number; minPlayers: number; isCreator: boolean } | null>(
+    const [myRoom, setMyRoom] = useState<{ id: string; gameId: string; maxPlayers: number; minPlayers: number; playerCountOptions: number[]; isCreator: boolean } | null>(
         null,
     );
     const [roomPlayers, setRoomPlayers] = useState<string[]>([]);
@@ -89,7 +89,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
             const room = (data.rooms as any);
             if (room?.status === 'waiting') {
                 const entry = getGameCatalogEntryById(room.game_id);
-                setMyRoom({ id: data.room_id, gameId: room.game_id, maxPlayers: room.max_players, minPlayers: entry?.minPlayers ?? 2, isCreator: room.creator_nickname === nickname });
+                setMyRoom({ id: data.room_id, gameId: room.game_id, maxPlayers: room.max_players, minPlayers: entry?.minPlayers ?? 2, playerCountOptions: entry?.playerCountOptions ? [...entry.playerCountOptions] : [], isCreator: room.creator_nickname === nickname });
             }
         }
         restoreRoom();
@@ -248,7 +248,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
         const entry = getGameCatalogEntryById(gameId);
         setBotCount(0);
-        setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, minPlayers: entry?.minPlayers ?? 2, isCreator });
+        setMyRoom({ id: roomId, gameId, maxPlayers: room?.max_players ?? 2, minPlayers: entry?.minPlayers ?? 2, playerCountOptions: entry?.playerCountOptions ? [...entry.playerCountOptions] : [], isCreator });
     }
 
     async function leaveRoom() {
@@ -313,7 +313,7 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
                     </div>
                 )}
                 {myRoom.isCreator && (
-                    <button onClick={launchGame} disabled={roomPlayers.length + botCount < myRoom.minPlayers}>
+                    <button onClick={launchGame} disabled={myRoom.playerCountOptions.length > 0 ? !myRoom.playerCountOptions.includes(roomPlayers.length + botCount) : roomPlayers.length + botCount < myRoom.minPlayers}>
                         Launch Game
                     </button>
                 )}
@@ -345,30 +345,33 @@ export function RoomList({ userId, nickname, onLogout }: Props) {
 
             <section>
                 <h2>New Room</h2>
-                {pendingGame ? (
+                <div className="game-buttons">
+                    {Object.entries(GAME_LABELS).map(([id, label]) => (
+                        <button key={id} onClick={() => selectGame(id)} disabled={creating}
+                            className={pendingGame?.id === id ? 'game-btn--active' : ''}>
+                            {label}
+                        </button>
+                    ))}
+                </div>
+                {pendingGame && (
                     <div className="game-player-count">
-                        <p className="game-player-count-label">Players:</p>
-                        <div className="game-buttons">
+                        <select
+                            className="player-count-select"
+                            defaultValue=""
+                            onChange={(e) => {
+                                if (e.target.value) createRoom(pendingGame.id, Number(e.target.value)).catch(() => {});
+                            }}
+                            disabled={creating}
+                        >
+                            <option value="" disabled>Players…</option>
                             {pendingGame.options.map((count) => (
-                                <button key={count} onClick={() => createRoom(pendingGame.id, count)} disabled={creating}>
-                                    {count}
-                                </button>
+                                <option key={count} value={count}>{count} players</option>
                             ))}
-                            <button
-                                onClick={() => setPendingGame(null)}
-                                style={{ background: 'none', border: '1px solid #6b4f28', color: '#a08860' }}
-                            >
-                                ✕
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <div className="game-buttons">
-                        {Object.entries(GAME_LABELS).map(([id, label]) => (
-                            <button key={id} onClick={() => selectGame(id)} disabled={creating}>
-                                {label}
-                            </button>
-                        ))}
+                        </select>
+                        <button
+                            onClick={() => setPendingGame(null)}
+                            className="player-count-cancel"
+                        >✕</button>
                     </div>
                 )}
             </section>

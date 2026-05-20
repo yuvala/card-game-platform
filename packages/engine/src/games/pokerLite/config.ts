@@ -20,6 +20,7 @@ export const pokerLiteConfig = defineCardGameConfig({
     minPlayers: 2,
     maxPlayers: 8,
     defaultPlayerCount: 3,
+    playerCountOptions: [2, 3, 4, 5, 6, 7, 8],
     supportedDeckIds: pokerLiteSupportedDeckIds,
     defaultDeckId: 'french',
     openingHandSize: 5,

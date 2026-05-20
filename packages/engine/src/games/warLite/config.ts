@@ -22,6 +22,7 @@ export const warLiteConfig = defineCardGameConfig({
     minPlayers: 2,
     maxPlayers: 2,
     defaultPlayerCount: 2,
+    playerCountOptions: [2],
     supportedDeckIds: warLiteSupportedDeckIds,
     defaultDeckId: 'french',
     openingHandSize: 0,

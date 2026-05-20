@@ -200,14 +200,48 @@ h2 {
 /* ── Player count picker ── */
 .game-player-count {
     display: flex;
-    flex-direction: column;
+    align-items: center;
     gap: 10px;
+    margin-top: 12px;
 }
 
-.game-player-count-label {
+.player-count-select {
+    flex: 1;
+    padding: 10px 14px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #6b4f28;
+    border-radius: 3px;
+    color: #f5ead8;
+    font-family: 'Cinzel', serif;
     font-size: 0.8rem;
-    color: #a08860;
-    font-style: italic;
+    letter-spacing: 0.06em;
+    cursor: pointer;
+    outline: none;
+    appearance: none;
+}
+
+.player-count-select option {
+    background: #1a1208;
+}
+
+.player-count-cancel {
+    all: unset;
+    cursor: pointer;
+    font-size: 0.75rem;
+    color: #c9a84c;
+    padding: 4px 8px;
+    border: 1px solid #6b4f28;
+    border-radius: 3px;
+    transition: color 0.15s;
+}
+
+.player-count-cancel:hover {
+    color: #e05555;
+}
+
+.game-btn--active {
+    filter: brightness(1.2);
+    outline: 1px solid rgba(201, 168, 76, 0.6);
 }
 
 /* ── Room list ── */

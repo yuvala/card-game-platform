@@ -64,7 +64,16 @@ function normalizeSelection(
     };
 }
 
-export function GamePanel() {
+interface GamePanelProps {
+    onStart?: (selection: GameSelection) => void;
+    confirmLabel?: string;
+    defaultOpen?: boolean;
+    panelTitle?: string;
+    panelDescription?: string;
+    showPlayerPreview?: boolean;
+}
+
+export function GamePanel({ onStart, confirmLabel, defaultOpen, panelTitle, panelDescription, showPlayerPreview = true }: GamePanelProps = {}) {
     const [searchParams] = useSearchParams();
     const shouldAutostart =
         searchParams.get('autostart') === '1';
@@ -75,7 +84,7 @@ export function GamePanel() {
         deckId: (searchParams.get('deck') ?? '') as SupportedDeckId,
     });
 
-    const [isOpen, setIsOpen] = useState(!shouldAutostart);
+    const [isOpen, setIsOpen] = useState(defaultOpen ?? !shouldAutostart);
     const [selection, setSelection] = useState<GameSelection>(initialSelection);
     const [activeTable, setActiveTable] = useState<ActiveTableSummary | null>(null);
 
@@ -97,12 +106,16 @@ export function GamePanel() {
 
     function handleStart(): void {
         setIsOpen(false);
-        globalThis.dispatchEvent(new CustomEvent('game-panel:start', { detail: selection }));
+        if (onStart) {
+            onStart(selection);
+        } else {
+            globalThis.dispatchEvent(new CustomEvent('game-panel:start', { detail: selection }));
+        }
     }
 
     const selectedGame = resolveGame(selection.gameId);
     const playerNames = buildPlayerNames(selection.playerCount);
-    const startLabel = activeTable ? 'Start New Table' : 'Start Game';
+    const startLabel = confirmLabel ?? (activeTable ? 'Start New Table' : 'Start Game');
     const summaryLabel = activeTable ? 'Live Table' : 'Ready';
     const summaryText = activeTable
         ? activeTable.gameLabel +
@@ -115,9 +128,9 @@ export function GamePanel() {
           String(selection.playerCount) +
           ' players | ' +
           supportedDeckDefinitions[selection.deckId].name;
-    const helperText = activeTable
+    const helperText = panelDescription ?? (activeTable
         ? 'Changing the setup will replace the current table when you press Start New Table.'
-        : 'Choose a ruleset, a seat count, and a deck. Start Game deals the opening hand immediately.';
+        : 'Choose a ruleset, a seat count, and a deck. Start Game deals the opening hand immediately.');
     const toggleLabel = activeTable ? 'Change Game' : 'Create Game';
 
     return (
@@ -147,7 +160,7 @@ export function GamePanel() {
                     <div className="appSetupHeader">
                         <div>
                             <p className="appSetupEyebrow">Create Game</p>
-                            <h2 className="appSetupTitle">Open a new card table</h2>
+                            <h2 className="appSetupTitle">{panelTitle ?? 'Open a new card table'}</h2>
                             <p className="appSetupCopy">{helperText}</p>
                         </div>
                         <div className="appSetupSummary" aria-live="polite">
@@ -243,16 +256,18 @@ export function GamePanel() {
                         </div>
                     </div>
 
-                    <div className="appSetupSection">
-                        <p className="appSetupSectionLabel">Players at the table</p>
-                        <div className="appPlayerPreview" aria-live="polite">
-                            {playerNames.map((name) => (
-                                <span key={name} className="appPlayerChip">
-                                    {name}
-                                </span>
-                            ))}
+                    {showPlayerPreview && (
+                        <div className="appSetupSection">
+                            <p className="appSetupSectionLabel">Players at the table</p>
+                            <div className="appPlayerPreview" aria-live="polite">
+                                {playerNames.map((name) => (
+                                    <span key={name} className="appPlayerChip">
+                                        {name}
+                                    </span>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+                    )}
 
                     <div className="appSetupActions">
                         <button
