@@ -580,22 +580,46 @@ a {
     white-space: nowrap;
 }
 
-.playerLeaveButton {
+.playerHeaderActions {
     margin-left: auto;
-    background: none;
-    border: 1px solid rgba(255, 209, 102, 0.2);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.playerSettingsButton,
+.playerLeaveButton {
     border-radius: 8px;
-    color: rgba(243, 234, 213, 0.6);
-    font-size: 16px;
+    font-size: 14px;
+    font-weight: 600;
     line-height: 1;
-    padding: 6px 10px;
+    padding: 7px 14px;
     cursor: pointer;
-    transition: color 160ms, border-color 160ms;
+    border: 1px solid transparent;
+    transition: background 160ms, border-color 160ms;
+}
+
+.playerSettingsButton {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 209, 102, 0.25);
+    color: #f3ead5;
+}
+
+.playerSettingsButton:hover {
+    background: rgba(255, 255, 255, 0.12);
+    border-color: rgba(255, 209, 102, 0.5);
+}
+
+.playerLeaveButton {
+    background: rgba(192, 57, 43, 0.2);
+    border-color: rgba(192, 57, 43, 0.6);
+    color: #f3ead5;
 }
 
 .playerLeaveButton:hover {
-    color: #f3ead5;
-    border-color: rgba(255, 209, 102, 0.5);
+    background: rgba(192, 57, 43, 0.4);
+    border-color: rgba(192, 57, 43, 0.9);
 }
 
 .confirmDialogOverlay {

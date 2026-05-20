@@ -83,16 +83,22 @@ export function PlayerRoute() {
                     Viewing Seat
                 </label>
                 <select id="player-viewer-select" className="playerSelect"></select>
-                <p id="player-status" className="playerStatus">
-                    Connecting to table...
-                </p>
-                <button
-                    className="playerLeaveButton"
-                    onClick={() => setShowLeaveDialog(true)}
-                    aria-label="Leave game"
-                >
-                    ✕
-                </button>
+                <div className="playerHeaderActions">
+                    <button
+                        className="playerSettingsButton"
+                        onClick={() => globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'))}
+                        aria-label="Settings"
+                    >
+                        ⚙
+                    </button>
+                    <button
+                        className="playerLeaveButton"
+                        onClick={() => setShowLeaveDialog(true)}
+                        aria-label="Leave game"
+                    >
+                        ✕ Leave
+                    </button>
+                </div>
             </header>
             <ConfirmDialog
                 open={showLeaveDialog}

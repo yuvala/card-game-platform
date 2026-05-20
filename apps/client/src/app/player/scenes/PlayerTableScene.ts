@@ -510,26 +510,6 @@ export class PlayerTableScene extends Phaser.Scene {
                 )
                 .setOrigin(0.5),
         );
-        const gearBg = this.add
-            .circle(PLAYER_GAME_WIDTH - 36, playerPovZones.topBarY, 20, 0x020806, 0.84)
-            .setInteractive({ useHandCursor: true })
-            .on(Phaser.Input.Events.POINTER_DOWN, () => {
-                globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'));
-            });
-        this.renderLayer.add(gearBg);
-        this.renderLayer.add(
-            this.add
-                .text(PLAYER_GAME_WIDTH - 36, playerPovZones.topBarY, '⚙', {
-                    fontFamily: 'Arial',
-                    fontSize: '18px',
-                    color: CREAM,
-                })
-                .setOrigin(0.5)
-                .setInteractive({ useHandCursor: true })
-                .on(Phaser.Input.Events.POINTER_DOWN, () => {
-                    globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'));
-                }),
-        );
     }
 
     private drawGameInfo(viewModel: CardGameViewModel, presentation: PlayerPovPresentation): void {
