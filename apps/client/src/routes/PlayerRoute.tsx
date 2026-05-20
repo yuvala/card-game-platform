@@ -1,6 +1,8 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { ConfirmDialog } from '../components/ConfirmDialog';
 
 export function PlayerRoute() {
+    const [showLeaveDialog, setShowLeaveDialog] = useState(false);
     useEffect(() => {
         const shell = document.querySelector('.playerShell') as HTMLElement | null;
         const settings = document.getElementById('player-settings');
@@ -84,7 +86,22 @@ export function PlayerRoute() {
                 <p id="player-status" className="playerStatus">
                     Connecting to table...
                 </p>
+                <button
+                    className="playerLeaveButton"
+                    onClick={() => setShowLeaveDialog(true)}
+                    aria-label="Leave game"
+                >
+                    ✕
+                </button>
             </header>
+            <ConfirmDialog
+                open={showLeaveDialog}
+                title="Leave the game?"
+                confirmLabel="Leave"
+                cancelLabel="Stay"
+                onConfirm={() => { location.href = '/'; }}
+                onCancel={() => setShowLeaveDialog(false)}
+            />
             <main className="playerDeviceFrame">
                 <div id="player-root" className="playerRoot"></div>
             </main>

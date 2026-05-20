@@ -11,6 +11,7 @@ import {
     type ServerMessage,
 } from '@engine/session/protocol';
 import { GameSessionHost, type RewriteSessionHostOptions } from './GameSessionHost';
+import { SessionLifecycle } from './SessionLifecycle';
 import { logger } from './logger';
 
 interface RewriteClient {
@@ -31,6 +32,11 @@ export function createGameWebSocketServer(
 ): GameWebSocketServer {
     const gameHost = new GameSessionHost(options);
     const clients = new Set<RewriteClient>();
+    const lifecycle = new SessionLifecycle({
+        onAbandoned: () => {
+            gameHost.stop();
+        },
+    });
 
     const server = http.createServer((_request, response) => {
         response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -56,6 +62,7 @@ export function createGameWebSocketServer(
             viewerId: null,
         };
         clients.add(client);
+        lifecycle.onClientConnected(clients.size);
         logger.info({ clients: clients.size }, 'client connected');
 
         socket.on('message', (payload) => {
@@ -64,6 +71,7 @@ export function createGameWebSocketServer(
 
         socket.on('close', () => {
             clients.delete(client);
+            lifecycle.onClientDisconnected(clients.size);
             logger.info({ clients: clients.size }, 'client disconnected');
         });
     });
@@ -72,7 +80,7 @@ export function createGameWebSocketServer(
         server,
         wss,
         gameHost,
-        close: () => closeGameWebSocketServer(server, wss, gameHost),
+        close: () => closeGameWebSocketServer(server, wss, gameHost, lifecycle),
     };
 }
 
@@ -195,7 +203,9 @@ function closeGameWebSocketServer(
     server: http.Server,
     wss: WebSocketServer,
     gameHost: GameSessionHost,
+    lifecycle: SessionLifecycle,
 ): Promise<void> {
+    lifecycle.destroy();
     gameHost.stop();
     wss.clients.forEach((client) => {
         client.close();

@@ -478,30 +478,6 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const isPlayerTurn = viewModel.players[0]?.isCurrentTurn === true;
-        const backBg = this.add
-            .circle(36, playerPovZones.topBarY, 20, 0x020806, 0.84)
-            .setInteractive({ useHandCursor: true })
-            .on(Phaser.Input.Events.POINTER_DOWN, () => {
-                if (confirm('Leave the game and return to lobby?')) {
-                    location.href = '/';
-                }
-            });
-        this.renderLayer.add(backBg);
-        this.renderLayer.add(
-            this.add
-                .text(36, 31, '‹', {
-                    fontFamily: 'Arial',
-                    fontSize: '28px',
-                    color: CREAM,
-                })
-                .setOrigin(0.5)
-                .setInteractive({ useHandCursor: true })
-                .on(Phaser.Input.Events.POINTER_DOWN, () => {
-                    if (confirm('Leave the game and return to lobby?')) {
-                        location.href = '/';
-                    }
-                }),
-        );
         const hasGameTitle = presentation.gameKind !== 'generic';
         this.renderLayer.add(
             createRoundedPanel(

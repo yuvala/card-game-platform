@@ -580,6 +580,99 @@ a {
     white-space: nowrap;
 }
 
+.playerLeaveButton {
+    margin-left: auto;
+    background: none;
+    border: 1px solid rgba(255, 209, 102, 0.2);
+    border-radius: 8px;
+    color: rgba(243, 234, 213, 0.6);
+    font-size: 16px;
+    line-height: 1;
+    padding: 6px 10px;
+    cursor: pointer;
+    transition: color 160ms, border-color 160ms;
+}
+
+.playerLeaveButton:hover {
+    color: #f3ead5;
+    border-color: rgba(255, 209, 102, 0.5);
+}
+
+.confirmDialogOverlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.confirmDialogCard {
+    background: rgba(12, 36, 25, 0.96);
+    border: 1px solid rgba(255, 209, 102, 0.25);
+    border-radius: 16px;
+    padding: 28px 24px 20px;
+    min-width: 260px;
+    max-width: min(360px, 90vw);
+    display: grid;
+    gap: 12px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6);
+}
+
+.confirmDialogTitle {
+    margin: 0;
+    font-size: 17px;
+    font-weight: 700;
+    color: #f3ead5;
+    text-align: center;
+}
+
+.confirmDialogMessage {
+    margin: 0;
+    font-size: 14px;
+    color: rgba(243, 234, 213, 0.7);
+    text-align: center;
+    line-height: 1.5;
+}
+
+.confirmDialogActions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 4px;
+}
+
+.confirmDialogCancel,
+.confirmDialogConfirm {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: opacity 160ms;
+}
+
+.confirmDialogCancel {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 209, 102, 0.2);
+    color: #ffffff;
+}
+
+.confirmDialogConfirm {
+    background: #c0392b;
+    color: #fff;
+}
+
+.confirmDialogCancel:hover,
+.confirmDialogConfirm:hover {
+    opacity: 0.85;
+}
+
 .playerDeviceFrame {
     width: 100%;
     height: 100%;

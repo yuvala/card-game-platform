@@ -5,19 +5,13 @@
 - Finish War Lite product polish in this order:
   1. Add repeatable visual screenshots for War tie / War stack / collection.
      - High value, but depends on stable visuals.
-  2. Improve War HUD text for battle pot size and next player.
-     - Useful polish, lower priority than stack clarity and tests.
 - Add more edge-case rules/state assertions for the concrete games beyond the current happy-path machine coverage.
 - Add visual regression coverage or repeatable screenshots for the highest-risk table states:
   - War Lite tie / war stack / collection
   - Brisca Lite stock + trump layout
   - crowded 5-6 player tables
 - Add a mute/volume control for the new card SFX layer before adding louder or longer audio assets.
-- Replace the native `confirm()` on the player back arrow (`‹`) with a proper in-game overlay:
-  - dispatch `player-exit-request` CustomEvent from Phaser (same pattern as `player-settings-toggle`)
-  - React renders a small "Leave game? / Keep playing" panel using the existing `playerSettings` overlay
-  - skip confirm if `viewModel.phase === 'gameOver'`
-  - call WebSocket disconnect before `location.href = '/'` to release the seat on the server
+- Leave-game dialog: skip confirm when `viewModel.phase === 'gameOver'` — currently the dialog always shows even after the game ends. Requires exposing phase from Phaser to React (no bridge exists yet).
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
 - Review UI states manually for crowded tables:
   - `5-6` players
