@@ -79,13 +79,8 @@ export function PlayerRoute() {
                 </div>
             </div>
             <header className="playerHeader">
-                <label className="playerSelectLabel" htmlFor="player-viewer-select">
-                    Viewing Seat
-                </label>
+                 
                 <select id="player-viewer-select" className="playerSelect"></select>
-                <p id="player-status" className="playerStatus">
-                    Connecting to table...
-                </p>
             </header>
             <ConfirmDialog
                 open={showLeaveDialog}
@@ -99,18 +94,18 @@ export function PlayerRoute() {
                 <div id="player-root" className="playerRoot"></div>
                 <div className="playerCanvasButtons">
                     <button
-                        className="playerSettingsButton"
-                        onClick={() => globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'))}
-                        aria-label="Settings"
-                    >
-                        ⚙
-                    </button>
-                    <button
                         className="playerLeaveButton"
                         onClick={() => setShowLeaveDialog(true)}
                         aria-label="Leave game"
                     >
                         ✕ Leave
+                    </button>
+                    <button
+                        className="playerSettingsButton"
+                        onClick={() => globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'))}
+                        aria-label="Settings"
+                    >
+                        ⚙
                     </button>
                 </div>
             </main>

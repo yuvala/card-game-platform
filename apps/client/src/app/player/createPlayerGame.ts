@@ -26,7 +26,7 @@ export function createPlayerGame(
         scale: {
             mode: Phaser.Scale.FIT,
             autoRound: true,
-            autoCenter: Phaser.Scale.CENTER_BOTH,
+            autoCenter: Phaser.Scale.CENTER_HORIZONTALLY,
         },
         scene: [new PlayerTableScene(session)],
     });

@@ -587,7 +587,12 @@ a {
     right: 12px;
     display: flex;
     justify-content: space-between;
+    pointer-events: none;
     z-index: 10;
+}
+
+.playerCanvasButtons > button {
+    pointer-events: auto;
 }
 
 .playerSettingsButton,
@@ -603,25 +608,25 @@ a {
 }
 
 .playerSettingsButton {
-    background: rgba(255, 255, 255, 0.06);
-    border-color: rgba(255, 209, 102, 0.25);
+    background: rgba(6, 19, 14, 0.82);
+    border-color: rgba(255, 209, 102, 0.4);
     color: #f3ead5;
 }
 
 .playerSettingsButton:hover {
-    background: rgba(255, 255, 255, 0.12);
-    border-color: rgba(255, 209, 102, 0.5);
+    background: rgba(6, 19, 14, 0.95);
+    border-color: rgba(255, 209, 102, 0.7);
 }
 
 .playerLeaveButton {
-    background: rgba(192, 57, 43, 0.2);
-    border-color: rgba(192, 57, 43, 0.6);
+    background: rgba(6, 19, 14, 0.82);
+    border-color: rgba(192, 57, 43, 0.7);
     color: #f3ead5;
 }
 
 .playerLeaveButton:hover {
-    background: rgba(192, 57, 43, 0.4);
-    border-color: rgba(192, 57, 43, 0.9);
+    background: rgba(6, 19, 14, 0.95);
+    border-color: rgba(192, 57, 43, 1);
 }
 
 .confirmDialogOverlay {
@@ -1085,7 +1090,8 @@ a {
     .playerSelect {
         flex: 1;
         min-width: 0;
-        padding: 8px 10px;
+        padding: 8px 10px;       
+        max-width: 82%;
     }
 
     .playerStatus {

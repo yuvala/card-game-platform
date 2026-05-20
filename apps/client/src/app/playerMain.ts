@@ -5,21 +5,13 @@ import { getGameCatalogEntryById } from '@engine/games/catalog';
 export function init(): void {
     const playerRootElement = document.getElementById('player-root');
     const playerSelectElement = document.getElementById('player-viewer-select');
-    const playerStatusElement = document.getElementById('player-status');
     const requestedParams = new URLSearchParams(globalThis.location.search);
 
-    if (
-        !playerRootElement ||
-        !(playerSelectElement instanceof HTMLSelectElement) ||
-        !playerStatusElement
-    ) {
-        throw new Error(
-            'Player POV requires #player-root, #player-viewer-select, and #player-status.',
-        );
+    if (!playerRootElement || !(playerSelectElement instanceof HTMLSelectElement)) {
+        throw new Error('Player POV requires #player-root and #player-viewer-select.');
     }
 
     const playerSelect = playerSelectElement;
-    const playerStatus = playerStatusElement;
 
     let activeSession: RemoteGameSession | null = null;
     let activeGame: ReturnType<typeof createPlayerGame> | null = null;
@@ -60,7 +52,6 @@ export function init(): void {
     showLoading();
     startPlayerPov().catch((error) => {
         const message = error instanceof Error ? error.message : 'Failed to connect to table.';
-        playerStatus.textContent = message;
         showError(message);
     });
 
@@ -120,13 +111,10 @@ export function init(): void {
 
         session.subscribe(() => {
             renderPlayerOptions(session);
-            syncStatus(session);
         });
-        syncStatus(session);
 
         playerSelect.addEventListener('change', () => {
             session.setViewer(playerSelect.value || null);
-            syncStatus(session);
         });
 
         globalThis.addEventListener('beforeunload', () => {
@@ -159,20 +147,6 @@ export function init(): void {
         }
     }
 
-    function syncStatus(session: RemoteGameSession): void {
-        const status = session.getStatus();
-        if (status.type !== 'connected') {
-            playerStatus.textContent = status.message;
-            return;
-        }
-
-        const viewerName = session
-            .getPlayers()
-            .find((player) => player.id === session.getViewerId())?.name;
-        playerStatus.textContent = viewerName
-            ? 'Live seat: ' + viewerName
-            : 'Live table connection';
-    }
 
     function getRequestedWebSocketUrl(params: URLSearchParams): string {
         const explicitUrl = params.get('wsUrl');
