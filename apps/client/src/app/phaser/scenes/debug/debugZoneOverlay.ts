@@ -1,5 +1,6 @@
 import * as Phaser from 'phaser';
 
+import { TABLE_TEXT_RESOLUTION } from '../layout/constants';
 import type { SeatBadge } from '../factories/createSeatBadge';
 import type { TableCardVisual } from '../factories/createTableCardVisual';
 import type { HandSlotVisual } from '../presenters/handPresenter';
@@ -269,7 +270,7 @@ export function drawDebugZoneOverlay(input: DebugZoneOverlayInput): DebugOverlay
             })
             .setOrigin(0.5, 1)
             .setDepth(10000)
-            .setResolution(2);
+            .setResolution(TABLE_TEXT_RESOLUTION);
 
         texts.push(text);
     });

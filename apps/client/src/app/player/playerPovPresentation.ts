@@ -47,7 +47,7 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
         return {
             gameKind: 'brisca',
             gameTitle: 'BRISCA',
-            infoPanel: 'trump',
+            infoPanel: 'none',
             centerArea: 'trick',
             bottomDock: 'stock-trump',
             centerDock: 'none',

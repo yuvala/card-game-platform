@@ -18,7 +18,7 @@ export function buildPhaserConfig(
         render: {
             antialias: true,
             antialiasGL: true,
-            roundPixels: false,
+            roundPixels: true,
             ...(overrides.render as object | undefined),
         },
         scale: {

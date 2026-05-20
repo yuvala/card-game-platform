@@ -24,7 +24,7 @@ export const PLAYER_ZONE_RIGHT_X = 720; // x boundary of the right player zone (
 
 // --- Colors ---
 export const CARD_BACK_STROKE = 0xc4b06a; // gold border drawn on card backs
-export const TABLE_TEXT_RESOLUTION = 2; // canvas resolution multiplier for crisp text rendering
+export const TABLE_TEXT_RESOLUTION = Math.max(2, Math.min(Math.ceil(window.devicePixelRatio), 3));
 export const TABLE_FONT_FAMILY = 'Georgia, Cambria, serif'; // serif font for labels and scores
 export const TABLE_MONO_FONT_FAMILY = 'Trebuchet MS, Georgia, serif'; // monospaced-ish font for numeric displays
 export const TABLE_GOLD = 0xffd166; // primary gold accent (highlights, borders)

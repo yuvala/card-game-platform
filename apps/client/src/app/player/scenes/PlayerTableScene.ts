@@ -50,7 +50,6 @@ import {
     getPlayerPovSeatSide,
     getPrimaryPileText,
     normalizeActionLabel,
-    parsePlayerCounters,
     type PlayerPovPlayerCounters,
 } from '../playerPovUiModel';
 
@@ -297,11 +296,11 @@ export class PlayerTableScene extends Phaser.Scene {
         const theme = getTheme(viewModel.themeId);
         this.drawBackground(theme);
         const presentation = getPlayerPovPresentation(viewModel);
-        this.drawTopBar(viewModel, presentation, theme);
+        this.drawTopBar(viewModel, theme);
         this.drawGameInfo(viewModel, presentation);
         this.drawOpponents(viewModel);
         this.drawTableCards(viewModel, presentation);
-        this.drawPlayerHand(viewModel, presentation);
+        this.drawPlayerHand(viewModel);
         this.drawBottomControls(viewModel, presentation);
         this.drawSessionStatus();
         this.presentMoveEffects(viewModel);
@@ -472,7 +471,6 @@ export class PlayerTableScene extends Phaser.Scene {
 
     private drawTopBar(
         viewModel: CardGameViewModel,
-        presentation: PlayerPovPresentation,
         theme: PlayerTheme,
     ): void {
         if (!this.renderLayer) {
@@ -480,13 +478,12 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const isPlayerTurn = viewModel.players[0]?.isCurrentTurn === true;
-        const hasGameTitle = presentation.gameKind !== 'generic';
         this.renderLayer.add(
             createRoundedPanel(
                 this,
                 PLAYER_GAME_WIDTH / 2,
                 playerPovZones.topBarY,
-                hasGameTitle ? 104 : 94,
+                94,
                 30,
                 15,
                 isPlayerTurn ? 0xf7efe0 : theme.turnBg,
@@ -498,14 +495,10 @@ export class PlayerTableScene extends Phaser.Scene {
                 .text(
                     PLAYER_GAME_WIDTH / 2,
                     playerPovZones.topBarY,
-                    hasGameTitle
-                        ? presentation.gameTitle
-                        : isPlayerTurn
-                          ? 'Your turn'
-                          : viewModel.phaseLabel,
+                    isPlayerTurn ? 'Your turn' : viewModel.phaseLabel,
                     {
                         fontFamily: 'Arial',
-                        fontSize: hasGameTitle ? '18px' : '14px',
+                        fontSize: '14px',
                         fontStyle: '700',
                         color: isPlayerTurn ? '#10251c' : CREAM,
                     },
@@ -1267,70 +1260,68 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         const stockTrumpPoint = getStockTrumpPoint();
-        const centerX = stockTrumpPoint.x;
+        const stockX = stockTrumpPoint.x;
         const centerY = stockTrumpPoint.y;
-        this.stockPilePoint = { x: centerX, y: centerY };
-        this.renderLayer.add(
-            createRoundedPanel(this, 132, centerY, 194, 76, 18, 0x082417, 0.57, 0x5ea65d, 1, 0.24),
-        );
+        this.stockPilePoint = { x: stockX, y: centerY };
 
-        for (let index = 0; index < 3; index += 1) {
-            const stockBack = this.add
-                .image(
-                    centerX - 18 + index * 3,
-                    centerY - 1 - index * 1,
-                    this.getActiveBackTextureKey(),
-                )
+        // Trump offset: same ratio as table view (cardHeight * 0.34 to the left)
+        const trumpOffset = Math.round(STOCK_TRUMP_CARD_H * 0.34);
+        const trumpX = stockX + trumpOffset;
+
+        const cardTopY = centerY - Math.round(STOCK_TRUMP_CARD_H / 2);
+        const labelCenterX = stockX;
+
+        // Trump card — rotated 90°, underneath stock pile
+        const trumpCard = this.add
+            .image(trumpX, centerY, this.getTextureForCard(trumpPile.topCard, 'compact'))
+            .setDisplaySize(STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H)
+            .setAngle(90)
+            .setAlpha(0.98)
+            .setDepth(56);
+        this.setCardDisplaySize(trumpCard, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
+        this.renderLayer.add(trumpCard);
+
+        // Stock card backs — stacked on top of trump
+        for (let i = 2; i >= 0; i--) {
+            const back = this.add
+                .image(stockX + i * 2, centerY - i * 2, this.getActiveBackTextureKey())
                 .setDisplaySize(STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H)
-                .setAngle(-2 + index * 2)
-                .setAlpha(drawPile.cardCount > 0 ? 0.78 : 0.24);
-            this.setCardDisplaySize(stockBack, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
-            this.renderLayer.add(stockBack);
+                .setAlpha(drawPile.cardCount > 0 ? 0.78 + i * 0.08 : 0.24)
+                .setAngle(0)
+                .setDepth(57 + i);
+            this.setCardDisplaySize(back, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
+            this.renderLayer.add(back);
         }
 
-        const trumpCard = this.add
-            .image(centerX - 24, centerY + 2, this.getTextureForCard(trumpPile.topCard, 'compact'))
-            .setDisplaySize(STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H)
-            .setAngle(0)
-            .setAlpha(0.98);
-        this.setCardDisplaySize(trumpCard, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
-
-        const stockCard = this.add
-            .image(centerX + 28, centerY - 2, this.getActiveBackTextureKey())
-            .setDisplaySize(STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H)
-            .setAlpha(drawPile.cardCount > 0 ? 1 : 0.42);
-        this.setCardDisplaySize(stockCard, STOCK_TRUMP_CARD_W, STOCK_TRUMP_CARD_H);
-
-        this.renderLayer.add(trumpCard);
-        this.renderLayer.add(stockCard);
+        // Labels above the cards
         this.renderLayer.add(
             this.add
-                .text(centerX + 64, centerY - 13, 'Trump', {
+                .text(labelCenterX, cardTopY - 30, 'Trump', {
                     fontFamily: 'Arial',
                     fontSize: '12px',
                     fontStyle: '700',
                     color: CREAM,
                 })
-                .setOrigin(0, 0.5),
+                .setOrigin(0.5, 1),
         );
         this.renderLayer.add(
             this.add
-                .text(centerX + 64, centerY + 5, presentation.trumpLabel ?? 'spent', {
+                .text(labelCenterX, cardTopY - 16, presentation.trumpLabel ?? 'spent', {
                     fontFamily: 'Arial',
                     fontSize: '11px',
                     fontStyle: '700',
                     color: 'rgba(255,209,102,0.9)',
                 })
-                .setOrigin(0, 0.5),
+                .setOrigin(0.5, 1),
         );
         this.renderLayer.add(
             this.add
-                .text(centerX + 64, centerY + 22, drawPile.countLabel.replace(' + trump', ''), {
+                .text(labelCenterX, cardTopY - 4, drawPile.countLabel.replace(' + trump', ''), {
                     fontFamily: 'Arial',
                     fontSize: '9px',
                     color: DIM,
                 })
-                .setOrigin(0, 0.5),
+                .setOrigin(0.5, 1),
         );
 
         return true;
@@ -1446,10 +1437,7 @@ export class PlayerTableScene extends Phaser.Scene {
         return true;
     }
 
-    private drawPlayerHand(
-        viewModel: CardGameViewModel,
-        presentation: PlayerPovPresentation,
-    ): void {
+    private drawPlayerHand(viewModel: CardGameViewModel): void {
         if (!this.renderLayer) {
             return;
         }
@@ -1457,100 +1445,6 @@ export class PlayerTableScene extends Phaser.Scene {
         const player = viewModel.players[0];
         if (!player) {
             return;
-        }
-
-        this.renderLayer.add(
-            createRoundedPanel(
-                this,
-                PLAYER_GAME_WIDTH / 2,
-                playerPovZones.playerHudY,
-                166,
-                34,
-                17,
-                0x071a13,
-                0.68,
-                player.isCurrentTurn ? GOLD : 0x7fb896,
-                1,
-                player.isCurrentTurn ? 0.54 : 0.18,
-            ),
-        );
-        this.renderLayer.add(
-            this.add
-                .circle(
-                    PLAYER_GAME_WIDTH / 2 - 62,
-                    playerPovZones.playerHudY,
-                    16,
-                    player.isCurrentTurn ? GOLD : 0x1d7f54,
-                    1,
-                )
-                .setStrokeStyle(2, player.isCurrentTurn ? 0xfff1bf : 0x83d0ae, 0.92),
-        );
-        this.renderLayer.add(
-            this.add
-                .text(PLAYER_GAME_WIDTH / 2 - 62, playerPovZones.playerHudY, player.iconLabel, {
-                    fontFamily: 'Arial',
-                    fontSize: '10px',
-                    fontStyle: '700',
-                    color: player.isCurrentTurn ? '#10251c' : CREAM,
-                })
-                .setOrigin(0.5),
-        );
-        const playerCounters = parsePlayerCounters(player.metaLabel);
-        const isLowCards = playerCounters.cards > 0 && playerCounters.cards < 10;
-        this.renderLayer.add(
-            this.add.text(
-                PLAYER_GAME_WIDTH / 2 - 38,
-                playerPovZones.playerHudY - 8,
-                player.nameLabel,
-                {
-                    fontFamily: 'Arial',
-                    fontSize: '12px',
-                    fontStyle: '700',
-                    color: CREAM,
-                    wordWrap: { width: 92 },
-                },
-            ),
-        );
-        this.renderLayer.add(
-            this.add.text(
-                PLAYER_GAME_WIDTH / 2 - 38,
-                playerPovZones.playerHudY + 8,
-                playerCounters.cards + ' cards',
-                {
-                    fontFamily: 'Arial',
-                    fontSize: '9px',
-                    color: isLowCards ? 'rgba(255,140,60,0.96)' : DIM,
-                },
-            ),
-        );
-        this.renderLayer.add(
-            this.add
-                .text(
-                    PLAYER_GAME_WIDTH / 2 + 66,
-                    playerPovZones.playerHudY,
-                    String(playerCounters.score),
-                    {
-                        fontFamily: 'Arial',
-                        fontSize: '15px',
-                        fontStyle: '700',
-                        color: 'rgba(255,209,102,0.96)',
-                    },
-                )
-                .setOrigin(0.5),
-        );
-
-        if (presentation.actionStyle === 'battle') {
-            const turnLabel = player.isCurrentTurn ? '▸ YOUR TURN' : '· waiting';
-            this.renderLayer.add(
-                this.add
-                    .text(PLAYER_GAME_WIDTH / 2, playerPovZones.playerHudY + 26, turnLabel, {
-                        fontFamily: 'Arial',
-                        fontSize: '9px',
-                        fontStyle: player.isCurrentTurn ? '700' : '400',
-                        color: player.isCurrentTurn ? 'rgba(255,209,102,0.96)' : DIM,
-                    })
-                    .setOrigin(0.5),
-            );
         }
 
         this.localPlayerDeckPoint = null;

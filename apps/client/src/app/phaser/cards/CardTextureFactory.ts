@@ -81,7 +81,7 @@ export function ensureDeckTextures(
             CANVAS_TEXTURE_HEIGHT,
         );
         if (texture) {
-            drawCardBack(texture.getContext(), deckDefinition, skin);
+            drawCardBack(texture.getContext(), skin);
             texture.refresh();
         }
     }
@@ -142,7 +142,6 @@ function drawCardFace(
 
 function drawCardBack(
     context: CanvasRenderingContext2D,
-    deckDefinition: DeckDefinition,
     skin: CardSkinDefinition,
 ): void {
     clearCanvas(context);
@@ -187,12 +186,6 @@ function drawCardBack(
     context.beginPath();
     context.arc(0, 0, 30, 0, Math.PI * 2);
     context.fill();
-
-    context.fillStyle = '#f7f1de';
-    context.font = '700 20px Georgia';
-    context.textAlign = 'center';
-    context.textBaseline = 'middle';
-    context.fillText(deckDefinition.name.toUpperCase(), 0, 0, 124);
     context.restore();
 }
 
