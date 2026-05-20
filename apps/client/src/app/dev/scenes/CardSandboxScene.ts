@@ -10,6 +10,7 @@ import {
     getCardFaceTextureKey,
     preloadFrenchCardTextures,
 } from '../../phaser/cards/CardTextureFactory';
+import { preloadSpanishSheetTexture } from '../../phaser/cards/SpanishCardSpriteSheet';
 import {
     createCardAnimationLayer,
     type CardAnimationLayer,
@@ -70,6 +71,7 @@ export class CardSandboxScene extends Phaser.Scene {
 
     preload(): void {
         preloadFrenchCardTextures(this, SKIN_ID);
+        preloadSpanishSheetTexture(this);
     }
 
     create(): void {
