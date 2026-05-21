@@ -629,6 +629,23 @@ a {
     border-color: rgba(192, 57, 43, 1);
 }
 
+.playerBackToLobbyButton {
+    background: rgba(6, 19, 14, 0.88);
+    border: 1px solid rgba(255, 209, 102, 0.8);
+    border-radius: 8px;
+    color: #f3ead5;
+    font-size: 13px;
+    font-weight: 600;
+    padding: 6px 12px;
+    cursor: pointer;
+    transition: background 160ms, border-color 160ms;
+}
+
+.playerBackToLobbyButton:hover {
+    background: rgba(6, 19, 14, 0.98);
+    border-color: rgba(255, 209, 102, 1);
+}
+
 .confirmDialogOverlay {
     position: fixed;
     inset: 0;

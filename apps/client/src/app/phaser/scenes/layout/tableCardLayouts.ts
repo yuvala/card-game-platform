@@ -256,6 +256,24 @@ function getTrickSeatPosition(playerIndex: number, playerCount: number): ScenePo
     return getTrickSeatFallbackPosition(playerIndex, playerCount);
 }
 
+export function getTrickSeatDisplayStateForPlayer(
+    playerId: string,
+    players: readonly CardGameViewPlayer[],
+): TableCardDisplayState {
+    const playerIndex = Math.max(
+        players.findIndex((p) => p.id === playerId),
+        0,
+    );
+    const position = getTrickSeatPosition(playerIndex, players.length);
+    const seatLayout = getSeatLayouts(players.length)[playerIndex];
+    return {
+        x: position.x,
+        y: position.y,
+        angle: seatLayout?.angle ?? 0,
+        stackIndex: 0,
+    };
+}
+
 export function getTrickSeatCardDisplayState(input: {
     cards: readonly CardGameViewTableCard[];
     players: readonly CardGameViewPlayer[];

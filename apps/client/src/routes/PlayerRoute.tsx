@@ -116,13 +116,22 @@ export function PlayerRoute() {
             <main className="playerDeviceFrame">
                 <div id="player-root" className="playerRoot"></div>
                 <div className="playerCanvasButtons">
-                    <button
-                        className="playerLeaveButton"
-                        onClick={() => { if (isGameOver) { location.href = '/'; } else { setShowLeaveDialog(true); } }}
-                        aria-label="Leave game"
-                    >
-                        ←
-                    </button>
+                    {isGameOver ? (
+                        <button
+                            className="playerBackToLobbyButton"
+                            onClick={() => { location.href = '/'; }}
+                        >
+                            Back to Lobby
+                        </button>
+                    ) : (
+                        <button
+                            className="playerLeaveButton"
+                            onClick={() => { setShowLeaveDialog(true); }}
+                            aria-label="Leave game"
+                        >
+                            ←
+                        </button>
+                    )}
                     <button
                         className="playerSettingsButton"
                         onClick={() => globalThis.dispatchEvent(new CustomEvent('player-settings-toggle'))}

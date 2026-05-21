@@ -100,7 +100,7 @@ function getWinningPlayedCard(context: BriscaLiteContext): BriscaLitePlayedCard 
 
 function getWinnerIndex(context: BriscaLiteContext, winnerId: string | null): number {
     const winnerIndex = context.players.findIndex((player) => player.id === winnerId);
-    return winnerIndex >= 0 ? winnerIndex : 0;
+    return Math.max(0, winnerIndex);
 }
 
 function drawOneCardForPlayer(
@@ -307,6 +307,7 @@ export function queuePlayedCardWithEffects(context: BriscaLiteContext): {
                 fromIndex: Math.max(0, fromIndex),
                 fromFaceUp: true,
                 toPileId: BRISCA_LITE_TRICK_PILE_ID,
+                toIndex: getPileCards(context.piles, BRISCA_LITE_TRICK_PILE_ID).length,
                 isFaceUp: true,
                 keyPrefix: 'play-' + String(context.round) + '-' + String(context.turnIndex),
             }),

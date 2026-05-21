@@ -8,7 +8,12 @@ import {
 import type { CardGameEffectReason } from '@engine/engine/game/effects';
 import type { CardGameViewCard, CardGameViewModel } from '@engine/engine/game/viewModel';
 import { CARD_HEIGHT, CARD_WIDTH } from '../layout/constants';
-import { getTableCardDisplayState, getTableCardPosition } from '../layout/tableCardLayouts';
+import {
+    getTableCardDisplayState,
+    getTableCardPosition,
+    getTrickSeatCardDisplayState,
+    getTrickSeatDisplayStateForPlayer,
+} from '../layout/tableCardLayouts';
 import {
     animateCollectCards,
     animateCardToStack,
@@ -201,6 +206,15 @@ function getEffectTableCardPoint(input: {
         return null;
     }
 
+    if (input.viewModel.tablePresentation === 'trick-seats') {
+        const displayState = getTrickSeatCardDisplayState({
+            cards: input.viewModel.tableCards,
+            players: input.viewModel.players,
+            index: tableCardIndex,
+        });
+        return { x: displayState.x, y: displayState.y, angle: displayState.angle };
+    }
+
     const displayState = getTableCardDisplayState(
         input.viewModel.tableCards,
         tableCardIndex,
@@ -354,6 +368,14 @@ function getDestinationPoint(input: {
                 y: visibleTablePoint.y,
                 angle: visibleTablePoint.angle,
             };
+        }
+
+        if (viewModel.tablePresentation === 'trick-seats' && effect.fromOwnerId) {
+            const seatPoint = getTrickSeatDisplayStateForPlayer(
+                effect.fromOwnerId,
+                viewModel.players,
+            );
+            return { x: seatPoint.x, y: seatPoint.y, angle: seatPoint.angle };
         }
 
         const tableCardCount = Math.max(viewModel.tableCards.length, (effect.toIndex ?? 0) + 1, 2);

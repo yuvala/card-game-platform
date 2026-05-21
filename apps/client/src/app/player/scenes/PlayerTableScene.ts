@@ -1876,6 +1876,18 @@ export class PlayerTableScene extends Phaser.Scene {
         }
 
         if ((viewModel.tablePileIds ?? []).includes(effect.toPileId)) {
+            if (viewModel.tablePresentation === 'trick-seats' && effect.fromOwnerId) {
+                const alreadyOnTable = viewModel.tableCards.some(
+                    (c) =>
+                        c.id === effect.card.id ||
+                        (c.sourceCardIds ?? []).includes(effect.card.id),
+                );
+                if (!alreadyOnTable) {
+                    return getTrickCardPoint(
+                        getPlayerPovSeatSide(viewModel, effect.fromOwnerId),
+                    );
+                }
+            }
             return this.getTableCardPoint(
                 viewModel,
                 effect.toIndex ?? viewModel.tableCards.length - 1,
