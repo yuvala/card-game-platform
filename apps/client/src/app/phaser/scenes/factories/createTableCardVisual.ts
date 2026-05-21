@@ -30,14 +30,9 @@ export function createTableCardVisual(
     scene: Phaser.Scene,
     backTextureKey: string,
 ): TableCardVisual {
-    const shadow = scene.add.rectangle(
-        5,
-        8,
-        TABLE_CARD_WIDTH + 8,
-        TABLE_CARD_HEIGHT + 8,
-        0x000000,
-        0.22,
-    );
+    const shadow = scene.add.rectangle(6, 9, TABLE_CARD_WIDTH + 18, TABLE_CARD_HEIGHT + 18, 0x000000, 0.22);
+    const shadow2 = scene.add.rectangle(4, 7, TABLE_CARD_WIDTH + 10, TABLE_CARD_HEIGHT + 10, 0x000000, 0.28);
+    const shadow3 = scene.add.rectangle(2, 4, TABLE_CARD_WIDTH + 4, TABLE_CARD_HEIGHT + 4, 0x000000, 0.32);
     const stackBacks = [
         { x: -10, y: -8 },
         { x: -5, y: -4 },
@@ -87,6 +82,8 @@ export function createTableCardVisual(
         .container(TABLE_CENTER_X, 392, [
             caption,
             shadow,
+            shadow2,
+            shadow3,
             ...stackBacks,
             image,
             outline,

@@ -1,4 +1,4 @@
-import { PLAYER_GAME_WIDTH } from './createPlayerGame';
+import { PLAYER_GAME_WIDTH } from './playerGameDimensions';
 
 export type PlayerPovSeatSide = 'top' | 'left' | 'right' | 'bottom';
 
@@ -160,4 +160,49 @@ export function getStockTrumpPoint(): PlayerPovPoint {
         x: 56,
         y: playerPovZones.stockTrumpY,
     };
+}
+
+export function getOpponentFanCardPoint(
+    count: number,
+    index: number,
+    cx: number,
+    cy: number,
+    side: 'top' | 'left' | 'right',
+): PlayerPovOrientedPoint {
+    const offset = index - (count - 1) / 2;
+    const spread = count > 1 ? Math.min(14, 84 / (count - 1)) : 0;
+    const arcFactor = 4;
+    const fanAngleDeg = offset * 7;
+    const baseDx = offset * spread;
+    const baseDy = -Math.abs(offset) * arcFactor;
+
+    if (side === 'top') {
+        return { x: cx + baseDx, y: cy + baseDy, angle: fanAngleDeg };
+    }
+    if (side === 'left') {
+        return { x: cx + baseDy, y: cy - baseDx, angle: -fanAngleDeg + 90 };
+    }
+    return { x: cx - baseDy, y: cy + baseDx, angle: -fanAngleDeg - 90 };
+}
+
+export function getOpponentFanCenter(
+    layout: PlayerPovSeatLayout,
+    cardCount: number,
+): { cx: number; cy: number } {
+    if (layout.side === 'top') {
+        const seatY = layout.y + 6;
+        const seatHeight = 36;
+        const cx = layout.x;
+        const cy = seatY + seatHeight / 2 + 6 + playerPovCardSizes.opponent.height / 2;
+        return { cx, cy };
+    }
+
+    const panelHeight = 36;
+    const panelWidth = 112;
+    const panelCenterX =
+        layout.side === 'left' ? panelWidth / 2 : PLAYER_GAME_WIDTH - panelWidth / 2;
+    const spread = cardCount > 1 ? Math.min(14, 84 / (cardCount - 1)) : 0;
+    const fanTopY = layout.y + panelHeight / 2 + 6 + playerPovCardSizes.opponent.height / 2;
+    const cy = fanTopY + ((cardCount - 1) / 2) * spread;
+    return { cx: panelCenterX, cy };
 }

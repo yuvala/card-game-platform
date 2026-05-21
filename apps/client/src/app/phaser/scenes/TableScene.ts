@@ -225,10 +225,12 @@ export class TableScene<TSnapshot> extends Phaser.Scene {
             const outline = this.add
                 .rectangle(0, 0, CARD_WIDTH + 8, CARD_HEIGHT + 8, 0x000000, 0)
                 .setStrokeStyle(1, 0x17352b, 0.28);
+            const cardShadow = this.add.rectangle(5, 8, CARD_WIDTH + 14, CARD_HEIGHT + 14, 0x000000, 0.25);
+            const cardShadow2 = this.add.rectangle(3, 5, CARD_WIDTH + 6, CARD_HEIGHT + 6, 0x000000, 0.32);
             const slotX = startX + layout.gapX * i;
             const slotY = startY + layout.gapY * i;
             const container = this.add
-                .container(slotX, slotY, [...stackBacks, image, outline])
+                .container(slotX, slotY, [cardShadow, cardShadow2, ...stackBacks, image, outline])
                 .setAngle(layout.angle);
             const hitTarget = this.add
                 .rectangle(slotX, slotY, CARD_WIDTH, CARD_HEIGHT, 0x000000, 0.001)

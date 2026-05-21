@@ -5,7 +5,7 @@ import { getPileCards } from '../../engine/game/piles';
 import { briscaLiteConfig } from './config';
 import { createInitialContext, createShuffledContext, dealOpeningHands } from './setup';
 import {
-    advanceToNextPlayer,
+    advanceToNextPlayerWithEffects,
     advanceToNextTrickWithEffects,
     canCurrentPlayerPlay,
     commitPlayedCard,
@@ -64,6 +64,10 @@ export const briscaLiteGameDefinition: GameDefinition<
             return [];
         }
 
+        if (state.roundCards.some((rc) => rc.playerId === currentPlayer.id)) {
+            return [];
+        }
+
         const moves: BriscaLiteMove[] = getPileCards(
             state.piles,
             getBriscaLiteHandPileId(currentPlayer.id),
@@ -109,10 +113,13 @@ export const briscaLiteGameDefinition: GameDefinition<
                 return {
                     state: finalizeTurn(state),
                 };
-            case 'advance-next-player':
+            case 'advance-next-player': {
+                const transition = advanceToNextPlayerWithEffects(state);
                 return {
-                    state: setTrickStatus(advanceToNextPlayer(state)),
+                    state: setTrickStatus(transition.state),
+                    effects: transition.effects,
                 };
+            }
             case 'advance-next-trick': {
                 const transition = advanceToNextTrickWithEffects(state);
                 return {

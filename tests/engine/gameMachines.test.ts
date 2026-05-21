@@ -843,8 +843,8 @@ async function runBriscaLiteMachineTest() {
     snapshot = actor.getSnapshot();
     assert(snapshot.context.roundCards.length === 1, "Brisca-lite should keep one card in the current trick after the first play.");
     assert(
-        getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(currentPlayer.id)).length === 0,
-        "Brisca-lite should remove the played card from the first player's hand pile."
+        getPileCards(snapshot.context.piles, getBriscaLiteHandPileId(currentPlayer.id)).length === 1,
+        "Brisca-lite first player should have drawn one card after playing (sequential draw rule)."
     );
 
     const secondPlayer = snapshot.context.players[snapshot.context.turnIndex];
@@ -863,8 +863,8 @@ async function runBriscaLiteMachineTest() {
         "Brisca-lite should emit collect effects when moving trick cards to the winner capture pile."
     );
     assert(
-        snapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "draw").length === 2,
-        "Brisca-lite should emit draw effects when refilling both players after a trick."
+        snapshot.context.lastEffects.filter((effect) => isMoveCardEffect(effect) && effect.reason === "draw").length === 1,
+        "Brisca-lite advance-next-trick should emit one draw effect (last player; first player drew earlier in advance-next-player)."
     );
     assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
     assert(snapshot.context.playedCardHistory.length === 2, "Brisca-lite should record both played cards in played-card history.");

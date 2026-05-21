@@ -32,6 +32,8 @@ import { musicPlayer } from '../../../audio/musicPlayer';
 import { PLAYER_GAME_HEIGHT, PLAYER_GAME_WIDTH } from '../createPlayerGame';
 import {
     getHandCardPoint,
+    getOpponentFanCardPoint,
+    getOpponentFanCenter,
     getOpponentSeatLayouts,
     getStockTrumpPoint,
     getTableRowCardPoint,
@@ -51,11 +53,14 @@ import {
     getPlayerPovSeatSide,
     getPrimaryPileText,
     normalizeActionLabel,
+    parsePlayerCounters,
     type PlayerPovPlayerCounters,
 } from '../playerPovUiModel';
 
 const HAND_CARD_W = playerPovCardSizes.hand.width;
 const HAND_CARD_H = playerPovCardSizes.hand.height;
+const OPP_CARD_W = playerPovCardSizes.opponent.width;   // 42
+const OPP_CARD_H = playerPovCardSizes.opponent.height;  // 62
 const TABLE_CARD_W = playerPovCardSizes.table.width;
 const TABLE_CARD_H = playerPovCardSizes.table.height;
 const STOCK_TRUMP_CARD_W = playerPovCardSizes.stockTrump.width;
@@ -853,6 +858,20 @@ export class PlayerTableScene extends Phaser.Scene {
                 })
                 .setOrigin(0, 0.5),
         );
+
+        const cardCount = Math.min(counters.cards, 8);
+        if (cardCount > 0) {
+            const fanCenterY = seatY + seatHeight / 2 + 6 + OPP_CARD_H / 2;
+            for (let i = 0; i < cardCount; i++) {
+                const pt = getOpponentFanCardPoint(cardCount, i, x, fanCenterY, 'top');
+                const back = this.add
+                    .image(pt.x, pt.y, this.getActiveBackTextureKey())
+                    .setDisplaySize(OPP_CARD_W, OPP_CARD_H)
+                    .setAngle(pt.angle);
+                this.setCardDisplaySize(back, OPP_CARD_W, OPP_CARD_H);
+                this.renderLayer.add(back);
+            }
+        }
     }
 
     private drawSideOpponent(
@@ -950,6 +969,23 @@ export class PlayerTableScene extends Phaser.Scene {
                 })
                 .setOrigin(originX, 0.5),
         );
+
+        const cardCount = Math.min(counters.cards, 6);
+        if (cardCount > 0) {
+            const fanSide = isLeft ? 'left' : 'right';
+            const spread = cardCount > 1 ? Math.min(14, 84 / (cardCount - 1)) : 0;
+            const fanTopY = panelY + panelHeight / 2 + 6 + OPP_CARD_H / 2;
+            const fanCenterY = fanTopY + ((cardCount - 1) / 2) * spread;
+            for (let i = 0; i < cardCount; i++) {
+                const pt = getOpponentFanCardPoint(cardCount, i, panelCenterX, fanCenterY, fanSide);
+                const back = this.add
+                    .image(pt.x, pt.y, this.getActiveBackTextureKey())
+                    .setDisplaySize(OPP_CARD_W, OPP_CARD_H)
+                    .setAngle(pt.angle);
+                this.setCardDisplaySize(back, OPP_CARD_W, OPP_CARD_H);
+                this.renderLayer.add(back);
+            }
+        }
     }
 
     private drawTableCards(
@@ -1879,11 +1915,11 @@ export class PlayerTableScene extends Phaser.Scene {
             return null;
         }
 
-        return {
-            x: opponentPosition.x,
-            y: opponentPosition.y - 24,
-            angle: opponentPosition.angle,
-        };
+        const player = viewModel.players[playerIndex];
+        const fanCount = Math.min(parsePlayerCounters(player?.metaLabel ?? '').cards, 8);
+        const { cx, cy } = getOpponentFanCenter(opponentPosition, fanCount);
+        const pt = getOpponentFanCardPoint(fanCount, index, cx, cy, opponentPosition.side as 'top' | 'left' | 'right');
+        return { x: pt.x, y: pt.y, angle: pt.angle };
     }
 
     private getTableCardPoint(

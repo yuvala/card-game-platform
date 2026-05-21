@@ -103,68 +103,54 @@ function getWinnerIndex(context: BriscaLiteContext, winnerId: string | null): nu
     return winnerIndex >= 0 ? winnerIndex : 0;
 }
 
-function drawCardsForPlayers(
+function drawOneCardForPlayer(
     context: BriscaLiteContext,
-    winnerId: string | null,
-): Pick<BriscaLiteContext, 'piles' | 'trumpCard' | 'trumpSuitId'> & { effects: CardGameEffect[] } {
-    let piles = context.piles;
-    const effects: CardGameEffect[] = [];
-    const winnerIndex = getWinnerIndex(context, winnerId);
-
-    for (let offset = 0; offset < context.players.length; offset += 1) {
-        const playerIndex = (winnerIndex + offset) % context.players.length;
-        const player = context.players[playerIndex];
-        if (!player) {
-            continue;
-        }
-
-        const toPileId = getBriscaLiteHandPileId(player.id);
-        const stockDraw = moveTopCardBetweenPiles(piles, BRISCA_LITE_STOCK_PILE_ID, toPileId);
-        piles = stockDraw.piles;
-        if (stockDraw.card) {
-            effects.push(
-                createDrawCardEffect({
-                    card: stockDraw.card,
-                    fromPileId: BRISCA_LITE_STOCK_PILE_ID,
-                    toPileId,
-                    toOwnerId: player.id,
-                    toIndex: Math.max(0, getPileCards(piles, toPileId).length - 1),
-                    isFaceUp: false,
-                    keyPrefix:
-                        'draw-' + String(context.round) + '-' + String(offset) + '-' + player.id,
-                }),
-            );
-            continue;
-        }
-
-        const trumpDraw = moveTopCardBetweenPiles(piles, BRISCA_LITE_TRUMP_PILE_ID, toPileId);
-        piles = trumpDraw.piles;
-        if (trumpDraw.card) {
-            effects.push(
-                createDrawCardEffect({
-                    card: trumpDraw.card,
-                    fromPileId: BRISCA_LITE_TRUMP_PILE_ID,
-                    toPileId,
-                    toOwnerId: player.id,
-                    toIndex: Math.max(0, getPileCards(piles, toPileId).length - 1),
-                    isFaceUp: true,
-                    keyPrefix: 'draw-trump-' + String(context.round) + '-' + player.id,
-                }),
-            );
-        }
+    playerIndex: number,
+): { piles: BriscaLiteContext['piles']; effects: CardGameEffect[] } {
+    const player = context.players[playerIndex];
+    if (!player) {
+        return { piles: context.piles, effects: [] };
     }
 
-    const nextContext = syncBriscaLiteContextFromPiles({
-        ...context,
-        piles,
-    });
+    let piles = context.piles;
+    const effects: CardGameEffect[] = [];
+    const toPileId = getBriscaLiteHandPileId(player.id);
 
-    return {
-        piles: nextContext.piles,
-        trumpCard: nextContext.trumpCard,
-        trumpSuitId: nextContext.trumpSuitId,
-        effects,
-    };
+    const stockDraw = moveTopCardBetweenPiles(piles, BRISCA_LITE_STOCK_PILE_ID, toPileId);
+    piles = stockDraw.piles;
+
+    if (stockDraw.card) {
+        effects.push(
+            createDrawCardEffect({
+                card: stockDraw.card,
+                fromPileId: BRISCA_LITE_STOCK_PILE_ID,
+                toPileId,
+                toOwnerId: player.id,
+                toIndex: Math.max(0, getPileCards(piles, toPileId).length - 1),
+                isFaceUp: false,
+                keyPrefix: 'draw-' + String(context.round) + '-' + String(playerIndex),
+            }),
+        );
+        return { piles, effects };
+    }
+
+    const trumpDraw = moveTopCardBetweenPiles(piles, BRISCA_LITE_TRUMP_PILE_ID, toPileId);
+    piles = trumpDraw.piles;
+    if (trumpDraw.card) {
+        effects.push(
+            createDrawCardEffect({
+                card: trumpDraw.card,
+                fromPileId: BRISCA_LITE_TRUMP_PILE_ID,
+                toPileId,
+                toOwnerId: player.id,
+                toIndex: Math.max(0, getPileCards(piles, toPileId).length - 1),
+                isFaceUp: true,
+                keyPrefix: 'draw-trump-' + String(context.round) + '-' + player.id,
+            }),
+        );
+    }
+
+    return { piles, effects };
 }
 
 function collectTrickToWinner(context: BriscaLiteContext): BriscaLiteContext {
@@ -415,14 +401,27 @@ export function finalizeTurn(context: BriscaLiteContext): BriscaLiteContext {
     };
 }
 
-export function advanceToNextPlayer(context: BriscaLiteContext): BriscaLiteContext {
+export function advanceToNextPlayerWithEffects(context: BriscaLiteContext): {
+    state: BriscaLiteContext;
+    effects: CardGameEffect[];
+} {
+    const draw = drawOneCardForPlayer(context, context.turnIndex);
+    const nextIndex = getNextPlayerIndex(context);
     return {
-        ...context,
-        turnIndex: getNextPlayerIndex(context),
-        selectedCardId: null,
-        winningPlayerIds: [],
-        trickWinnerId: null,
+        state: syncBriscaLiteContextFromPiles({
+            ...context,
+            piles: draw.piles,
+            turnIndex: nextIndex,
+            selectedCardId: null,
+            winningPlayerIds: [],
+            trickWinnerId: null,
+        }),
+        effects: draw.effects,
     };
+}
+
+export function advanceToNextPlayer(context: BriscaLiteContext): BriscaLiteContext {
+    return advanceToNextPlayerWithEffects(context).state;
 }
 
 export function advanceToNextTrick(context: BriscaLiteContext): BriscaLiteContext {
@@ -433,10 +432,19 @@ export function advanceToNextTrickWithEffects(context: BriscaLiteContext): {
     state: BriscaLiteContext;
     effects: CardGameEffect[];
 } {
-    const collectTransition = collectTrickToWinnerWithEffects(context);
+    // Draw for the last player who played (not the winner — turnIndex was set to winner by finalizeTurn)
+    const lastPlayedEntry = context.roundCards[context.roundCards.length - 1];
+    const lastPlayerIndex = lastPlayedEntry
+        ? context.players.findIndex((p) => p.id === lastPlayedEntry.playerId)
+        : context.turnIndex;
+    const draw = drawOneCardForPlayer(
+        context,
+        lastPlayerIndex >= 0 ? lastPlayerIndex : context.turnIndex,
+    );
+    const drawnContext = syncBriscaLiteContextFromPiles({ ...context, piles: draw.piles });
+
+    const collectTransition = collectTrickToWinnerWithEffects(drawnContext);
     const collectedContext = collectTransition.state;
-    const nextRoundState = drawCardsForPlayers(collectedContext, collectedContext.trickWinnerId);
-    const { effects: drawEffects, ...nextContextState } = nextRoundState;
     const nextLeaderId =
         collectedContext.trickWinnerId ??
         collectedContext.leadPlayerId ??
@@ -447,10 +455,7 @@ export function advanceToNextTrickWithEffects(context: BriscaLiteContext): {
     return {
         state: {
             ...collectedContext,
-            ...nextContextState,
-            playedCardHistory: collectedContext.playedCardHistory.concat(
-                collectedContext.roundCards,
-            ),
+            playedCardHistory: collectedContext.playedCardHistory.concat(collectedContext.roundCards),
             roundCards: [],
             round: collectedContext.round + 1,
             turnIndex: nextLeaderIndex,
@@ -464,13 +469,10 @@ export function advanceToNextTrickWithEffects(context: BriscaLiteContext): {
                 ' leads trick ' +
                 (collectedContext.round + 1) +
                 '. Trump is ' +
-                getTrumpSummary({
-                    ...collectedContext,
-                    ...nextContextState,
-                } as BriscaLiteContext) +
+                getTrumpSummary(drawnContext) +
                 '.',
         },
-        effects: collectTransition.effects.concat(drawEffects),
+        effects: draw.effects.concat(collectTransition.effects),
     };
 }
 
