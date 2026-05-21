@@ -103,6 +103,21 @@ export function init(): void {
         clearState();
         activeGame = createPlayerGame('player-root', session);
 
+        // On mobile, orientationchange fires before the browser has finished
+        // updating viewport dimensions. Wait for the following resize event
+        // (or a 500ms fallback) before telling Phaser to re-measure.
+        globalThis.addEventListener('orientationchange', () => {
+            const onResize = () => {
+                globalThis.removeEventListener('resize', onResize);
+                activeGame?.scale.refresh();
+            };
+            globalThis.addEventListener('resize', onResize);
+            setTimeout(() => {
+                globalThis.removeEventListener('resize', onResize);
+                activeGame?.scale.refresh();
+            }, 500);
+        });
+
         // Set viewer BEFORE renderPlayerOptions so it doesn't override our seat selection
         const myPlayerId = `p${myIndex + 1}`;
         session.setViewer(myPlayerId);

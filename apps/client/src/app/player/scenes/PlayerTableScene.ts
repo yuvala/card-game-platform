@@ -214,6 +214,7 @@ export class PlayerTableScene extends Phaser.Scene {
     preload(): void {
         this.load.image('bg-brisca', 'images/bg-brisca.jpg');
         this.load.image('bg-war', 'images/map4.jpg');
+        this.load.image('win-bg', '/assets/lobby/win.png');
         preloadFrenchCardTextures(this, 'vintage-european');
         preloadSpanishSheetTexture(this);
     }
@@ -374,7 +375,13 @@ export class PlayerTableScene extends Phaser.Scene {
             })
             .setOrigin(0.5);
 
-        container.add([overlay, panelBg, title, sub]);
+        const items: Phaser.GameObjects.GameObject[] = [overlay, panelBg];
+        if (isLocalPlayer && this.textures.exists('win-bg')) {
+            const winBg = this.add.image(0, 0, 'win-bg').setDisplaySize(panelW, panelH);
+            items.push(winBg);
+        }
+        items.push(title, sub);
+        container.add(items);
 
         this.tweens.add({
             targets: container,
