@@ -309,7 +309,7 @@ export class PlayerTableScene extends Phaser.Scene {
         this.drawOpponents(viewModel);
         this.drawTableCards(viewModel, presentation);
         this.drawPlayerHand(viewModel);
-        this.drawBottomControls(viewModel, presentation);
+        this.drawBottomControls(viewModel);
         this.drawSessionStatus();
         this.presentMoveEffects(viewModel);
         this.checkBattleFlash(viewModel);
@@ -1665,10 +1665,7 @@ export class PlayerTableScene extends Phaser.Scene {
         );
     }
 
-    private drawBottomControls(
-        viewModel: CardGameViewModel,
-        presentation: PlayerPovPresentation,
-    ): void {
+    private drawBottomControls(viewModel: CardGameViewModel): void {
         if (!this.renderLayer) {
             return;
         }
@@ -1678,10 +1675,8 @@ export class PlayerTableScene extends Phaser.Scene {
         const label = normalizeActionLabel(
             action?.label ?? (viewModel.players[0]?.isCurrentTurn ? 'Select Card' : 'Waiting'),
         );
-        const hasBottomDock = presentation.bottomDock !== 'none';
-        const dockRightX = hasBottomDock ? 310 : PLAYER_GAME_WIDTH / 2;
-        const buttonX = dockRightX;
-        const buttonWidth = hasBottomDock ? 148 : 144;
+        const buttonX = PLAYER_GAME_WIDTH / 2;
+        const buttonWidth = 144;
         const button = createRoundedPanel(
             this,
             buttonX,
@@ -1700,7 +1695,7 @@ export class PlayerTableScene extends Phaser.Scene {
             this.add
                 .text(buttonX, playerPovZones.actionButtonY, label, {
                     fontFamily: 'Arial',
-                    fontSize: canPlay && hasBottomDock ? '11px' : canPlay ? '14px' : '16px',
+                    fontSize: canPlay ? '14px' : '16px',
                     fontStyle: '700',
                     color: canPlay ? '#10251c' : DIM,
                 })
@@ -1717,8 +1712,8 @@ export class PlayerTableScene extends Phaser.Scene {
             this.renderLayer.add(hitTarget);
         }
 
-        const statusX = dockRightX;
-        const statusWidth = hasBottomDock ? 148 : PLAYER_GAME_WIDTH - 60;
+        const statusX = PLAYER_GAME_WIDTH / 2;
+        const statusWidth = PLAYER_GAME_WIDTH - 60;
         this.renderLayer.add(
             createRoundedPanel(
                 this,
@@ -1741,7 +1736,7 @@ export class PlayerTableScene extends Phaser.Scene {
                     fontSize: '10px',
                     color: DIM,
                     align: 'center',
-                    wordWrap: { width: hasBottomDock ? 128 : PLAYER_GAME_WIDTH - 82 },
+                    wordWrap: { width: PLAYER_GAME_WIDTH - 82 },
                 })
                 .setOrigin(0.5),
         );
