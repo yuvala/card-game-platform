@@ -1,10 +1,12 @@
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { AdminToolbar } from '../components/AdminToolbar';
 import { GamePanel } from '../app/app/GamePanel';
 
 export function TableRoute() {
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
+    const isWatchMode = searchParams.get('watch') === '1';
 
     useEffect(() => {
         const layers: Record<string, string> = {
@@ -33,7 +35,7 @@ export function TableRoute() {
                     Card Game
                 </span>
             </AdminToolbar>
-            <GamePanel />
+            {!isWatchMode && <GamePanel />}
             <div id="game-root" className="appRoot"></div>
             <div className="appDevHints">
                 <kbd>D</kbd>
