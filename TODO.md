@@ -10,8 +10,6 @@
   - War Lite tie / war stack / collection
   - Brisca Lite stock + trump layout
   - crowded 5-6 player tables
-- Add a mute/volume control for the new card SFX layer before adding louder or longer audio assets.
-- Leave-game dialog: skip confirm when `viewModel.phase === 'gameOver'` — currently the dialog always shows even after the game ends. Requires exposing phase from Phaser to React (no bridge exists yet).
 - Review whether the current `playedCardHistory` field should stay generic or move behind a more explicit history contract.
 - Review UI states manually for crowded tables:
   - `5-6` players

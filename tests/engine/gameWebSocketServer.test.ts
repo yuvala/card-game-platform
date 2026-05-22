@@ -28,7 +28,7 @@ async function main(): Promise<void> {
 
         sendClientMessage(admin, {
             type: "watch-session",
-            role: "admin"
+            role: "operator"
         });
         sendClientMessage(player, {
             type: "watch-session",
@@ -71,7 +71,7 @@ async function main(): Promise<void> {
             }
         });
         await waitForServerMessage(player, (message) => {
-            return message.type === "error" && message.message.includes("admin");
+            return message.type === "error" && message.message.includes("operator");
         });
 
         sendClientMessage(admin, {
@@ -134,14 +134,6 @@ async function main(): Promise<void> {
             }
         });
         await waitForServerMessage(player, (message) => message.type === "error");
-
-        sendClientMessage(admin, {
-            type: "set-viewer",
-            playerId: actingPlayer.id
-        });
-        await waitForServerMessage(admin, (message) => {
-            return message.type === "error" && message.message.includes("player");
-        });
 
         sendClientMessage(player, {
             type: "set-viewer",

@@ -61,7 +61,7 @@ export const ClientMessageSchema = z.discriminatedUnion('type', [
         type: z.literal('game-event'),
         expectedSequence: z.number().optional(),
         event: RewriteProtocolGameEventSchema,
-    }),
+    }).strict(),
 ]);
 export type ClientMessage = z.infer<typeof ClientMessageSchema>;
 

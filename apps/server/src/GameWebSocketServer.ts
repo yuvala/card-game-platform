@@ -1,10 +1,9 @@
-﻿import http from 'node:http';
+import http from 'node:http';
 import { WebSocket, WebSocketServer } from 'ws';
 
 import {
     isClientMessage,
     ROLE_CAN_CONFIGURE,
-    ROLE_CAN_TABLE_EVENTS,
     ROLE_CAN_GAME_EVENTS,
     type ClientRole,
     type ClientMessage,
@@ -14,29 +13,57 @@ import { GameSessionHost, type RewriteSessionHostOptions } from './GameSessionHo
 import { SessionLifecycle } from './SessionLifecycle';
 import { logger } from './logger';
 
+const DEFAULT_ROOM_ID = '__default__';
+
 interface RewriteClient {
     socket: WebSocket;
     role: ClientRole;
     viewerId: string | null;
+    roomId: string;
+}
+
+interface RoomSession {
+    gameHost: GameSessionHost;
+    clients: Set<RewriteClient>;
+    lifecycle: SessionLifecycle;
 }
 
 export interface GameWebSocketServer {
     server: http.Server;
     wss: WebSocketServer;
-    gameHost: GameSessionHost;
+    getGameHost(roomId?: string): GameSessionHost | undefined;
     close(): Promise<void>;
 }
 
 export function createGameWebSocketServer(
     options: RewriteSessionHostOptions = {},
 ): GameWebSocketServer {
-    const gameHost = new GameSessionHost(options);
-    const clients = new Set<RewriteClient>();
-    const lifecycle = new SessionLifecycle({
-        onAbandoned: () => {
-            gameHost.stop();
-        },
-    });
+    const rooms = new Map<string, RoomSession>();
+
+    function getOrCreateRoom(roomId: string): RoomSession {
+        const existing = rooms.get(roomId);
+        if (existing) return existing;
+
+        const gameHost = new GameSessionHost(options);
+        const clients = new Set<RewriteClient>();
+        const lifecycle = new SessionLifecycle({
+            onAbandoned: () => {
+                gameHost.stop();
+                rooms.delete(roomId);
+                logger.info({ roomId }, 'room destroyed after idle timeout');
+            },
+        });
+
+        gameHost.subscribe(() => {
+            sanitizeClientViewers(gameHost, clients);
+            broadcastViews(gameHost, clients);
+        });
+
+        const session: RoomSession = { gameHost, clients, lifecycle };
+        rooms.set(roomId, session);
+        logger.info({ roomId, totalRooms: rooms.size }, 'room created');
+        return session;
+    }
 
     const server = http.createServer((_request, response) => {
         response.writeHead(200, { 'Content-Type': 'application/json; charset=utf-8' });
@@ -44,48 +71,77 @@ export function createGameWebSocketServer(
             JSON.stringify({
                 ok: true,
                 service: 'rewrite-websocket',
-                sessionId: gameHost.sessionId,
+                rooms: rooms.size,
             }),
         );
     });
     const wss = new WebSocketServer({ server });
-
-    gameHost.subscribe(() => {
-        sanitizeClientViewers(gameHost, clients);
-        broadcastViews(gameHost, clients);
-    });
 
     wss.on('connection', (socket) => {
         const client: RewriteClient = {
             socket,
             role: 'spectator',
             viewerId: null,
+            roomId: DEFAULT_ROOM_ID,
         };
-        clients.add(client);
-        lifecycle.onClientConnected(clients.size);
-        logger.info({ clients: clients.size }, 'client connected');
+
+        const defaultRoom = getOrCreateRoom(DEFAULT_ROOM_ID);
+        defaultRoom.clients.add(client);
+        defaultRoom.lifecycle.onClientConnected(defaultRoom.clients.size);
+        logger.info({ rooms: rooms.size, clients: defaultRoom.clients.size }, 'client connected');
 
         socket.on('message', (payload) => {
-            handleSocketMessage(gameHost, client, payload.toString());
+            handleSocketMessage(rooms, getOrCreateRoom, client, toUtf8(payload));
         });
 
         socket.on('close', () => {
-            clients.delete(client);
-            lifecycle.onClientDisconnected(clients.size);
-            logger.info({ clients: clients.size }, 'client disconnected');
+            const room = rooms.get(client.roomId);
+            if (room) {
+                room.clients.delete(client);
+                room.lifecycle.onClientDisconnected(room.clients.size);
+                logger.info({ roomId: client.roomId, clients: room.clients.size }, 'client disconnected');
+            }
         });
     });
 
     return {
         server,
         wss,
-        gameHost,
-        close: () => closeGameWebSocketServer(server, wss, gameHost, lifecycle),
+        getGameHost: (roomId = DEFAULT_ROOM_ID) => rooms.get(roomId)?.gameHost,
+        close: () => closeGameWebSocketServer(server, wss, rooms),
     };
 }
 
+function assignClientToRoom(
+    rooms: Map<string, RoomSession>,
+    getOrCreateRoom: (roomId: string) => RoomSession,
+    client: RewriteClient,
+    newRoomId: string,
+): RoomSession {
+    if (client.roomId !== newRoomId) {
+        const oldRoom = rooms.get(client.roomId);
+        if (oldRoom) {
+            oldRoom.clients.delete(client);
+            oldRoom.lifecycle.onClientDisconnected(oldRoom.clients.size);
+        }
+        client.roomId = newRoomId;
+        const newRoom = getOrCreateRoom(newRoomId);
+        newRoom.clients.add(client);
+        newRoom.lifecycle.onClientConnected(newRoom.clients.size);
+        return newRoom;
+    }
+    return getOrCreateRoom(client.roomId);
+}
+
+function toUtf8(payload: Buffer | ArrayBuffer | Buffer[]): string {
+    if (Buffer.isBuffer(payload)) return payload.toString('utf8');
+    if (payload instanceof ArrayBuffer) return Buffer.from(payload).toString('utf8');
+    return Buffer.concat(payload).toString('utf8');
+}
+
 function handleSocketMessage(
-    gameHost: GameSessionHost,
+    rooms: Map<string, RoomSession>,
+    getOrCreateRoom: (roomId: string) => RoomSession,
     client: RewriteClient,
     rawMessage: string,
 ): void {
@@ -103,71 +159,78 @@ function handleSocketMessage(
         return;
     }
 
-    handleClientMessage(gameHost, client, parsed);
+    handleClientMessage(rooms, getOrCreateRoom, client, parsed);
 }
 
 function handleClientMessage(
-    gameHost: GameSessionHost,
+    rooms: Map<string, RoomSession>,
+    getOrCreateRoom: (roomId: string) => RoomSession,
     client: RewriteClient,
     message: ClientMessage,
 ): void {
     switch (message.type) {
-        case 'watch-session':
+        case 'watch-session': {
+            const roomId = message.sessionId ?? DEFAULT_ROOM_ID;
             if (message.role) {
                 client.role = message.role;
                 if (!ROLE_CAN_GAME_EVENTS.has(client.role)) {
                     client.viewerId = null;
                 }
             }
-            sendView(gameHost, client);
+            const room = assignClientToRoom(rooms, getOrCreateRoom, client, roomId);
+            sendView(room.gameHost, client);
             return;
-        case 'set-viewer':
-            client.viewerId = message.playerId;
-            sendView(gameHost, client);
+        }
+        case 'set-viewer': {
+            const room = rooms.get(client.roomId);
+            if (room) {
+                client.viewerId = message.playerId;
+                sendView(room.gameHost, client);
+            }
             return;
-        case 'configure-session':
+        }
+        case 'configure-session': {
+            const room = rooms.get(client.roomId);
+            if (!room) return;
             if (!ROLE_CAN_CONFIGURE.has(client.role)) {
                 logger.warn({ role: client.role }, 'configure-session rejected — not operator');
                 sendError(client, 'Only operator clients can configure the session.');
                 return;
             }
             logger.info(
-                { gameId: message.config.gameId, playerCount: message.config.playerCount, botSeats: message.config.botSeats, playerNames: message.config.playerNames },
+                { roomId: client.roomId, gameId: message.config.gameId, playerCount: message.config.playerCount },
                 'configure-session',
             );
-            gameHost.configure(message.config);
+            room.gameHost.configure(message.config);
             return;
-        case 'game-event':
-            {
-                if (!ROLE_CAN_GAME_EVENTS.has(client.role)) {
-                    sendError(client, 'Spectators cannot send game events.');
-                    return;
-                }
-                if (client.role === 'player' && !client.viewerId) {
-                    sendError(
-                        client,
-                        'Player clients must select a viewer before sending game events.',
-                    );
-                    return;
-                }
-                const result = gameHost.sendClientEvent(
-                    client.viewerId,
-                    message.event,
-                    message.expectedSequence,
-                );
-                if (!result.ok) {
-                    sendError(client, result.message ?? 'Illegal player event.');
-                }
+        }
+        case 'game-event': {
+            const room = rooms.get(client.roomId);
+            if (!room) return;
+            if (!ROLE_CAN_GAME_EVENTS.has(client.role)) {
+                sendError(client, 'Spectators cannot send game events.');
+                return;
+            }
+            if (client.role === 'player' && !client.viewerId) {
+                sendError(client, 'Player clients must select a viewer before sending game events.');
+                return;
+            }
+            const result = room.gameHost.sendClientEvent(
+                client.viewerId,
+                message.event,
+                message.expectedSequence,
+            );
+            if (!result.ok) {
+                sendError(client, result.message ?? 'Illegal player event.');
             }
             return;
+        }
     }
 }
 
 function sanitizeClientViewers(gameHost: GameSessionHost, clients: Set<RewriteClient>): void {
     const sessionView = gameHost.getSessionView(null);
-    if (sessionView.type !== 'session-view') {
-        return;
-    }
+    if (sessionView.type !== 'session-view') return;
 
     const activePlayerIds = new Set(sessionView.players.map((player) => player.id));
     clients.forEach((client) => {
@@ -178,9 +241,7 @@ function sanitizeClientViewers(gameHost: GameSessionHost, clients: Set<RewriteCl
 }
 
 function broadcastViews(gameHost: GameSessionHost, clients: Set<RewriteClient>): void {
-    clients.forEach((client) => {
-        sendView(gameHost, client);
-    });
+    clients.forEach((client) => sendView(gameHost, client));
 }
 
 function sendView(gameHost: GameSessionHost, client: RewriteClient): void {
@@ -192,33 +253,26 @@ function sendError(client: RewriteClient, message: string): void {
 }
 
 function send(client: RewriteClient, message: ServerMessage): void {
-    if (client.socket.readyState !== WebSocket.OPEN) {
-        return;
-    }
-
+    if (client.socket.readyState !== WebSocket.OPEN) return;
     client.socket.send(JSON.stringify(message));
 }
 
 function closeGameWebSocketServer(
     server: http.Server,
     wss: WebSocketServer,
-    gameHost: GameSessionHost,
-    lifecycle: SessionLifecycle,
+    rooms: Map<string, RoomSession>,
 ): Promise<void> {
-    lifecycle.destroy();
-    gameHost.stop();
-    wss.clients.forEach((client) => {
-        client.close();
+    rooms.forEach((room) => {
+        room.lifecycle.destroy();
+        room.gameHost.stop();
     });
+    rooms.clear();
+    wss.clients.forEach((client) => client.close());
     wss.close();
 
     return new Promise((resolve, reject) => {
         server.close((error) => {
-            if (error) {
-                reject(error);
-                return;
-            }
-
+            if (error) { reject(error); return; }
             resolve();
         });
     });
