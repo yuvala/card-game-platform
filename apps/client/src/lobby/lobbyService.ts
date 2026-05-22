@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import type { RoomRow } from './lobbyTypes';
 export type { RoomRow } from './lobbyTypes';
 export { isFull } from './lobbyTypes';
 
