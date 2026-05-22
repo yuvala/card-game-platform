@@ -79,23 +79,31 @@ export function init(): void {
             const game = getGameCatalogEntryById(gameId);
             const deckId = game?.defaultDeckId ?? 'french';
 
-            if (botCount > 0) {
-                const realPlayers = allPlayerNames.length > 0 ? allPlayerNames : [myNickname];
-                const playerCount = realPlayers.length + botCount;
-                const botSeats = Array.from({ length: botCount }, (_, i) => realPlayers.length + i);
-                const playerNames = [
-                    ...realPlayers,
-                    ...Array.from({ length: botCount }, (_, i) => `Player ${realPlayers.length + i + 1}`),
-                ];
-                await session.configure({ gameId, playerCount, playerNames, deckId, botSeats });
-            } else {
-                const playerCount = allPlayerNames.length || 2;
-                await session.configure({
-                    gameId,
-                    playerCount,
-                    playerNames: allPlayerNames.length > 0 ? allPlayerNames : undefined,
-                    deckId,
-                });
+            try {
+                if (botCount > 0) {
+                    const realPlayers = allPlayerNames.length > 0 ? allPlayerNames : [myNickname];
+                    const playerCount = realPlayers.length + botCount;
+                    const botSeats = Array.from({ length: botCount }, (_, i) => realPlayers.length + i);
+                    const playerNames = [
+                        ...realPlayers,
+                        ...Array.from({ length: botCount }, (_, i) => `Player ${realPlayers.length + i + 1}`),
+                    ];
+                    await session.configure({ gameId, playerCount, playerNames, deckId, botSeats });
+                } else {
+                    const playerCount = allPlayerNames.length || 2;
+                    await session.configure({
+                        gameId,
+                        playerCount,
+                        playerNames: allPlayerNames.length > 0 ? allPlayerNames : undefined,
+                        deckId,
+                    });
+                }
+            } catch (err) {
+                if (err instanceof Error && err.message.includes('in progress')) {
+                    // Game already started — join the existing session
+                } else {
+                    throw err;
+                }
             }
         }
 

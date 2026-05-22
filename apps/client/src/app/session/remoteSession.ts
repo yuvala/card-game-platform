@@ -185,11 +185,20 @@ function waitForNextSessionView(
             resolvers.delete(handleSessionView);
             socket.removeEventListener('close', handleClose);
             socket.removeEventListener('error', handleError);
+            socket.removeEventListener('message', handleServerError);
         };
 
         const handleSessionView = () => {
             cleanup();
             resolve();
+        };
+
+        const handleServerError = (event: MessageEvent) => {
+            const message = parseServerMessage(event.data);
+            if (message?.type === 'error') {
+                cleanup();
+                reject(new Error(message.message));
+            }
         };
 
         const handleClose = () => {
@@ -205,6 +214,7 @@ function waitForNextSessionView(
         resolvers.add(handleSessionView);
         socket.addEventListener('close', handleClose);
         socket.addEventListener('error', handleError);
+        socket.addEventListener('message', handleServerError);
         sendMessage();
     });
 }
