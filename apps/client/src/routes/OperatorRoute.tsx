@@ -123,6 +123,7 @@ export function OperatorRoute() {
                                 <button
                                     className="operatorBtn operatorBtn--view"
                                     onClick={() => viewTable(room)}
+                                    disabled={room.status !== 'playing'}
                                 >
                                     View
                                 </button>

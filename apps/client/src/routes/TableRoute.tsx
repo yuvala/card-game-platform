@@ -1,8 +1,11 @@
 import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { AdminToolbar } from '../components/AdminToolbar';
 import { GamePanel } from '../app/app/GamePanel';
 
 export function TableRoute() {
+    const navigate = useNavigate();
+
     useEffect(() => {
         const layers: Record<string, string> = {
             origins: 'dbg-origins',
@@ -25,6 +28,7 @@ export function TableRoute() {
     return (
         <div className="adminShell">
             <AdminToolbar>
+                <button className="operatorBtn operatorBtn--back" onClick={() => navigate('/operator')}>← Operator</button>
                 <span id="game-title" className="adminToolbarGameTitle">
                     Card Game
                 </span>
