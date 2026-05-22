@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from './supabase';
 import { getGameCatalogEntryById } from '@engine/games/catalog';
 import * as lobbyService from './lobbyService';
@@ -22,6 +22,8 @@ export function useWaitingRoom(userId: string, nickname: string) {
     const [players, setPlayers] = useState<PlayerEntry[]>([]);
     const [isOwner, setIsOwner] = useState(false);
     const [leftMessage, setLeftMessage] = useState<string | null>(null);
+    const playersRef = useRef<PlayerEntry[]>([]);
+    useEffect(() => { playersRef.current = players; }, [players]);
 
     useEffect(() => { restore(); }, [userId]);
 
@@ -96,9 +98,21 @@ export function useWaitingRoom(userId: string, nickname: string) {
                 if (status === 'SUBSCRIBED') fetchPlayers();
             });
 
+        let accessToken = '';
+        supabase.auth.getSession().then(({ data: { session } }) => {
+            accessToken = session?.access_token ?? '';
+        });
+
         const handleUnload = () => {
             const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/players?room_id=eq.${myRoom.id}&user_id=eq.${userId}`;
-            navigator.sendBeacon(url, '');
+            fetch(url, {
+                method: 'DELETE',
+                headers: {
+                    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY as string,
+                    Authorization: `Bearer ${accessToken}`,
+                },
+                keepalive: true,
+            });
         };
         window.addEventListener('beforeunload', handleUnload);
 
@@ -124,14 +138,8 @@ export function useWaitingRoom(userId: string, nickname: string) {
                         return;
                     }
                     if (updated.status === 'playing' && updated.ws_url) {
-                        const { data: playerRows } = await supabase
-                            .from('players')
-                            .select('nickname')
-                            .eq('room_id', myRoom.id)
-                            .order('joined_at', { ascending: true });
-                        const allPlayerNames = playerRows?.map((p: any) => p.nickname as string) ?? [];
+                        const allPlayerNames = playersRef.current.map(p => p.nickname);
                         lobbyService.redirectToGame(myRoom.id, myRoom.gameId, updated.ws_url, nickname, 0, allPlayerNames);
-
                         return;
                     }
                     setMyRoom(prev => prev ? { ...prev, botCount: updated.bot_count ?? prev.botCount } : prev);
