@@ -23,6 +23,7 @@ interface RoomRow {
     game_id: string;
     status: string;
     max_players: number;
+    bot_count: number;
     creator_nickname: string | null;
     player_count: number;
     ws_url: string | null;
@@ -53,7 +54,7 @@ export function OperatorRoute() {
     async function fetchRooms() {
         const { data } = await supabase
             .from('rooms')
-            .select('id, game_id, status, max_players, creator_nickname, ws_url, players(count)')
+            .select('id, game_id, status, max_players, bot_count, creator_nickname, ws_url, players(count)')
             .in('status', ['waiting', 'playing'])
             .order('created_at', { ascending: false })
             .limit(50);
@@ -62,6 +63,7 @@ export function OperatorRoute() {
         setRooms(data.map((r: any) => ({
             ...r,
             player_count: r.players[0]?.count ?? 0,
+            bot_count: r.bot_count ?? 0,
         })));
     }
 
@@ -107,7 +109,7 @@ export function OperatorRoute() {
                             </div>
                             <div className="operatorRoomInfo">
                                 <span className="operatorRoomCreator">{room.creator_nickname ?? '?'}</span>
-                                <span className="operatorRoomCount">{room.player_count}/{room.max_players} players</span>
+                                <span className="operatorRoomCount">{room.player_count + room.bot_count}/{room.max_players} players</span>
                             </div>
                             <div className="operatorRoomActions">
                                 <button
