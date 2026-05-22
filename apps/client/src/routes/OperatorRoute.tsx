@@ -26,6 +26,7 @@ interface RoomRow {
     bot_count: number;
     creator_nickname: string | null;
     player_count: number;
+    player_names: string[];
     ws_url: string | null;
 }
 
@@ -54,7 +55,7 @@ export function OperatorRoute() {
     async function fetchRooms() {
         const { data } = await supabase
             .from('rooms')
-            .select('id, game_id, status, max_players, bot_count, creator_nickname, ws_url, players(count)')
+            .select('id, game_id, status, max_players, bot_count, creator_nickname, ws_url, players(nickname)')
             .in('status', ['waiting', 'playing'])
             .order('created_at', { ascending: false })
             .limit(50);
@@ -62,7 +63,8 @@ export function OperatorRoute() {
         if (!data) return;
         setRooms(data.map((r: any) => ({
             ...r,
-            player_count: r.players[0]?.count ?? 0,
+            player_names: (r.players as { nickname: string }[]).map(p => p.nickname),
+            player_count: r.players.length,
             bot_count: r.bot_count ?? 0,
         })));
     }
@@ -111,6 +113,12 @@ export function OperatorRoute() {
                                 <span className="operatorRoomCreator">{room.creator_nickname ?? '?'}</span>
                                 <span className="operatorRoomCount">{room.player_count + room.bot_count}/{room.max_players} players</span>
                             </div>
+                            {room.player_names.length > 0 && (
+                                <div className="operatorRoomPlayers">
+                                    {room.player_names.join(', ')}
+                                    {room.bot_count > 0 && ` + ${room.bot_count} bot${room.bot_count > 1 ? 's' : ''}`}
+                                </div>
+                            )}
                             <div className="operatorRoomActions">
                                 <button
                                     className="operatorBtn operatorBtn--table"
