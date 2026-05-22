@@ -1,5 +1,5 @@
 import React from 'react';
-import type { WaitingRoomState } from './useWaitingRoom';
+import type { WaitingRoomState, PlayerEntry } from './useWaitingRoom';
 
 const GAME_LABELS: Record<string, string> = {
     'war-lite': 'War',
@@ -9,12 +9,12 @@ const GAME_LABELS: Record<string, string> = {
 
 interface Props {
     room: WaitingRoomState;
-    players: string[];
+    players: PlayerEntry[];
     nickname: string;
     isOwner: boolean;
     leftMessage: string | null;
     onLeave: () => void;
-    onKick: (name: string) => void;
+    onKick: (userId: string) => void;
     onBotChange: (delta: number) => void;
     onLaunch: () => void;
 }
@@ -35,11 +35,11 @@ export function WaitingRoom({ room, players, nickname, isOwner, leftMessage, onL
             {leftMessage && <p className="waiting-left-msg">{leftMessage}</p>}
 
             <div className="waiting-players">
-                {players.map((name) => (
-                    <div key={name} className="waiting-player">
-                        <span className="waiting-player-suit">♠</span>{' '}{name}
-                        {isOwner && name !== nickname && (
-                            <button className="waiting-player-kick" onClick={() => onKick(name)} title="Kick player">✕</button>
+                {players.map((entry) => (
+                    <div key={entry.userId} className="waiting-player">
+                        <span className="waiting-player-suit">♠</span>{' '}{entry.nickname}
+                        {isOwner && entry.nickname !== nickname && (
+                            <button className="waiting-player-kick" onClick={() => onKick(entry.userId)} title="Kick player">✕</button>
                         )}
                     </div>
                 ))}

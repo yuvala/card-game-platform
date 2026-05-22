@@ -12,9 +12,14 @@ export interface WaitingRoomState {
     botCount: number;
 }
 
+export interface PlayerEntry {
+    nickname: string;
+    userId: string;
+}
+
 export function useWaitingRoom(userId: string, nickname: string) {
     const [myRoom, setMyRoom] = useState<WaitingRoomState | null>(null);
-    const [players, setPlayers] = useState<string[]>([]);
+    const [players, setPlayers] = useState<PlayerEntry[]>([]);
     const [isOwner, setIsOwner] = useState(false);
     const [leftMessage, setLeftMessage] = useState<string | null>(null);
 
@@ -58,22 +63,25 @@ export function useWaitingRoom(userId: string, nickname: string) {
     useEffect(() => {
         if (!myRoom) { setPlayers([]); return; }
 
-        let prev: string[] = [];
+        let seq = 0;
+        let prevPlayers: PlayerEntry[] = [];
 
         async function fetchPlayers() {
+            const mySeq = ++seq;
             const { data } = await supabase
                 .from('players')
-                .select('nickname')
+                .select('nickname, user_id')
                 .eq('room_id', myRoom!.id)
                 .order('joined_at', { ascending: true });
-            const next = data?.map((p: any) => p.nickname as string) ?? [];
-            const left = prev.filter((n) => !next.includes(n));
+            if (mySeq !== seq) return;
+            const next: PlayerEntry[] = data?.map((p: any) => ({ nickname: p.nickname as string, userId: p.user_id as string })) ?? [];
+            const left = prevPlayers.filter(p => !next.some(n => n.userId === p.userId));
             if (left.length > 0) {
-                setLeftMessage(`${left[0]} left the room`);
+                setLeftMessage(`${left[0].nickname} left the room`);
                 setTimeout(() => setLeftMessage(null), 3000);
             }
-            prev = next;
-            if (prev.length > 0 && !next.includes(nickname)) {
+            prevPlayers = next;
+            if (next.length > 0 && !next.some(p => p.userId === userId)) {
                 sessionStorage.removeItem('lobby-room-id');
                 setMyRoom(null);
                 return;
@@ -81,12 +89,12 @@ export function useWaitingRoom(userId: string, nickname: string) {
             setPlayers(next);
         }
 
-        fetchPlayers();
-
         const sub = supabase
             .channel(`room-players-${myRoom.id}`)
             .on('postgres_changes', { event: '*', schema: 'public', table: 'players', filter: `room_id=eq.${myRoom.id}` }, fetchPlayers)
-            .subscribe();
+            .subscribe((status: string) => {
+                if (status === 'SUBSCRIBED') fetchPlayers();
+            });
 
         const handleUnload = () => {
             const url = `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/players?room_id=eq.${myRoom.id}&user_id=eq.${userId}`;
@@ -123,6 +131,7 @@ export function useWaitingRoom(userId: string, nickname: string) {
                             .order('joined_at', { ascending: true });
                         const allPlayerNames = playerRows?.map((p: any) => p.nickname as string) ?? [];
                         lobbyService.redirectToGame(myRoom.id, myRoom.gameId, updated.ws_url, nickname, 0, allPlayerNames);
+
                         return;
                     }
                     setMyRoom(prev => prev ? { ...prev, botCount: updated.bot_count ?? prev.botCount } : prev);
@@ -159,9 +168,10 @@ export function useWaitingRoom(userId: string, nickname: string) {
         setMyRoom(null);
     }
 
-    async function kick(playerNickname: string): Promise<void> {
+    async function kick(playerUserId: string): Promise<void> {
         if (!myRoom) return;
-        await lobbyService.kickPlayer(myRoom.id, playerNickname);
+        setPlayers(prev => prev.filter(p => p.userId !== playerUserId));
+        await lobbyService.kickPlayer(myRoom.id, playerUserId);
     }
 
     async function updateBotCount(delta: number): Promise<void> {
@@ -174,7 +184,7 @@ export function useWaitingRoom(userId: string, nickname: string) {
 
     async function launch(): Promise<void> {
         if (!myRoom) return;
-        await lobbyService.launchGame(myRoom.id, myRoom.gameId, myRoom.botCount, players, nickname);
+        await lobbyService.launchGame(myRoom.id, myRoom.gameId, myRoom.botCount, players.map(p => p.nickname), nickname);
     }
 
     return { myRoom, players, isOwner, leftMessage, join, leave, kick, updateBotCount, launch };

@@ -1,19 +1,6 @@
 import { supabase } from './supabase';
-
-export interface RoomRow {
-    id: string;
-    game_id: string;
-    status: string;
-    max_players: number;
-    bot_count: number;
-    player_count: number;
-    creator_nickname: string;
-    owner_user_id: string | null;
-}
-
-export function isFull(room: RoomRow): boolean {
-    return room.player_count + room.bot_count >= room.max_players;
-}
+export type { RoomRow } from './lobbyTypes';
+export { isFull } from './lobbyTypes';
 
 export async function fetchRooms(): Promise<RoomRow[]> {
     const { data } = await supabase
@@ -89,8 +76,8 @@ export async function leaveRoom(roomId: string, userId: string, isOwner: boolean
     }
 }
 
-export async function kickPlayer(roomId: string, nickname: string): Promise<void> {
-    await supabase.from('players').delete().eq('room_id', roomId).eq('nickname', nickname);
+export async function kickPlayer(roomId: string, userId: string): Promise<void> {
+    await supabase.from('players').delete().eq('room_id', roomId).eq('user_id', userId);
 }
 
 export async function setBotCount(roomId: string, count: number): Promise<void> {
