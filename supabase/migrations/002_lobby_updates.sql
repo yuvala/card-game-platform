@@ -12,7 +12,7 @@ alter table public.players replica identity full;
 drop policy if exists "players_delete" on public.players;
 create policy "players_delete" on public.players for delete using (
   auth.uid() = user_id
-  or auth.uid() = (
+  or auth.uid()::text = (
     select owner_user_id from public.rooms where id = room_id
   )
 );
