@@ -26,6 +26,7 @@ interface RoomSession {
     gameHost: GameSessionHost;
     clients: Set<RewriteClient>;
     lifecycle: SessionLifecycle;
+    configOwner: RewriteClient | null;
 }
 
 export interface GameWebSocketServer {
@@ -54,12 +55,19 @@ export function createGameWebSocketServer(
             },
         });
 
+        const session: RoomSession = { gameHost, clients, lifecycle, configOwner: null };
+
         gameHost.subscribe(() => {
+            const view = gameHost.getSessionView(null);
+            if (view.type === 'session-view') {
+                const vm = view.viewModel as { controls?: { canRestart?: boolean } };
+                if (vm?.controls?.canRestart) {
+                    session.configOwner = null;
+                }
+            }
             sanitizeClientViewers(gameHost, clients);
             broadcastViews(gameHost, clients);
         });
-
-        const session: RoomSession = { gameHost, clients, lifecycle };
         rooms.set(roomId, session);
         logger.info({ roomId, totalRooms: rooms.size }, 'room created');
         return session;
@@ -98,6 +106,9 @@ export function createGameWebSocketServer(
             const room = rooms.get(client.roomId);
             if (room) {
                 room.clients.delete(client);
+                if (room.configOwner === client) {
+                    room.configOwner = null;
+                }
                 room.lifecycle.onClientDisconnected(room.clients.size);
                 logger.info({ roomId: client.roomId, clients: room.clients.size }, 'client disconnected');
             }
@@ -197,11 +208,17 @@ function handleClientMessage(
                 sendError(client, 'Only operator clients can configure the session.');
                 return;
             }
+            if (room.configOwner !== null && room.configOwner !== client) {
+                logger.warn({ roomId: client.roomId }, 'configure-session rejected — game in progress');
+                sendError(client, 'A game is already in progress in this room.');
+                return;
+            }
             logger.info(
                 { roomId: client.roomId, gameId: message.config.gameId, playerCount: message.config.playerCount },
                 'configure-session',
             );
             room.gameHost.configure(message.config);
+            room.configOwner = client;
             return;
         }
         case 'game-event': {
