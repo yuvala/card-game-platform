@@ -8,6 +8,7 @@
     "dev": "vite --config vite.config.js",
     "build": "tsc --noEmit && vite build --config vite.config.js",
     "test": "\"%npm_node_execpath%\" .\\scripts\\run-tests.cjs",
+    "test:e2e": "playwright test",
     "test-rewrite": "\"%npm_node_execpath%\" .\\scripts\\run-tests.cjs",
     "smoke": "node .\\scripts\\smoke.cjs",
     "smoke:rewrite": "node .\\scripts\\smoke.cjs",
@@ -20,6 +21,7 @@
     "format:check": "prettier --check \"apps/**/*.{ts,tsx,css}\" \"packages/**/*.ts\""
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/pino": "^7.0.5",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
