@@ -12,3 +12,4 @@ node_modules/
 .claude/settings.json
 .claude/settings.local.json
 dev_graphics/
+test-results/
