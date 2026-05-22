@@ -45,7 +45,7 @@ export function createGameWebSocketServer(
         const existing = rooms.get(roomId);
         if (existing) return existing;
 
-        const gameHost = new GameSessionHost(options);
+        const gameHost = new GameSessionHost({ ...options, sessionId: roomId });
         const clients = new Set<RewriteClient>();
         const lifecycle = new SessionLifecycle({
             onAbandoned: () => {
