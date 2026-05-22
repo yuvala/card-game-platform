@@ -69,11 +69,6 @@ export function OperatorRoute() {
         })));
     }
 
-    function openTable(room: RoomRow) {
-        const wsUrl = room.ws_url ?? (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
-        navigate(`/table?game=${room.game_id}&wsUrl=${encodeURIComponent(wsUrl)}&autostart=1`);
-    }
-
     function viewTable(room: RoomRow) {
         const wsUrl = room.ws_url ?? (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
         navigate(`/table?game=${room.game_id}&wsUrl=${encodeURIComponent(wsUrl)}`);
@@ -125,21 +120,12 @@ export function OperatorRoute() {
                                 </div>
                             )}
                             <div className="operatorRoomActions">
-                                {room.status === 'playing' ? (
-                                    <button
-                                        className="operatorBtn operatorBtn--view"
-                                        onClick={() => viewTable(room)}
-                                    >
-                                        View
-                                    </button>
-                                ) : (
-                                    <button
-                                        className="operatorBtn operatorBtn--table"
-                                        onClick={() => openTable(room)}
-                                    >
-                                        Open Table
-                                    </button>
-                                )}
+                                <button
+                                    className="operatorBtn operatorBtn--view"
+                                    onClick={() => viewTable(room)}
+                                >
+                                    View
+                                </button>
                                 <button
                                     className="operatorBtn operatorBtn--close"
                                     onClick={() => closeRoom(room.id)}
