@@ -71,7 +71,7 @@ export function OperatorRoute() {
 
     function viewTable(room: RoomRow) {
         const wsUrl = room.ws_url ?? (import.meta.env.VITE_WS_URL as string) ?? 'ws://localhost:8787';
-        navigate(`/table?game=${room.game_id}&wsUrl=${encodeURIComponent(wsUrl)}`);
+        navigate(`/table?game=${room.game_id}&wsUrl=${encodeURIComponent(wsUrl)}&watch=1`);
     }
 
 

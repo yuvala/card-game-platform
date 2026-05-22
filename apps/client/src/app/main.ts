@@ -30,6 +30,7 @@ export function init(): void {
     const requestedDebugScenario = getDebugScenarioById(requestedParams.get('scenario'));
     const shouldAutostart =
         requestedParams.get('autostart') === '1' || requestedDebugScenario?.autostart === true;
+    const shouldWatch = requestedParams.get('watch') === '1';
     const shouldUseLocalSession =
         requestedParams.get('transport') === 'local' || requestedParams.get('local') === '1';
     const shouldUseWebSocketSession = !shouldUseLocalSession;
@@ -59,9 +60,31 @@ export function init(): void {
     renderEmptyTable();
 
     if (shouldAutostart) {
-        startGame(initialSelection).catch((error) => {
-            renderStartError(error);
+        startGame(initialSelection).catch(renderStartError);
+    } else if (shouldWatch) {
+        watchGame().catch(renderStartError);
+    }
+
+    async function watchGame(): Promise<void> {
+        teardownActiveRuntime();
+        rootElement.replaceChildren();
+        rootElement.classList.remove('is-empty');
+
+        const session = await createRemoteGameSession({
+            url: getRequestedWebSocketUrl(requestedParams),
+            role: 'operator',
+            sessionId: requestedParams.get('session') ?? undefined,
         });
+
+        const game = createTableGame('game-root', session);
+        const syncFn = () => syncActiveTableFromSession(session, {
+            fallbackDeckLabel: '',
+            fallbackPlayerNames: [],
+        });
+        const appSubscription = session.subscribe(syncFn);
+        syncFn();
+
+        activeRuntime = { session, game, appSubscription };
     }
 
     async function startGame(selection: GameSelection): Promise<void> {
