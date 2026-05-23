@@ -11,7 +11,7 @@ import type {
 } from '../presenters/pilePresenter';
 import type { PlayerDeckVisual } from '../presenters/playerDeckPresenter';
 
-interface ZoneEntry {
+export interface ZoneEntry {
     label: string;
     x: number;
     y: number;
@@ -240,8 +240,10 @@ export function drawDebugZoneOverlay(input: DebugZoneOverlayInput): DebugOverlay
     const { scene } = input;
     const graphics = scene.add.graphics().setDepth(9999);
     const texts: Phaser.GameObjects.Text[] = [];
+    const zones = collectZones(input);
+    globalThis.dispatchEvent(new CustomEvent('debug-zones-updated', { detail: zones }));
 
-    collectZones(input).forEach((zone) => {
+    zones.forEach((zone) => {
         const { x, y, color, label: zoneLabel, dashed } = zone;
         const w = zone.width ?? 60;
         const h = zone.height ?? 60;
@@ -283,6 +285,7 @@ export function drawDebugZoneOverlay(input: DebugZoneOverlayInput): DebugOverlay
             texts.forEach((t) => {
                 t.destroy();
             });
+            globalThis.dispatchEvent(new CustomEvent('debug-zones-updated', { detail: [] }));
         },
     };
 }

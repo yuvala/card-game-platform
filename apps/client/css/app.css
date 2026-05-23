@@ -320,8 +320,8 @@ a {
 }
 
 .appRoot {
-    width: min(1280px, 100%);
-    aspect-ratio: 16 / 9;
+    width: min(1500px, 100%);
+    aspect-ratio: 1500 / 720;
     min-height: 0;
     margin: 0 auto;
     border: 1px solid rgba(255, 209, 102, 0.18);
@@ -1287,4 +1287,278 @@ a {
     background: rgba(180, 60, 60, 0.2);
     color: #c84c4c;
     border: 1px solid rgba(200, 76, 76, 0.3);
+}
+
+/* ── Table Game Layout ── */
+.tableGameWrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+}
+
+.tableGameCanvas {
+    flex: 1 1 0;
+    min-width: 0;
+    height: 100%;
+    position: relative;
+}
+
+/* ── Table Debug Panel (left) ── */
+.tableDebugPanel {
+    flex: 0 0 220px;
+    width: 220px;
+    height: 100%;
+    background: #08150f;
+    border-right: 1px solid rgba(255, 209, 102, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 14px;
+    box-sizing: border-box;
+    font-family: 'Cinzel', serif;
+    overflow-y: auto;
+}
+
+.tableDebugHint {
+    margin: 0;
+    font-size: 11px;
+    color: rgba(246, 236, 210, 0.5);
+    line-height: 1.5;
+}
+
+.tableDebugHint kbd {
+    display: inline-block;
+    padding: 1px 5px;
+    border: 1px solid rgba(243, 234, 213, 0.2);
+    border-radius: 3px;
+    font-size: 10px;
+    font-family: monospace;
+    background: rgba(255, 255, 255, 0.04);
+}
+
+.tableDebugSep {
+    height: 1px;
+    background: rgba(255, 209, 102, 0.1);
+}
+
+.tableDebugCheck {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 11px;
+    color: rgba(246, 236, 210, 0.6);
+    cursor: pointer;
+    user-select: none;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tableDebugCheck input {
+    accent-color: #ffd166;
+    cursor: pointer;
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+}
+
+.tableDebugLegend {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tableDebugPlayerHeader {
+    margin: 5px 0 1px;
+    font-size: 10px;
+    color: rgba(246, 236, 210, 0.45);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.tableDebugLegendRow {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.tableDebugLegendRow--indented {
+    padding-left: 8px;
+}
+
+.tableDebugSwatch {
+    flex-shrink: 0;
+    width: 9px;
+    height: 9px;
+    border: 1px solid;
+    border-radius: 2px;
+}
+
+.tableDebugSwatch--dashed {
+    background: transparent !important;
+    border-style: dashed;
+}
+
+.tableDebugLegendLabel {
+    font-size: 10px;
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+}
+
+.tableDebugLegendCoords {
+    font-size: 9px;
+    font-family: monospace;
+    color: rgba(246, 236, 210, 0.3);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* ── Table Controls Panel (right) ── */
+.tableControls {
+    flex: 0 0 292px;
+    width: 292px;
+    height: 100%;
+    background: #08150f;
+    border-left: 1px solid rgba(255, 209, 102, 0.18);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 20px 16px;
+    box-sizing: border-box;
+    font-family: 'Cinzel', serif;
+    overflow-y: auto;
+}
+
+.tableControlsEyebrow {
+    margin: 0;
+    font-size: 11px;
+    color: #ffd166;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+}
+
+.tableControlsPhase {
+    margin: 0;
+    align-self: flex-start;
+    font-size: 22px;
+    font-weight: 700;
+    color: #10251c;
+    background: #ffd166;
+    padding: 8px 14px;
+    line-height: 1;
+}
+
+.tableControlsRound {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 700;
+    color: #f6ecd2;
+}
+
+.tableControlsDeck {
+    margin: 0;
+    font-size: 14px;
+    color: #f6ecd2;
+}
+
+.tableControlsDrawerHint {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(246, 236, 210, 0.72);
+    line-height: 1.4;
+}
+
+.tableControlsScore {
+    margin: 0;
+    font-size: 14px;
+    color: #f6ecd2;
+    line-height: 1.7;
+}
+
+.tableControlsOutcomeTitle {
+    margin: 0;
+    font-size: 16px;
+    color: #ffd166;
+}
+
+.tableControlsOutcomeDetail {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(246, 236, 210, 0.86);
+    line-height: 1.4;
+}
+
+.tableControlsActions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tableControlsPlayRow {
+    display: flex;
+    gap: 6px;
+}
+
+.tableControlsPlayRow .tableControlsBtn {
+    flex: 1 1 0;
+}
+
+.tableControlsBtn {
+    padding: 10px 14px;
+    border: none;
+    border-radius: 3px;
+    background: #f7d46c;
+    color: #10251c;
+    font-family: 'Cinzel', serif;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 100ms ease;
+    width: 100%;
+    text-align: center;
+    line-height: 1;
+}
+
+.tableControlsBtn:hover:not(:disabled) {
+    transform: scale(1.02);
+}
+
+.tableControlsBtn:disabled {
+    opacity: 0.35;
+    cursor: default;
+    background: #8b6f2e;
+    color: #26352d;
+}
+
+.tableControlsBtnAuto {
+    flex: 0 0 auto;
+    width: auto;
+    padding: 10px 12px;
+    min-width: 40px;
+}
+
+.tableControlsActionHint {
+    margin: 0;
+    font-size: 13px;
+    color: rgba(255, 209, 102, 0.86);
+    line-height: 1.4;
+}
+
+.tableControlsStatusBox {
+    margin-top: auto;
+    background: rgba(16, 34, 27, 0.84);
+    border: 1px solid rgba(255, 209, 102, 0.18);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tableControlsStatusText {
+    margin: 0;
+    font-size: 14px;
+    color: #f6ecd2;
+    line-height: 1.4;
 }
