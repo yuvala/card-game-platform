@@ -555,7 +555,7 @@ export function syncOwnedPilePresentation(input: OwnedPilePresentationInput): vo
             return;
         }
         const position = getOwnedPilePosition(ownerPileIndex, layout);
-        visual.container.setPosition(position.x, position.y);
+        visual.container.setPosition(position.x, position.y).setAngle(layout.angle);
         visual.labelText.setText('');
         visual.countText.setText(pile.countLabel);
         visual.container.setVisible(true);

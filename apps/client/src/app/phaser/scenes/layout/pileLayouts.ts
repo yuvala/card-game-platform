@@ -123,34 +123,38 @@ export function getPrimaryPileLayout(playerCount: number): PrimaryPileLayout {
 }
 
 export function getOwnedPilePosition(ownerPileIndex: number, layout: SeatLayout): ScenePoint {
-    const horizontalOffset = ownerPileIndex * 58;
-    const { handCenterX, handCenterY, angle } = layout;
+    const pileOffset = ownerPileIndex * 58;
+    const { handCenterX, handCenterY, angle, gapY } = layout;
 
     if (angle === 0) {
         const isUpperSeat = handCenterY < TABLE_CENTER_Y;
         if (isUpperSeat) {
             return {
-                x: PLAYER_ZONE_LEFT_X + horizontalOffset,
+                x: PLAYER_ZONE_LEFT_X + pileOffset,
                 y: handCenterY + 6,
             };
         }
 
         return {
-            x: PLAYER_ZONE_RIGHT_X + horizontalOffset,
+            x: PLAYER_ZONE_RIGHT_X + pileOffset,
             y: handCenterY - 6,
         };
     }
 
+    // Side players: slots are vertical. Place owned pile outside the slot chain.
+    // angle > 0 (right side, P2): "right" from player's POV = downward → below last slot
+    // angle < 0 (left side, P4): "right" from player's POV = upward → above first slot
+    const halfSpan = 2 * gapY;
     if (angle > 0) {
         return {
-            x: handCenterX - 84 - horizontalOffset,
-            y: handCenterY,
+            x: handCenterX,
+            y: handCenterY - halfSpan - 58 - pileOffset,
         };
     }
 
     return {
-        x: handCenterX + 84 + horizontalOffset,
-        y: handCenterY,
+        x: handCenterX,
+        y: handCenterY + halfSpan + 58 + pileOffset,
     };
 }
 
