@@ -195,10 +195,46 @@ function getEffectSourcePoint(
     return { x: PLAYER_GAME_WIDTH / 2, y: playerPovZones.stockTrumpY };
 }
 
+function getCapturePilePoint(
+    viewModel: CardGameViewModel,
+    ownerId: string,
+): { x: number; y: number; angle: number } | null {
+    const playerIndex = viewModel.players.findIndex((p) => p.id === ownerId);
+    if (playerIndex < 0) return null;
+
+    const oppW = playerPovCardSizes.opponent.width;
+    const oppH = playerPovCardSizes.opponent.height;
+
+    if (playerIndex === 0) {
+        return { x: PLAYER_GAME_WIDTH - oppW / 2 - 8, y: playerPovZones.handY - 10, angle: 0 };
+    }
+
+    const layouts = getOpponentSeatLayouts(viewModel.players.length - 1);
+    const layout = layouts[playerIndex - 1];
+    if (!layout) return null;
+
+    const panelH = 36;
+    if (layout.side === 'top') {
+        const seatY = layout.y + 6;
+        const fanCenterY = seatY + panelH / 2 + 6 + oppH / 2;
+        return { x: layout.x - 58 - oppW / 2 - 6, y: fanCenterY, angle: 0 };
+    }
+
+    const panelW = 112;
+    const panelCenterX = layout.side === 'left' ? panelW / 2 : PLAYER_GAME_WIDTH - panelW / 2;
+    const wonY = layout.y + panelH / 2 + 6 + oppH + (layout.side === 'left' ? -90 : 64);
+    return { x: panelCenterX, y: wonY, angle: 90 };
+}
+
 function getEffectDestinationPoint(
     effect: MoveCardEffect,
     viewModel: CardGameViewModel,
 ): { x: number; y: number; angle: number } | null {
+    const capturePile = viewModel.piles.find((p) => p.id === effect.toPileId && p.role === 'capture');
+    if (capturePile?.ownerId) {
+        return getCapturePilePoint(viewModel, capturePile.ownerId);
+    }
+
     if (effect.toOwnerId) {
         const point = getPlayerHandPoint(viewModel, effect.toOwnerId, effect.toIndex ?? 0);
         return point ? { ...point, angle: 0 } : null;
@@ -333,6 +369,11 @@ function animateMoveGhost(scene: Phaser.Scene, params: GhostAnimParams): void {
                     ghost.destroy();
                     onComplete?.();
                 });
+            } else if (effect.reason === 'collect' && effect.card.isFaceUp) {
+                animateCollectFlip(scene, ghost.image, ctx.backTextureKey, () => {
+                    ghost.destroy();
+                    onComplete?.();
+                });
             } else {
                 scene.tweens.add({
                     targets: ghost.image,
@@ -345,6 +386,41 @@ function animateMoveGhost(scene: Phaser.Scene, params: GhostAnimParams): void {
                     },
                 });
             }
+        },
+    });
+}
+
+function animateCollectFlip(
+    scene: Phaser.Scene,
+    image: Phaser.GameObjects.Image,
+    backTextureKey: string,
+    onComplete: () => void,
+): void {
+    const savedScaleX = image.scaleX;
+    scene.tweens.add({
+        targets: image,
+        scaleX: 0.01,
+        duration: 90,
+        ease: 'Sine.easeIn',
+        onComplete: () => {
+            sfxPlayer.play('flip');
+            image.setTexture(backTextureKey);
+            image.scaleX = 0.01;
+            scene.tweens.add({
+                targets: image,
+                scaleX: savedScaleX,
+                duration: 110,
+                ease: 'Sine.easeOut',
+                onComplete: () => {
+                    scene.tweens.add({
+                        targets: image,
+                        alpha: 0,
+                        duration: 90,
+                        delay: 60,
+                        onComplete,
+                    });
+                },
+            });
         },
     });
 }

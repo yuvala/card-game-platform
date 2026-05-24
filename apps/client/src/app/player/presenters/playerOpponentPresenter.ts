@@ -207,7 +207,7 @@ function drawSideOpponent(
     drawSideFanCards(scene, layer, counters, panel, backTextureKey);
 
     const wonY = panel.panelY + panelHeight / 2 + 6 + OPP_CARD_H + (isLeft ? -90 : 64);
-    drawCapturePileWidget(scene, layer, { x: panel.panelCenterX, y: wonY, cardCount: counters.captureCount, backTextureKey, cardW: OPP_CARD_W, cardH: OPP_CARD_H, angle: isLeft ? 0 : 90 });
+    drawCapturePileWidget(scene, layer, { x: panel.panelCenterX, y: wonY, cardCount: counters.captureCount, backTextureKey, cardW: OPP_CARD_W, cardH: OPP_CARD_H, angle: 90 });
 
     drawSideBadge(scene, layer, player, counters, panel);
 }

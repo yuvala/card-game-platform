@@ -49,6 +49,8 @@ export function drawCapturePileWidget(
 ): void {
     const { x, y, cardCount, backTextureKey, cardW, cardH, angle = 0 } = opts;
     const rotated = angle !== 0;
+    const effectiveW = rotated ? cardH : cardW;
+    const effectiveH = rotated ? cardW : cardH;
     if (cardCount > 0) {
         let stackCount = 1;
         if (cardCount > 7) stackCount = 3;
@@ -56,14 +58,14 @@ export function drawCapturePileWidget(
         for (let i = stackCount - 1; i >= 0; i--) {
             const back = scene.add
                 .image(x - i * 2, y - i * 2, backTextureKey)
-                .setDisplaySize(rotated ? cardH : cardW, rotated ? cardW : cardH)
+                .setDisplaySize(cardW, cardH)
                 .setAngle(angle)
                 .setAlpha(0.6 + i * 0.14);
             layer.add(back);
         }
         layer.add(
             scene.add
-                .text(x + cardW / 2 - 2, y - cardH / 2 + 2, String(cardCount), {
+                .text(x + effectiveW / 2 - 2, y - effectiveH / 2 + 2, String(cardCount), {
                     fontFamily: 'Arial',
                     fontSize: '9px',
                     fontStyle: '700',
@@ -76,12 +78,12 @@ export function drawCapturePileWidget(
     } else {
         const g = scene.add.graphics();
         g.lineStyle(1, 0x4d7c5a, 0.35);
-        g.strokeRoundedRect(x - cardW / 2, y - cardH / 2, cardW, cardH, 5);
+        g.strokeRoundedRect(x - effectiveW / 2, y - effectiveH / 2, effectiveW, effectiveH, 5);
         layer.add(g);
     }
     layer.add(
         scene.add
-            .text(x, y + cardH / 2 + 5, 'Won', {
+            .text(x, y + effectiveH / 2 + 5, 'Won', {
                 fontFamily: 'Arial',
                 fontSize: '9px',
                 color: cardCount > 0 ? 'rgba(100,220,140,0.86)' : 'rgba(100,180,120,0.38)',

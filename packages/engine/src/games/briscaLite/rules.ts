@@ -499,7 +499,7 @@ export function hasMoreTricksRemaining(context: BriscaLiteContext): boolean {
 
 export function finishGame(context: BriscaLiteContext): BriscaLiteContext {
     const collectedContext = collectTrickToWinner(context);
-    const highestScore = context.players.reduce((bestScore, player) => {
+    const highestScore = collectedContext.players.reduce((bestScore, player) => {
         return Math.max(bestScore, player.score);
     }, 0);
     const winningPlayers = collectedContext.players.filter(
