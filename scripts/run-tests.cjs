@@ -3,7 +3,18 @@ const fs = require("node:fs");
 const path = require("node:path");
 
 const repoRoot = path.resolve(__dirname, "..");
-const outDir = path.join(repoRoot, ".tmp-tests");
+const outDir = path.join(repoRoot, `.tmp-tests-${Date.now()}`);
+
+// Clean up any leftover runs from previous sessions
+try {
+    for (const entry of fs.readdirSync(repoRoot)) {
+        if (/^\.tmp-tests(-\d+)?$/.test(entry)) {
+            fs.rmSync(path.join(repoRoot, entry), { recursive: true, force: true });
+        }
+    }
+} catch {
+    // ignore — a locked dir from a previous run is not a blocker
+}
 const isWindows = process.platform === "win32";
 const tscPath = path.join(repoRoot, "node_modules", ".bin", isWindows ? "tsc.cmd" : "tsc");
 const aliasResolverPath = path.join(repoRoot, "scripts", "resolve-engine-aliases.cjs");
@@ -43,12 +54,7 @@ function run(command, args) {
 }
 
 try {
-    fs.rmSync(outDir, {
-        recursive: true,
-        force: true
-    });
-
-    run(tscPath, ["-p", "tsconfig.tests.json"]);
+    run(tscPath, ["-p", "tsconfig.tests.json", "--outDir", outDir]);
     run(process.execPath, [aliasResolverPath, outDir]);
 
     for (const entry of testEntries) {
