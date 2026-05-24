@@ -59,9 +59,9 @@ export function getOpponentSeatLayouts(count: number): PlayerPovSeatLayout[] {
             ];
         default: {
             const layouts: PlayerPovSeatLayout[] = [
+                { side: 'left', x: 44, y: 196, angle: -90 },
                 { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 58, angle: 0 },
                 { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 196, angle: 90 },
-                { side: 'left', x: 44, y: 196, angle: -90 },
                 { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 102, angle: 0 },
             ];
             return layouts.slice(0, count);
