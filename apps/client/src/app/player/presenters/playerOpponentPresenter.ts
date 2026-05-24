@@ -8,7 +8,7 @@ import {
     type PlayerPovSeatLayout,
 } from '../playerPovLayout';
 import { getPlayerPovOpponentSeats, type PlayerPovPlayerCounters } from '../playerPovUiModel';
-import { CREAM, DIM, GOLD, createRoundedPanel, setCardDisplaySize } from './playerDrawUtils';
+import { CREAM, DIM, GOLD, createRoundedPanel, setCardDisplaySize, drawCapturePileWidget } from './playerDrawUtils';
 
 const OPP_CARD_W = playerPovCardSizes.opponent.width;
 const OPP_CARD_H = playerPovCardSizes.opponent.height;
@@ -122,19 +122,8 @@ function drawTopOpponent(
         }
     }
 
-    if (counters.captureCount > 0) {
-        const wonY = seatY + seatHeight / 2 + 6 + OPP_CARD_H + 10;
-        layer.add(
-            scene.add
-                .text(x, wonY, 'Won: ' + counters.captureCount, {
-                    fontFamily: 'Arial',
-                    fontSize: '9px',
-                    fontStyle: '700',
-                    color: 'rgba(100,220,140,0.92)',
-                })
-                .setOrigin(0.5, 0),
-        );
-    }
+    const wonY = seatY + seatHeight / 2 + 6 + OPP_CARD_H + 10;
+    drawCapturePileWidget(scene, layer, { x, y: wonY, cardCount: counters.captureCount, backTextureKey, cardW: OPP_CARD_W, cardH: OPP_CARD_H });
 }
 
 function drawSideOpponent(
@@ -250,17 +239,6 @@ function drawSideOpponent(
         }
     }
 
-    if (counters.captureCount > 0) {
-        const wonY = panelY + panelHeight / 2 + 6 + OPP_CARD_H + 10;
-        layer.add(
-            scene.add
-                .text(panelCenterX, wonY, 'Won: ' + counters.captureCount, {
-                    fontFamily: 'Arial',
-                    fontSize: '9px',
-                    fontStyle: '700',
-                    color: 'rgba(100,220,140,0.92)',
-                })
-                .setOrigin(0.5, 0),
-        );
-    }
+    const wonY = panelY + panelHeight / 2 + 6 + OPP_CARD_H + 10;
+    drawCapturePileWidget(scene, layer, { x: panelCenterX, y: wonY, cardCount: counters.captureCount, backTextureKey, cardW: OPP_CARD_W, cardH: OPP_CARD_H });
 }

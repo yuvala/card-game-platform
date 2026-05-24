@@ -4,7 +4,7 @@ import type { CardGameViewModel } from '@engine/engine/game/viewModel';
 import { getCardFaceTextureKey } from '../../phaser/cards/CardTextureFactory';
 import { PLAYER_GAME_WIDTH } from '../createPlayerGame';
 import { getHandCardPoint, playerPovCardSizes, playerPovZones } from '../playerPovLayout';
-import { GOLD, setCardDisplaySize } from './playerDrawUtils';
+import { GOLD, setCardDisplaySize, drawCapturePileWidget } from './playerDrawUtils';
 
 const HAND_CARD_W = playerPovCardSizes.hand.width;
 const HAND_CARD_H = playerPovCardSizes.hand.height;
@@ -25,22 +25,21 @@ export function drawPlayerHand(
 
     let deckPoint: { x: number; y: number } | null = null;
     const cards = player.hand;
+    const capturePile = viewModel.piles.find(
+        (p) => p.role === 'capture' && p.ownerId === player.id,
+    );
+    const captureCount = capturePile?.cardCount ?? 0;
+    const captureX = PLAYER_GAME_WIDTH - HAND_CARD_W / 2 - 8;
+    const captureY = playerPovZones.handY - 10;
 
     if (cards.length === 0 && player.deckPile) {
-        const capturePile = viewModel.piles.find(
-            (p) => p.role === 'capture' && p.ownerId === player.id,
-        );
-        const hasWonPile = (capturePile?.cardCount ?? 0) > 0;
-        const deckX = hasWonPile ? PLAYER_GAME_WIDTH / 2 - 62 : PLAYER_GAME_WIDTH / 2;
+        const deckX = PLAYER_GAME_WIDTH / 2 - 62;
         const deckY = playerPovZones.handY - 10;
 
         if (player.deckPile.cardCount > 0) {
             deckPoint = { x: deckX, y: deckY };
             drawPlayerDeckVisual(
-                scene,
-                layer,
-                deckX,
-                deckY,
+                scene, layer, deckX, deckY,
                 player.deckPile.cardCount,
                 player.isCurrentTurn,
                 player.canInteract,
@@ -48,10 +47,17 @@ export function drawPlayerHand(
                 onPlayCard,
             );
         }
+    }
 
-        if (hasWonPile && capturePile) {
-            drawWonPileVisual(scene, layer, PLAYER_GAME_WIDTH / 2 + 62, deckY, capturePile.cardCount, backTextureKey);
-        }
+    if (capturePile) {
+        drawCapturePileWidget(scene, layer, {
+            x: captureX,
+            y: captureY,
+            cardCount: captureCount,
+            backTextureKey,
+            cardW: HAND_CARD_W,
+            cardH: HAND_CARD_H,
+        });
     }
 
     cards.forEach((card, index) => {
@@ -93,22 +99,6 @@ export function drawPlayerHand(
         }
         layer.add(image);
     });
-
-    if (cards.length > 0) {
-        const capturePile = viewModel.piles.find(
-            (p) => p.role === 'capture' && p.ownerId === player.id,
-        );
-        if (capturePile && capturePile.cardCount > 0) {
-            drawWonPileVisual(
-                scene,
-                layer,
-                PLAYER_GAME_WIDTH - HAND_CARD_W / 2 - 8,
-                playerPovZones.handY - 10,
-                capturePile.cardCount,
-                backTextureKey,
-            );
-        }
-    }
 
     return deckPoint;
 }
@@ -173,49 +163,4 @@ function drawPlayerDeckVisual(
         hit.on(Phaser.Input.Events.POINTER_DOWN, onPlayCard);
         layer.add(hit);
     }
-}
-
-function drawWonPileVisual(
-    scene: Phaser.Scene,
-    layer: Phaser.GameObjects.Container,
-    x: number,
-    y: number,
-    cardCount: number,
-    backTextureKey: string,
-): void {
-    const backCount = cardCount <= 3 ? 1 : cardCount <= 7 ? 2 : 3;
-    for (let i = backCount - 1; i >= 0; i--) {
-        const back = scene.add
-            .image(x - i * 2, y - i * 2, backTextureKey)
-            .setDisplaySize(HAND_CARD_W, HAND_CARD_H)
-            .setAlpha(0.6 + i * 0.14)
-            .setAngle(0)
-            .setDepth(28 + i);
-        setCardDisplaySize(back, HAND_CARD_W, HAND_CARD_H);
-        layer.add(back);
-    }
-
-    layer.add(
-        scene.add
-            .text(x + HAND_CARD_W / 2 - 2, y - HAND_CARD_H / 2 + 2, String(cardCount), {
-                fontFamily: 'Arial',
-                fontSize: '11px',
-                fontStyle: '700',
-                color: '#ffffff',
-                backgroundColor: 'rgba(30,100,50,0.88)',
-                padding: { x: 4, y: 2 },
-            })
-            .setOrigin(1, 0)
-            .setDepth(32),
-    );
-    layer.add(
-        scene.add
-            .text(x, y + HAND_CARD_H / 2 + 6, 'Won', {
-                fontFamily: 'Arial',
-                fontSize: '10px',
-                color: 'rgba(255,209,102,0.86)',
-            })
-            .setOrigin(0.5, 0)
-            .setDepth(32),
-    );
 }
