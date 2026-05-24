@@ -76,7 +76,13 @@ export class PlayerTableScene extends Phaser.Scene {
                 this.redrawDebugOverlay();
             }
         };
+        const onDebugToggle = () => {
+            const wantOpen = localStorage.getItem('player-debug-zones') === 'on';
+            if (wantOpen && !this.debugOverlay) this.toggleDebugOverlay();
+            else if (!wantOpen && this.debugOverlay) this.toggleDebugOverlay();
+        };
         globalThis.addEventListener('player-debug-layer-change', onDebugLayerChange);
+        globalThis.addEventListener('player-debug-toggle', onDebugToggle);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.subscription?.unsubscribe();
@@ -84,6 +90,7 @@ export class PlayerTableScene extends Phaser.Scene {
             this.animationLayer.destroy();
             this.battleFlashState.container?.destroy(true);
             globalThis.removeEventListener('player-debug-layer-change', onDebugLayerChange);
+            globalThis.removeEventListener('player-debug-toggle', onDebugToggle);
             this.debugPanel?.destroy();
             this.debugPanel = undefined;
         });

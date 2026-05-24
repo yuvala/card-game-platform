@@ -32,11 +32,11 @@ export function PlayerRoute() {
             shell?.classList.toggle('debug', debugBarToggle.checked);
         });
 
-        // zone overlay
+        // debug panel toggle
         if (zonesToggle) zonesToggle.checked = localStorage.getItem('player-debug-zones') === 'on';
         zonesToggle?.addEventListener('change', () => {
             localStorage.setItem('player-debug-zones', zonesToggle.checked ? 'on' : 'off');
-            globalThis.dispatchEvent(new Event('debug-layer-change'));
+            globalThis.dispatchEvent(new Event('player-debug-toggle'));
         });
 
         // settings panel open/close
@@ -59,7 +59,7 @@ export function PlayerRoute() {
             el.checked = localStorage.getItem('player-dbg-' + layer) === 'on';
             el.addEventListener('change', () => {
                 localStorage.setItem('player-dbg-' + layer, el.checked ? 'on' : 'off');
-                globalThis.dispatchEvent(new Event('debug-layer-change'));
+                globalThis.dispatchEvent(new Event('player-debug-layer-change'));
             });
         });
 
@@ -96,7 +96,7 @@ export function PlayerRoute() {
                         <input type="checkbox" id="settings-debug-bar" />
                     </label>
                     <label className="playerSettingsRow">
-                        Zone overlay (D)
+                        Debug show
                         <input type="checkbox" id="settings-zones" />
                     </label>
                 </div>
