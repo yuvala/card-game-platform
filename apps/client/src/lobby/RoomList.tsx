@@ -9,6 +9,7 @@ const GAME_LABELS: Record<string, string> = {
     'war-lite': 'War',
     'brisca-lite': 'Brisca',
     'poker-lite': 'Poker',
+    'scopa-lite': 'Scopa',
 };
 
 interface Props {

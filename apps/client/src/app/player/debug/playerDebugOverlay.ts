@@ -117,21 +117,26 @@ function collectTableZones(viewModel: CardGameViewModel): ZoneEntry[] {
 }
 
 function collectPileZones(viewModel: CardGameViewModel): ZoneEntry[] {
-    const stockPt = getStockTrumpPoint();
-    const entries: ZoneEntry[] = [
-        {
-            label: `stock ${fmt(stockPt.x, stockPt.y)}`,
-            x: stockPt.x, y: stockPt.y,
-            w: playerPovCardSizes.stockTrump.width, h: playerPovCardSizes.stockTrump.height,
-            color: 0x44ddff,
-        },
-        {
-            label: `trump ${fmt(stockPt.x + 24, stockPt.y + 8)}`,
-            x: stockPt.x + 24, y: stockPt.y + 8,
-            w: playerPovCardSizes.stockTrump.width, h: playerPovCardSizes.stockTrump.height,
-            angle: 90, color: 0x88eeff, dashed: true,
-        },
-    ];
+    const entries: ZoneEntry[] = [];
+
+    const hasStock = viewModel.piles.some((p) => p.role === 'stock');
+    if (hasStock) {
+        const stockPt = getStockTrumpPoint();
+        entries.push(
+            {
+                label: `stock ${fmt(stockPt.x, stockPt.y)}`,
+                x: stockPt.x, y: stockPt.y,
+                w: playerPovCardSizes.stockTrump.width, h: playerPovCardSizes.stockTrump.height,
+                color: 0x44ddff,
+            },
+            {
+                label: `trump ${fmt(stockPt.x + 24, stockPt.y + 8)}`,
+                x: stockPt.x + 24, y: stockPt.y + 8,
+                w: playerPovCardSizes.stockTrump.width, h: playerPovCardSizes.stockTrump.height,
+                angle: 90, color: 0x88eeff, dashed: true,
+            },
+        );
+    }
 
     const localPlayer = viewModel.players[0];
     if (localPlayer) {

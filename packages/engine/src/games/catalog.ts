@@ -13,6 +13,10 @@ import { briscaLiteConfig } from './briscaLite/config';
 import { briscaLiteGameDefinition } from './briscaLite/definition';
 import { createBriscaLiteMachine } from './briscaLite/machine';
 import type { BriscaLiteOptions, BriscaLiteViewSnapshot } from './briscaLite/types';
+import { scopaConfig } from './scopa/config';
+import { scopaGameDefinition } from './scopa/definition';
+import { createScopaMachine } from './scopa/machine';
+import type { ScopaOptions, ScopaViewSnapshot } from './scopa/types';
 import { pokerLiteConfig } from './pokerLite/config';
 import { pokerLiteGameDefinition } from './pokerLite/definition';
 import { createPokerLiteMachine } from './pokerLite/machine';
@@ -79,10 +83,17 @@ const briscaLiteCatalogEntry = createConfiguredCatalogEntry<
     createMachine: createBriscaLiteMachine,
 });
 
+const scopaCatalogEntry = createConfiguredCatalogEntry<ScopaViewSnapshot, ScopaOptions>({
+    config: scopaConfig,
+    definition: scopaGameDefinition,
+    createMachine: createScopaMachine,
+});
+
 export const gameCatalog = {
     'poker-lite': pokerLiteCatalogEntry,
     'war-lite': warLiteCatalogEntry,
     'brisca-lite': briscaLiteCatalogEntry,
+    'scopa-lite': scopaCatalogEntry,
 } satisfies Record<string, AnyGameCatalogEntry>;
 
 export type GameCatalogId = keyof typeof gameCatalog;
