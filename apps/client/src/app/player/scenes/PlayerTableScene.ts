@@ -131,6 +131,7 @@ export class PlayerTableScene extends Phaser.Scene {
     private syncViewModel(viewModel: CardGameViewModel): void {
         this.lastViewModel = viewModel;
         this.ensureCardTextures(viewModel);
+        const cardSnapshot = this.snapshotCardPositions();
         this.renderLayer?.destroy(true);
         this.renderLayer = this.add.container(0, 0);
         this.stockPilePoint = null;
@@ -156,17 +157,41 @@ export class PlayerTableScene extends Phaser.Scene {
         );
         drawBottomControls(this, layer, viewModel, () => this.session.send({ type: 'PLAY_CARD' }));
         drawSessionStatus(this, layer, this.getSessionStatus());
-        this.presentMoveEffects(viewModel);
+        this.presentMoveEffects(viewModel, cardSnapshot);
         checkBattleFlash(this, viewModel, this.battleFlashState);
     }
 
-    private presentMoveEffects(viewModel: CardGameViewModel): void {
+    private snapshotCardPositions(): Map<string, { x: number; y: number; displayWidth: number; displayHeight: number; angle: number; textureKey: string }> {
+        const map = new Map<string, { x: number; y: number; displayWidth: number; displayHeight: number; angle: number; textureKey: string }>();
+        if (!this.renderLayer) return map;
+        this.renderLayer.each((obj: Phaser.GameObjects.GameObject) => {
+            if (!(obj instanceof Phaser.GameObjects.Image)) return;
+            const cardId = obj.getData('cardId') as string | undefined;
+            if (cardId) {
+                map.set(cardId, {
+                    x: obj.x,
+                    y: obj.y,
+                    displayWidth: obj.displayWidth,
+                    displayHeight: obj.displayHeight,
+                    angle: obj.angle,
+                    textureKey: obj.texture.key,
+                });
+            }
+        });
+        return map;
+    }
+
+    private presentMoveEffects(
+        viewModel: CardGameViewModel,
+        cardSnapshot: Map<string, { x: number; y: number; displayWidth: number; displayHeight: number; angle: number; textureKey: string }>,
+    ): void {
         const ctx: PlayerEffectContext = {
             animationLayer: this.animationLayer,
             skinId: this.activeCardSkinId,
             backTextureKey: this.getActiveBackTextureKey(),
             localPlayerDeckPoint: this.localPlayerDeckPoint,
             stockPilePoint: this.stockPilePoint,
+            cardSnapshot,
         };
         presentMoveEffects(
             this,

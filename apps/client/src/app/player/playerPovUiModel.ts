@@ -9,6 +9,7 @@ import {
 export interface PlayerPovPlayerCounters {
     cards: number;
     score: number;
+    captureCount: number;
 }
 
 export interface PlayerPovOpponentSeat {
@@ -27,11 +28,17 @@ export function getPlayerPovOpponentSeats(viewModel: CardGameViewModel): PlayerP
             return [];
         }
 
+        const capturePile = viewModel.piles.find(
+            (p) => p.role === 'capture' && p.ownerId === player.id,
+        );
         return [
             {
                 player,
                 layout,
-                counters: parsePlayerCounters(player.metaLabel),
+                counters: {
+                    ...parsePlayerCounters(player.metaLabel),
+                    captureCount: capturePile?.cardCount ?? 0,
+                },
             },
         ];
     });
@@ -75,7 +82,7 @@ export function getLeadPlayerName(viewModel: CardGameViewModel): string | null {
     return viewModel.players.find((player) => player.id === leadPlayerId)?.nameLabel ?? null;
 }
 
-export function parsePlayerCounters(metaLabel: string): PlayerPovPlayerCounters {
+export function parsePlayerCounters(metaLabel: string): Omit<PlayerPovPlayerCounters, 'captureCount'> {
     const numbers = metaLabel.match(/\d+/g)?.map((value) => Number(value)) ?? [];
     return {
         cards: numbers[0] ?? 0,

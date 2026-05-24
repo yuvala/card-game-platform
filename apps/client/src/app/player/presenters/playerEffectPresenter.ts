@@ -74,12 +74,22 @@ function computeEffectDelays(effects: readonly MoveCardEffect[]): number[] {
     return delays;
 }
 
+export interface CardRenderSnapshot {
+    x: number;
+    y: number;
+    displayWidth: number;
+    displayHeight: number;
+    angle: number;
+    textureKey: string;
+}
+
 export interface PlayerEffectContext {
     animationLayer: CardAnimationLayer;
     skinId: string;
     backTextureKey: string;
     localPlayerDeckPoint: { x: number; y: number } | null;
     stockPilePoint: { x: number; y: number } | null;
+    cardSnapshot: Map<string, CardRenderSnapshot>;
 }
 
 export function presentMoveEffects(
@@ -117,13 +127,19 @@ export function presentMoveEffects(
     };
 
     effects.forEach((effect, index) => {
+        const snapshot = ctx.cardSnapshot.get(effect.card.id);
         const points = getMoveEffectPoints(effect, viewModel, ctx);
-        if (!points) return;
+        const from = snapshot ?? points?.from;
+        if (!from) return;
 
         scheduledCount += 1;
         const profile = getEffectProfile(effect.reason, dealDelayStep);
-        const ghostSize = getGhostSizeForEffect(effect, viewModel);
-        animateMoveGhost(scene, effect, points.from, points.to, profile, delays[index] ?? 0, ghostSize, ctx, onEffectDone);
+        const to = points?.to ?? { x: from.x, y: from.y, angle: 0 };
+        const ghostSize = snapshot
+            ? { width: snapshot.displayWidth, height: snapshot.displayHeight }
+            : getGhostSizeForEffect(effect, viewModel);
+        const snapshotTextureKey = snapshot?.textureKey;
+        animateMoveGhost(scene, { effect, from, to, profile, delay: delays[index] ?? 0, ghostSize, ctx, snapshotTextureKey, onComplete: onEffectDone });
     });
 
     if (scheduledCount === 0) {
@@ -264,22 +280,26 @@ function getWarCardPoint(
     return getWarBattleCardPoint(side, card.isFaceUp === true, fdIndex);
 }
 
-function animateMoveGhost(
-    scene: Phaser.Scene,
-    effect: MoveCardEffect,
-    from: { x: number; y: number },
-    to: { x: number; y: number; angle: number },
-    profile: EffectAnimProfile,
-    delay: number,
-    ghostSize: { width: number; height: number },
-    ctx: PlayerEffectContext,
-    onComplete?: () => void,
-): void {
+interface GhostAnimParams {
+    effect: MoveCardEffect;
+    from: { x: number; y: number };
+    to: { x: number; y: number; angle: number };
+    profile: EffectAnimProfile;
+    delay: number;
+    ghostSize: { width: number; height: number };
+    ctx: PlayerEffectContext;
+    snapshotTextureKey?: string;
+    onComplete?: () => void;
+}
+
+function animateMoveGhost(scene: Phaser.Scene, params: GhostAnimParams): void {
+    const { effect, from, to, profile, delay, ghostSize, ctx, snapshotTextureKey, onComplete } = params;
     const shouldFlip = effect.card.isFaceUp && effect.fromFaceUp === false;
-    const textureKey =
+    const textureKey = snapshotTextureKey ?? (
         effect.card.isFaceUp && !shouldFlip
             ? getCardFaceTextureKey(effect.card.id, ctx.skinId, 'compact')
-            : ctx.backTextureKey;
+            : ctx.backTextureKey
+    );
 
     const ghost = ctx.animationLayer.createGhostCard({
         textureKey,

@@ -81,7 +81,8 @@ export function drawPlayerHand(
             .image(point.x, point.y, textureKey)
             .setDisplaySize(HAND_CARD_W, HAND_CARD_H)
             .setAngle(point.angle)
-            .setDepth(30 + index);
+            .setDepth(30 + index)
+            .setData('cardId', card.id);
         setCardDisplaySize(image, HAND_CARD_W, HAND_CARD_H);
 
         if (player.canInteract && card.isFaceUp) {
@@ -92,6 +93,22 @@ export function drawPlayerHand(
         }
         layer.add(image);
     });
+
+    if (cards.length > 0) {
+        const capturePile = viewModel.piles.find(
+            (p) => p.role === 'capture' && p.ownerId === player.id,
+        );
+        if (capturePile && capturePile.cardCount > 0) {
+            drawWonPileVisual(
+                scene,
+                layer,
+                PLAYER_GAME_WIDTH - HAND_CARD_W / 2 - 8,
+                playerPovZones.handY - 10,
+                capturePile.cardCount,
+                backTextureKey,
+            );
+        }
+    }
 
     return deckPoint;
 }

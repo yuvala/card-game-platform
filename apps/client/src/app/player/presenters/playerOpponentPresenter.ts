@@ -121,6 +121,20 @@ function drawTopOpponent(
             layer.add(back);
         }
     }
+
+    if (counters.captureCount > 0) {
+        const wonY = seatY + seatHeight / 2 + 6 + OPP_CARD_H + 10;
+        layer.add(
+            scene.add
+                .text(x, wonY, 'Won: ' + counters.captureCount, {
+                    fontFamily: 'Arial',
+                    fontSize: '9px',
+                    fontStyle: '700',
+                    color: 'rgba(100,220,140,0.92)',
+                })
+                .setOrigin(0.5, 0),
+        );
+    }
 }
 
 function drawSideOpponent(
@@ -234,5 +248,19 @@ function drawSideOpponent(
             setCardDisplaySize(back, OPP_CARD_W, OPP_CARD_H);
             layer.add(back);
         }
+    }
+
+    if (counters.captureCount > 0) {
+        const wonY = panelY + panelHeight / 2 + 6 + OPP_CARD_H + 10;
+        layer.add(
+            scene.add
+                .text(panelCenterX, wonY, 'Won: ' + counters.captureCount, {
+                    fontFamily: 'Arial',
+                    fontSize: '9px',
+                    fontStyle: '700',
+                    color: 'rgba(100,220,140,0.92)',
+                })
+                .setOrigin(0.5, 0),
+        );
     }
 }

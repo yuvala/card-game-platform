@@ -72,7 +72,8 @@ export function drawTableCards(
         const image = scene.add
             .image(point.x, point.y, getTexture(card))
             .setDisplaySize(TABLE_CARD_W, TABLE_CARD_H)
-            .setAngle(point.angle);
+            .setAngle(point.angle)
+            .setData('cardId', card.id);
         setCardDisplaySize(image, TABLE_CARD_W, TABLE_CARD_H);
         layer.add(image);
 
