@@ -2,6 +2,7 @@ import * as Phaser from 'phaser';
 
 import { drawPlayerDebugOverlay } from '../debug/playerDebugOverlay';
 import type { PlayerDebugOverlay, PlayerDebugLayerFlags } from '../debug/playerDebugOverlay';
+import { PlayerDebugPanel } from '../debug/PlayerDebugPanel';
 import {
     createCardAnimationLayer,
     type CardAnimationLayer,
@@ -45,6 +46,7 @@ export class PlayerTableScene extends Phaser.Scene {
     private localPlayerDeckPoint: { x: number; y: number } | null = null;
     private stockPilePoint: { x: number; y: number } | null = null;
     private debugOverlay?: PlayerDebugOverlay;
+    private debugPanel?: PlayerDebugPanel;
     private lastViewModel?: CardGameViewModel;
     private animationLayer!: CardAnimationLayer;
     private readonly battleFlashState: BattleFlashState = { lastKey: '' };
@@ -74,14 +76,16 @@ export class PlayerTableScene extends Phaser.Scene {
                 this.redrawDebugOverlay();
             }
         };
-        globalThis.addEventListener('debug-layer-change', onDebugLayerChange);
+        globalThis.addEventListener('player-debug-layer-change', onDebugLayerChange);
 
         this.events.once(Phaser.Scenes.Events.SHUTDOWN, () => {
             this.subscription?.unsubscribe();
             this.subscription = undefined;
             this.animationLayer.destroy();
             this.battleFlashState.container?.destroy(true);
-            globalThis.removeEventListener('debug-layer-change', onDebugLayerChange);
+            globalThis.removeEventListener('player-debug-layer-change', onDebugLayerChange);
+            this.debugPanel?.destroy();
+            this.debugPanel = undefined;
         });
 
         this.input.keyboard?.on('keydown-D', () => {
@@ -109,10 +113,14 @@ export class PlayerTableScene extends Phaser.Scene {
         if (this.debugOverlay) {
             this.debugOverlay.destroy();
             this.debugOverlay = undefined;
+            this.debugPanel?.destroy();
+            this.debugPanel = undefined;
             localStorage.removeItem('player-debug-zones');
             return;
         }
         localStorage.setItem('player-debug-zones', 'on');
+        this.debugPanel = new PlayerDebugPanel();
+        document.body.appendChild(this.debugPanel.element);
         this.redrawDebugOverlay();
     }
 
@@ -121,6 +129,7 @@ export class PlayerTableScene extends Phaser.Scene {
         if (!this.lastViewModel) {
             return;
         }
+        this.debugPanel?.syncViewModel(this.lastViewModel);
         this.debugOverlay = drawPlayerDebugOverlay({
             scene: this,
             viewModel: this.lastViewModel,

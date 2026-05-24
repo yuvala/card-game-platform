@@ -23,7 +23,7 @@ export interface PlayerDebugLayerFlags {
     zones: boolean;
 }
 
-interface ZoneEntry {
+export interface ZoneEntry {
     label: string;
     x: number;
     y: number;
@@ -75,152 +75,136 @@ function strokeDashedRect(
     });
 }
 
-function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlags): ZoneEntry[] {
-    const zones: ZoneEntry[] = [];
-    const presentation = getPlayerPovPresentation(viewModel);
+function collectHandZones(viewModel: CardGameViewModel): ZoneEntry[] {
     const player = viewModel.players[0];
+    if (!player) return [];
+    const count = Math.max(player.hand.length, 1);
+    return Array.from({ length: count }, (_, i) => {
+        const pt = getHandCardPoint({ cardCount: count, index: i });
+        return {
+            label: `hand[${i}] ${fmt(pt.x, pt.y)}`,
+            x: pt.x, y: pt.y,
+            w: playerPovCardSizes.hand.width, h: playerPovCardSizes.hand.height,
+            angle: pt.angle, color: 0xffd166,
+        };
+    });
+}
 
-    if (layers.hand && player) {
-        const cards = player.hand;
-        const count = Math.max(cards.length, 1);
-        for (let i = 0; i < count; i++) {
-            const pt = getHandCardPoint({ cardCount: count, index: i });
-            zones.push({
-                label: `hand[${i}] ${fmt(pt.x, pt.y)}`,
-                x: pt.x,
-                y: pt.y,
-                w: playerPovCardSizes.hand.width,
-                h: playerPovCardSizes.hand.height,
-                angle: pt.angle,
-                color: 0xffd166,
-            });
-        }
+function collectTableZones(viewModel: CardGameViewModel): ZoneEntry[] {
+    const presentation = getPlayerPovPresentation(viewModel);
+    const count = Math.max(viewModel.tableCards.length, 1);
+    if (presentation.centerArea === 'trick') {
+        const sides: PlayerPovSeatSide[] = ['bottom', 'top', 'left', 'right'];
+        return sides.slice(0, viewModel.players.length).map((side, i) => {
+            const pt = getTrickCardPoint(side);
+            return {
+                label: `trick[${i}]:${side} ${fmt(pt.x, pt.y)}`,
+                x: pt.x, y: pt.y,
+                w: playerPovCardSizes.table.width, h: playerPovCardSizes.table.height,
+                angle: pt.angle, color: 0xff6666,
+            };
+        });
     }
+    return Array.from({ length: count }, (_, i) => {
+        const pt = getTableRowCardPoint({ cardCount: count, index: i });
+        return {
+            label: `table[${i}] ${fmt(pt.x, pt.y)}`,
+            x: pt.x, y: pt.y,
+            w: playerPovCardSizes.table.width, h: playerPovCardSizes.table.height,
+            angle: pt.angle, color: 0xff6666,
+        };
+    });
+}
 
-    if (layers.table) {
-        const tableCards = viewModel.tableCards;
-        const count = Math.max(tableCards.length, 1);
-        if (presentation.centerArea === 'trick') {
-            const sides: PlayerPovSeatSide[] = ['bottom', 'top', 'left', 'right'];
-            sides.slice(0, viewModel.players.length).forEach((side, i) => {
-                const pt = getTrickCardPoint(side);
-                zones.push({
-                    label: `trick[${i}]:${side} ${fmt(pt.x, pt.y)}`,
-                    x: pt.x,
-                    y: pt.y,
-                    w: playerPovCardSizes.table.width,
-                    h: playerPovCardSizes.table.height,
-                    angle: pt.angle,
-                    color: 0xff6666,
-                });
-            });
-        } else {
-            for (let i = 0; i < count; i++) {
-                const pt = getTableRowCardPoint({ cardCount: count, index: i });
-                zones.push({
-                    label: `table[${i}] ${fmt(pt.x, pt.y)}`,
-                    x: pt.x,
-                    y: pt.y,
-                    w: playerPovCardSizes.table.width,
-                    h: playerPovCardSizes.table.height,
-                    angle: pt.angle,
-                    color: 0xff6666,
-                });
-            }
-        }
-    }
-
-    if (layers.piles) {
-        const stockPt = getStockTrumpPoint();
-        zones.push({
+function collectPileZones(viewModel: CardGameViewModel): ZoneEntry[] {
+    const stockPt = getStockTrumpPoint();
+    const entries: ZoneEntry[] = [
+        {
             label: `stock ${fmt(stockPt.x, stockPt.y)}`,
-            x: stockPt.x,
-            y: stockPt.y,
-            w: playerPovCardSizes.stockTrump.width,
-            h: playerPovCardSizes.stockTrump.height,
+            x: stockPt.x, y: stockPt.y,
+            w: playerPovCardSizes.stockTrump.width, h: playerPovCardSizes.stockTrump.height,
             color: 0x44ddff,
-        });
-        zones.push({
+        },
+        {
             label: `trump ${fmt(stockPt.x + 24, stockPt.y + 8)}`,
-            x: stockPt.x + 24,
-            y: stockPt.y + 8,
-            w: playerPovCardSizes.stockTrump.width,
-            h: playerPovCardSizes.stockTrump.height,
-            angle: 90,
-            color: 0x88eeff,
-            dashed: true,
-        });
-    }
+            x: stockPt.x + 24, y: stockPt.y + 8,
+            w: playerPovCardSizes.stockTrump.width, h: playerPovCardSizes.stockTrump.height,
+            angle: 90, color: 0x88eeff, dashed: true,
+        },
+    ];
 
-    if (layers.seats) {
-        const opponentSeats = getPlayerPovOpponentSeats(viewModel);
-        const seatLayouts = getOpponentSeatLayouts(opponentSeats.length);
-        seatLayouts.forEach((layout, i) => {
-            zones.push({
-                label: `seat[${i}]:${layout.side} ${fmt(layout.x, layout.y)}`,
-                x: layout.x,
-                y: layout.y,
-                w: playerPovCardSizes.opponent.width,
-                h: playerPovCardSizes.opponent.height,
-                angle: layout.angle,
-                color: 0x66ff99,
+    const localPlayer = viewModel.players[0];
+    if (localPlayer) {
+        const localCapture = viewModel.piles.find(
+            (p) => p.role === 'capture' && p.ownerId === localPlayer.id,
+        );
+        if (localCapture) {
+            const cx = PLAYER_GAME_WIDTH - playerPovCardSizes.hand.width / 2 - 8;
+            const cy = playerPovZones.handY - 10;
+            entries.push({
+                label: `owned:capture:${localPlayer.id} ${fmt(cx, cy)}`,
+                x: cx, y: cy,
+                w: playerPovCardSizes.hand.width, h: playerPovCardSizes.hand.height,
+                color: 0xaa44ff,
             });
-        });
+        }
     }
 
-    if (layers.zones) {
-        const zoneEntries: Array<{ key: string; y: number; w: number; h: number; color: number }> =
-            [
-                {
-                    key: 'topBar',
-                    y: playerPovZones.topBarY,
-                    w: PLAYER_GAME_WIDTH,
-                    h: 30,
-                    color: 0xcc88ff,
-                },
-                {
-                    key: 'gameInfo',
-                    y: playerPovZones.gameInfoY,
-                    w: PLAYER_GAME_WIDTH,
-                    h: 56,
-                    color: 0xcc88ff,
-                },
-                {
-                    key: 'playerHud',
-                    y: playerPovZones.playerHudY,
-                    w: PLAYER_GAME_WIDTH,
-                    h: 40,
-                    color: 0xffaa44,
-                },
-                {
-                    key: 'actionBtn',
-                    y: playerPovZones.actionButtonY,
-                    w: PLAYER_GAME_WIDTH,
-                    h: 48,
-                    color: 0xffaa44,
-                },
-                {
-                    key: 'actionText',
-                    y: playerPovZones.actionStatusY,
-                    w: PLAYER_GAME_WIDTH,
-                    h: 24,
-                    color: 0xffdd88,
-                },
-            ];
-        zoneEntries.forEach(({ key, y, w, h, color }) => {
-            zones.push({
-                label: `${key} y=${y}`,
-                x: PLAYER_GAME_WIDTH / 2,
-                y,
-                w,
-                h,
-                color,
-                dashed: true,
-            });
+    getPlayerPovOpponentSeats(viewModel).forEach((seat) => {
+        const hasCapture = viewModel.piles.some(
+            (p) => p.role === 'capture' && p.ownerId === seat.player.id,
+        );
+        if (!hasCapture) return;
+        const panelH = 36;
+        const oppH = playerPovCardSizes.opponent.height;
+        const wonY = seat.layout.y + panelH / 2 + 6 + oppH + 10;
+        let wonX = seat.layout.x;
+        if (seat.layout.side === 'left') wonX = 56;
+        else if (seat.layout.side === 'right') wonX = PLAYER_GAME_WIDTH - 56;
+        entries.push({
+            label: `owned:capture:${seat.player.id} ${fmt(wonX, wonY)}`,
+            x: wonX, y: wonY,
+            w: playerPovCardSizes.opponent.width, h: playerPovCardSizes.opponent.height,
+            color: 0xaa44ff,
         });
-    }
+    });
 
-    return zones;
+    return entries;
+}
+
+function collectSeatZones(viewModel: CardGameViewModel): ZoneEntry[] {
+    const opponentSeats = getPlayerPovOpponentSeats(viewModel);
+    return getOpponentSeatLayouts(opponentSeats.length).map((layout, i) => ({
+        label: `seat[${i}]:${layout.side} ${fmt(layout.x, layout.y)}`,
+        x: layout.x, y: layout.y,
+        w: playerPovCardSizes.opponent.width, h: playerPovCardSizes.opponent.height,
+        angle: layout.angle, color: 0x66ff99,
+    }));
+}
+
+function collectLayoutZones(): ZoneEntry[] {
+    return [
+        { key: 'topBar',     y: playerPovZones.topBarY,      h: 30, color: 0xcc88ff },
+        { key: 'gameInfo',   y: playerPovZones.gameInfoY,    h: 56, color: 0xcc88ff },
+        { key: 'playerHud',  y: playerPovZones.playerHudY,   h: 40, color: 0xffaa44 },
+        { key: 'actionBtn',  y: playerPovZones.actionButtonY, h: 48, color: 0xffaa44 },
+        { key: 'actionText', y: playerPovZones.actionStatusY, h: 24, color: 0xffdd88 },
+    ].map(({ key, y, h, color }) => ({
+        label: `${key} y=${y}`,
+        x: PLAYER_GAME_WIDTH / 2, y,
+        w: PLAYER_GAME_WIDTH, h,
+        color, dashed: true,
+    }));
+}
+
+function collectZones(viewModel: CardGameViewModel, layers: PlayerDebugLayerFlags): ZoneEntry[] {
+    return [
+        ...(layers.hand  ? collectHandZones(viewModel)   : []),
+        ...(layers.table ? collectTableZones(viewModel)  : []),
+        ...(layers.piles ? collectPileZones(viewModel)   : []),
+        ...(layers.seats ? collectSeatZones(viewModel)   : []),
+        ...(layers.zones ? collectLayoutZones()          : []),
+    ];
 }
 
 export interface PlayerDebugOverlay {
@@ -238,7 +222,10 @@ export function drawPlayerDebugOverlay(input: {
     const g = scene.add.graphics().setDepth(9999);
     const texts: Phaser.GameObjects.Text[] = [];
 
-    collectZones(viewModel, layers).forEach((zone) => {
+    const zones = collectZones(viewModel, layers);
+    globalThis.dispatchEvent(new CustomEvent<ZoneEntry[]>('player-debug-zones-updated', { detail: zones }));
+
+    zones.forEach((zone) => {
         const { x, y, w, h, color, label, dashed, angle = 0 } = zone;
 
         g.fillStyle(color, dashed ? 0.05 : 0.12);
