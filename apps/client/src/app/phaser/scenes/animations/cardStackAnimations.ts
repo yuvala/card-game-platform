@@ -147,14 +147,14 @@ export function shouldRevealFinalCard(effect: MoveCardEffect): boolean {
 }
 
 function getFinalRevealDelay(effect: MoveCardEffect): number {
-    return effect.key.startsWith('war-reveal-') ? 650 : 0;
+    return effect.animationProfile === 'war-reveal' ? 650 : 0;
 }
 
 function getFinalRevealDurations(effect: MoveCardEffect): {
     revealInDuration: number;
     revealOutDuration: number;
 } {
-    return effect.key.startsWith('war-reveal-')
+    return effect.animationProfile === 'war-reveal'
         ? {
               revealInDuration: 170,
               revealOutDuration: 230,
@@ -166,7 +166,7 @@ function getFinalRevealDurations(effect: MoveCardEffect): {
 }
 
 function isWarRevealEffect(effect: MoveCardEffect): boolean {
-    return effect.key.startsWith('war-reveal-');
+    return effect.animationProfile === 'war-reveal';
 }
 
 export function prepareCardMoveGhostTexture(input: {

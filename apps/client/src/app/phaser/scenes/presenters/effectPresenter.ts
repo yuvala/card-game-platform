@@ -441,10 +441,6 @@ function restoreOwnedPileCardLayersAlpha(visual: OwnedPileVisual): void {
     visual.outline.setAlpha(1);
 }
 
-function isWarCollectEffect(effect: MoveCardEffect): boolean {
-    return effect.key.startsWith('battle-collect-') || effect.key.startsWith('battle-tie-discard-');
-}
-
 function getCollectAnimationProfile(
     effect: MoveCardEffect,
     index: number,
@@ -455,7 +451,7 @@ function getCollectAnimationProfile(
     peakScale: number;
     landingScale: number;
 } {
-    if (isWarCollectEffect(effect)) {
+    if (effect.animationProfile === 'war-collect') {
         return {
             delay: index * 92,
             duration: 460,
@@ -549,7 +545,7 @@ function runCollectEffects(
         })?.container.setAlpha(0);
         if (ownedPileVisual) {
             destinationPileVisuals.add(ownedPileVisual);
-            if (isWarCollectEffect(effect)) {
+            if (effect.animationProfile === 'war-collect') {
                 warDestinationPileVisuals.add(ownedPileVisual);
             }
             setOwnedPileCardLayersAlpha(ownedPileVisual, 0);

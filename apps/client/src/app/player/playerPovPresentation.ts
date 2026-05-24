@@ -42,8 +42,8 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
         };
     }
 
-    const trumpPile = getPileByRole(viewModel, 'trump');
-    if (trumpPile) {
+    if (viewModel.themeId === 'brisca') {
+        const trumpPile = getPileByRole(viewModel, 'trump');
         return {
             gameKind: 'brisca',
             gameTitle: 'BRISCA',
@@ -52,40 +52,16 @@ export function getPlayerPovPresentation(viewModel: CardGameViewModel): PlayerPo
             bottomDock: 'stock-trump',
             centerDock: 'none',
             actionStyle: 'play-card',
-            trumpLabel: getTrumpLabel(viewModel, trumpPile),
+            trumpLabel: trumpPile ? getTrumpLabel(viewModel, trumpPile) : null,
             infoPrimaryLabel: 'Trump',
-            infoPrimaryValue: getTrumpLabel(viewModel, trumpPile),
+            infoPrimaryValue: trumpPile ? getTrumpLabel(viewModel, trumpPile) : '',
             infoSecondaryLabel: 'Round',
             infoSecondaryValue: viewModel.roundLabel,
             centerLabel: 'Current trick',
         };
     }
 
-    if (
-        viewModel.tableCards.some((card) => (card.stackCount ?? 0) > 1) ||
-        viewModel.phaseLabel.toLowerCase().includes('battle')
-    ) {
-        return {
-            gameKind: 'war',
-            gameTitle: 'WAR',
-            infoPanel: 'battle',
-            centerArea: 'battle',
-            bottomDock: 'none',
-            centerDock: 'stock',
-            actionStyle: 'battle',
-            trumpLabel: null,
-            infoPrimaryLabel: 'Battle',
-            infoPrimaryValue: viewModel.roundLabel,
-            infoSecondaryLabel: 'In play',
-            infoSecondaryValue: getDeckDetail(viewModel),
-            centerLabel: 'Battle area',
-        };
-    }
-
-    if (
-        viewModel.piles.some((pile) => pile.role === 'discard') ||
-        viewModel.deckLabel.toLowerCase().includes('poker')
-    ) {
+    if (viewModel.themeId === 'poker') {
         return {
             gameKind: 'poker',
             gameTitle: 'POKER',

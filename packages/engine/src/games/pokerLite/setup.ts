@@ -45,7 +45,6 @@ export function createInitialContext(
     return {
         deckDefinition,
         lastEffects: [],
-        playedCardHistory: [],
         piles: createConfiguredPiles(pokerLiteConfig, players),
         roundCards: [],
         players,
@@ -117,7 +116,6 @@ export function dealOpeningHands(context: PokerLiteContext): {
             piles,
             turnIndex: 0,
             round: 1,
-            playedCardHistory: [],
             roundCards: [],
             lastPlayedCard: null,
             selectedCardId: null,

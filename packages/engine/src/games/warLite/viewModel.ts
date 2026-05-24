@@ -144,7 +144,7 @@ export function getWarLiteViewModel(
                 };
             }),
             tableCards: getWarLiteTableCards(snapshot),
-            tablePresentation: 'table-row',
+            tablePresentation: 'battle-formation',
             tablePileIds: [WAR_LITE_BATTLE_PILE_ID],
             piles: [
                 ...(stockCards.length > 0

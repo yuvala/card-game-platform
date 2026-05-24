@@ -117,6 +117,7 @@ function collectBattlePileWithEffects(input: {
     targetPileId: string;
     targetOwnerId?: string;
     keyPrefix: string;
+    animationProfile?: import('../../engine/game/effects').MoveCardAnimationProfile;
 }): { piles: WarLiteContext['piles']; effects: CardGameEffect[] } {
     const battleCards = getPileCards(input.context.piles, WAR_LITE_BATTLE_PILE_ID);
     const targetPileCardCount = getPileCards(input.context.piles, input.targetPileId).length;
@@ -134,6 +135,7 @@ function collectBattlePileWithEffects(input: {
             toIndex: targetPileCardCount + index,
             isFaceUp,
             keyPrefix: input.keyPrefix,
+            animationProfile: input.animationProfile,
         });
     });
     const piles = clearPile(
@@ -163,6 +165,7 @@ function collectBattleToWinnerWithEffects(input: {
             String(input.context.round) +
             '-war-' +
             String(input.context.warState?.depth ?? 0),
+        animationProfile: 'war-collect',
     });
     const winningPlayerIds = [input.winningCard.playerId];
     const statusText =
@@ -196,7 +199,6 @@ function collectBattleToWinnerWithEffects(input: {
                     score: player.score + 1,
                 };
             }),
-            playedCardHistory: input.context.playedCardHistory.concat(input.context.roundCards),
             lastPlayedCard: input.winningCard,
             winningPlayerIds,
             warState: null,
@@ -218,13 +220,13 @@ function collectUnresolvedTieWithEffects(context: WarLiteContext): {
             String(context.round) +
             '-war-' +
             String(context.warState?.depth ?? 0),
+        animationProfile: 'war-collect',
     });
 
     return {
         state: {
             ...context,
             piles: collectTransition.piles,
-            playedCardHistory: context.playedCardHistory.concat(context.roundCards),
             winningPlayerIds: [],
             warState: null,
             statusText:
@@ -508,6 +510,7 @@ function revealComparisonCardWithEffects(context: WarLiteContext): {
                 String(context.warState?.depth ?? 0) +
                 '-' +
                 nextPlayer.id,
+            animationProfile: context.warState ? 'war-reveal' : undefined,
         }),
     );
 

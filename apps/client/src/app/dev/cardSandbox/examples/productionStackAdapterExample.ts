@@ -66,6 +66,7 @@ export const productionStackAdapterExample: CardSandboxExample = {
                 type: 'move-card',
                 key: 'war-reveal-sandbox',
                 reason: 'play',
+                animationProfile: 'war-reveal',
                 card: {
                     id: card.id,
                     label: card.displayLabel,

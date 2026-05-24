@@ -73,7 +73,7 @@ export interface CardGameViewTableCard extends CardGameViewCard {
     sourceCardIds?: string[];
 }
 
-export type CardGameViewTablePresentation = 'table-row' | 'trick-seats';
+export type CardGameViewTablePresentation = 'table-row' | 'trick-seats' | 'battle-formation';
 
 export type CardGameViewPilePresentation =
     | 'hidden-stack'

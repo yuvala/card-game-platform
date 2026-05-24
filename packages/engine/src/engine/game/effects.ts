@@ -17,11 +17,14 @@ interface BaseCardGameEffect<TType extends CardGameEffectType> {
     delayMs?: number;
 }
 
+export type MoveCardAnimationProfile = 'war-collect' | 'war-reveal';
+
 export interface MoveCardEffect {
     type: 'move-card';
     key: string;
     delayMs?: number;
     reason: CardGameEffectReason;
+    animationProfile?: MoveCardAnimationProfile;
     card: {
         id: string;
         label: string;
@@ -92,6 +95,7 @@ type MoveCardEffectInput = {
     toIndex?: number;
     isFaceUp?: boolean;
     keyPrefix?: string;
+    animationProfile?: MoveCardAnimationProfile;
 };
 
 type SpecificMoveCardEffectInput = Omit<MoveCardEffectInput, 'reason'>;
@@ -120,6 +124,7 @@ export function createMoveCardEffect(input: MoveCardEffectInput): MoveCardEffect
         toPileId: input.toPileId,
         toOwnerId: input.toOwnerId,
         toIndex: input.toIndex,
+        animationProfile: input.animationProfile,
     };
 }
 

@@ -166,7 +166,6 @@ async function runPokerLiteMachineTest() {
 
     assert(snapshot.value === "gameOver", "Poker Lite should finish after both one-card turns.");
     assert(snapshot.context.roundCards.length === 2, "Poker Lite should keep both played cards in the last round.");
-    assert(snapshot.context.playedCardHistory.length === 2, "Poker Lite should record both plays in played-card history.");
     assert(
         getPileCards(snapshot.context.piles, "discard").length === 2,
         "Poker Lite discard pile should contain both played cards."
@@ -254,10 +253,6 @@ async function runWarLiteMachineTest() {
     }, 5000);
 
     const afterBattle = actor.getSnapshot();
-    assert(
-        afterBattle.context.playedCardHistory.length === 2,
-        "War Lite should move both revealed cards into played-card history after one battle."
-    );
     assert(
         afterBattle.context.players.some((player) => {
             return getPileCards(afterBattle.context.piles, getWarLiteCapturePileId(player.id)).length === 2;
@@ -626,7 +621,6 @@ function runWarLiteWarTieRuleTest() {
         "The war winner should collect all tied, face-down, and face-up war cards."
     );
     assert(getPileCards(state.piles, WAR_LITE_BATTLE_PILE_ID).length === 0, "The battle pile should be empty after collection.");
-    assert(state.playedCardHistory.length === 10, "War Lite should record every card in the resolved war pot.");
 }
 
 function createWarStateWithPlayerStacks(input: {
@@ -867,7 +861,6 @@ async function runBriscaLiteMachineTest() {
         "Brisca-lite advance-next-trick should emit one draw effect (last player; first player drew earlier in advance-next-player)."
     );
     assert(snapshot.context.roundCards.length === 0, "Brisca-lite should clear the trick cards after the trick resolves.");
-    assert(snapshot.context.playedCardHistory.length === 2, "Brisca-lite should record both played cards in played-card history.");
     assert(
         getPileCards(snapshot.context.piles, BRISCA_LITE_TRICK_PILE_ID).length === 0,
         "Brisca-lite trick pile should be empty after the trick is collected."

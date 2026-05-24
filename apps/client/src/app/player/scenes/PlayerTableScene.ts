@@ -1942,7 +1942,7 @@ export class PlayerTableScene extends Phaser.Scene {
         if (tableCard && viewModel.tablePresentation === 'trick-seats') {
             return this.getTrickCardPointForCard(tableCard, viewModel);
         }
-        if (tableCard && viewModel.themeId === 'war') {
+        if (tableCard && viewModel.tablePresentation === 'battle-formation') {
             return this.getWarCardPoint(tableCard, viewModel);
         }
         return getTableRowCardPoint({

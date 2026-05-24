@@ -109,6 +109,7 @@ export function getBriscaLiteViewModel(
                 playerId: playedCard.playerId,
                 caption: '',
             })),
+            themeId: 'brisca',
             tablePresentation: 'trick-seats',
             tablePileIds: [BRISCA_LITE_TRICK_PILE_ID],
             piles: [

@@ -57,7 +57,6 @@ export function createInitialContext(
     return {
         deckDefinition,
         lastEffects: [],
-        playedCardHistory: [],
         piles: createConfiguredPiles(warLiteConfig, players),
         comparisonCards: [],
         roundCards: [],
@@ -150,7 +149,6 @@ export function dealOpeningHands(context: WarLiteContext): {
             piles,
             turnIndex: 0,
             round: 1,
-            playedCardHistory: [],
             comparisonCards: [],
             roundCards: [],
             lastPlayedCard: null,

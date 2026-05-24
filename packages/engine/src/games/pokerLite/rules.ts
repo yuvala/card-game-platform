@@ -168,7 +168,6 @@ export function commitPlayedCard(context: PokerLiteContext): PokerLiteContext {
     return {
         ...context,
         piles: playedCardState.piles,
-        playedCardHistory: context.playedCardHistory.concat(playedCard),
         roundCards: context.roundCards.concat(playedCard),
         lastPlayedCard: playedCard,
         selectedCardId: null,
