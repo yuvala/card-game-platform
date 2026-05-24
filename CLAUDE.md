@@ -84,7 +84,7 @@ toViewModel?(state, viewerId?) → TViewModel   // viewerId: null = admin/table 
 Owns the authoritative `GameSession` and broadcasts view models to all connected clients.
 
 - `gameServer.ts` — entry point, starts WebSocket server on port 8787
-- `GameWebSocketServer.ts` — WebSocket protocol handling, client role enforcement
+- `GameWebSocketServer.ts` — WebSocket protocol handling, client role enforcement, 30s ping/pong heartbeat to prevent proxy timeouts (e.g. Render.com)
 - `GameSessionHost.ts` — wraps the XState actor, runs `toViewModel` per viewer
 
 **Security model**: the server derives the acting player from the socket's declared `viewerId`. Clients cannot send a `playerId` in `game-event` messages. The server rejects events whose `expectedSequence` is older than the current session sequence, preventing stale-UI mutations.

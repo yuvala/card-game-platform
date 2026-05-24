@@ -85,6 +85,18 @@ export function createGameWebSocketServer(
     });
     const wss = new WebSocketServer({ server });
 
+    const socketAlive = new WeakMap<WebSocket, boolean>();
+    const heartbeatInterval = setInterval(() => {
+        wss.clients.forEach((socket) => {
+            if (!socketAlive.get(socket)) {
+                socket.terminate();
+                return;
+            }
+            socketAlive.set(socket, false);
+            socket.ping();
+        });
+    }, 30_000);
+
     wss.on('connection', (socket) => {
         const client: RewriteClient = {
             socket,
@@ -92,6 +104,9 @@ export function createGameWebSocketServer(
             viewerId: null,
             roomId: DEFAULT_ROOM_ID,
         };
+
+        socketAlive.set(socket, true);
+        socket.on('pong', () => socketAlive.set(socket, true));
 
         const defaultRoom = getOrCreateRoom(DEFAULT_ROOM_ID);
         defaultRoom.clients.add(client);
@@ -119,7 +134,7 @@ export function createGameWebSocketServer(
         server,
         wss,
         getGameHost: (roomId = DEFAULT_ROOM_ID) => rooms.get(roomId)?.gameHost,
-        close: () => closeGameWebSocketServer(server, wss, rooms),
+        close: () => closeGameWebSocketServer(server, wss, rooms, heartbeatInterval),
     };
 }
 
@@ -278,7 +293,9 @@ function closeGameWebSocketServer(
     server: http.Server,
     wss: WebSocketServer,
     rooms: Map<string, RoomSession>,
+    heartbeatInterval: ReturnType<typeof setInterval>,
 ): Promise<void> {
+    clearInterval(heartbeatInterval);
     rooms.forEach((room) => {
         room.lifecycle.destroy();
         room.gameHost.stop();
