@@ -51,18 +51,18 @@ export function getOpponentSeatLayouts(count: number): PlayerPovSeatLayout[] {
         case 0:
             return [];
         case 1:
-            return [{ side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 58, angle: 0 }];
+            return [{ side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 48, angle: 0 }];
         case 2:
             return [
-                { side: 'left', x: 44, y: 196, angle: -90 },
-                { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 196, angle: 90 },
+                { side: 'left', x: 44, y: 186, angle: -90 },
+                { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 186, angle: 90 },
             ];
         default: {
             const layouts: PlayerPovSeatLayout[] = [
-                { side: 'left', x: 44, y: 196, angle: -90 },
-                { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 58, angle: 0 },
-                { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 196, angle: 90 },
-                { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 102, angle: 0 },
+                { side: 'left', x: 44, y: 186, angle: -90 },
+                { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 48, angle: 0 },
+                { side: 'right', x: PLAYER_GAME_WIDTH - 44, y: 186, angle: 90 },
+                { side: 'top', x: PLAYER_GAME_WIDTH / 2, y: 92, angle: 0 },
             ];
             return layouts.slice(0, count);
         }

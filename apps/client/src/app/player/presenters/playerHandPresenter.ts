@@ -8,6 +8,8 @@ import { GOLD, setCardDisplaySize, drawCapturePileWidget } from './playerDrawUti
 
 const HAND_CARD_W = playerPovCardSizes.hand.width;
 const HAND_CARD_H = playerPovCardSizes.hand.height;
+const CAP_CARD_W = playerPovCardSizes.opponent.width;
+const CAP_CARD_H = playerPovCardSizes.opponent.height;
 
 export function drawPlayerHand(
     scene: Phaser.Scene,
@@ -29,7 +31,7 @@ export function drawPlayerHand(
         (p) => p.role === 'capture' && p.ownerId === player.id,
     );
     const captureCount = capturePile?.cardCount ?? 0;
-    const captureX = PLAYER_GAME_WIDTH - HAND_CARD_W / 2 - 8;
+    const captureX = PLAYER_GAME_WIDTH - CAP_CARD_W / 2 - 8;
     const captureY = playerPovZones.handY - 10;
 
     if (cards.length === 0 && player.deckPile) {
@@ -55,8 +57,8 @@ export function drawPlayerHand(
             y: captureY,
             cardCount: captureCount,
             backTextureKey,
-            cardW: HAND_CARD_W,
-            cardH: HAND_CARD_H,
+            cardW: CAP_CARD_W,
+            cardH: CAP_CARD_H,
         });
     }
 

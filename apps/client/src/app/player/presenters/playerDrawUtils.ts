@@ -39,6 +39,7 @@ export interface CapturePileWidgetOptions {
     backTextureKey: string;
     cardW: number;
     cardH: number;
+    angle?: number;
 }
 
 export function drawCapturePileWidget(
@@ -46,7 +47,8 @@ export function drawCapturePileWidget(
     layer: Phaser.GameObjects.Container,
     opts: CapturePileWidgetOptions,
 ): void {
-    const { x, y, cardCount, backTextureKey, cardW, cardH } = opts;
+    const { x, y, cardCount, backTextureKey, cardW, cardH, angle = 0 } = opts;
+    const rotated = angle !== 0;
     if (cardCount > 0) {
         let stackCount = 1;
         if (cardCount > 7) stackCount = 3;
@@ -54,7 +56,8 @@ export function drawCapturePileWidget(
         for (let i = stackCount - 1; i >= 0; i--) {
             const back = scene.add
                 .image(x - i * 2, y - i * 2, backTextureKey)
-                .setDisplaySize(cardW, cardH)
+                .setDisplaySize(rotated ? cardH : cardW, rotated ? cardW : cardH)
+                .setAngle(angle)
                 .setAlpha(0.6 + i * 0.14);
             layer.add(back);
         }

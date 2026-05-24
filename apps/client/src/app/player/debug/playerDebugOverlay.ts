@@ -139,12 +139,12 @@ function collectPileZones(viewModel: CardGameViewModel): ZoneEntry[] {
             (p) => p.role === 'capture' && p.ownerId === localPlayer.id,
         );
         if (localCapture) {
-            const cx = PLAYER_GAME_WIDTH - playerPovCardSizes.hand.width / 2 - 8;
+            const cx = PLAYER_GAME_WIDTH - playerPovCardSizes.opponent.width / 2 - 8;
             const cy = playerPovZones.handY - 10;
             entries.push({
                 label: `owned:capture:${localPlayer.id} ${fmt(cx, cy)}`,
                 x: cx, y: cy,
-                w: playerPovCardSizes.hand.width, h: playerPovCardSizes.hand.height,
+                w: playerPovCardSizes.opponent.width, h: playerPovCardSizes.opponent.height,
                 color: 0xaa44ff,
             });
         }
@@ -156,11 +156,21 @@ function collectPileZones(viewModel: CardGameViewModel): ZoneEntry[] {
         );
         if (!hasCapture) return;
         const panelH = 36;
+        const seatW = 116;
         const oppH = playerPovCardSizes.opponent.height;
-        const wonY = seat.layout.y + panelH / 2 + 6 + oppH + 10;
-        let wonX = seat.layout.x;
-        if (seat.layout.side === 'left') wonX = 56;
-        else if (seat.layout.side === 'right') wonX = PLAYER_GAME_WIDTH - 56;
+        const oppW = playerPovCardSizes.opponent.width;
+        const seatY = seat.layout.y + 6;
+        const fanCenterY = seatY + panelH / 2 + 6 + oppH / 2;
+        let wonX: number;
+        let wonY: number;
+        if (seat.layout.side === 'top') {
+            wonX = seat.layout.x - seatW / 2 - oppW / 2 - 6;
+            wonY = fanCenterY;
+        } else {
+            const isLeft = seat.layout.side === 'left';
+            wonX = isLeft ? 56 : PLAYER_GAME_WIDTH - 56;
+            wonY = seat.layout.y + panelH / 2 + 6 + oppH + (isLeft ? -90 : 64);
+        }
         entries.push({
             label: `owned:capture:${seat.player.id} ${fmt(wonX, wonY)}`,
             x: wonX, y: wonY,

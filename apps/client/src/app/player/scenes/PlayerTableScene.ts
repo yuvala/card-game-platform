@@ -78,8 +78,7 @@ export class PlayerTableScene extends Phaser.Scene {
         };
         const onDebugToggle = () => {
             const wantOpen = localStorage.getItem('player-debug-zones') === 'on';
-            if (wantOpen && !this.debugOverlay) this.toggleDebugOverlay();
-            else if (!wantOpen && this.debugOverlay) this.toggleDebugOverlay();
+            if (wantOpen !== !!this.debugOverlay) this.toggleDebugOverlay();
         };
         globalThis.addEventListener('player-debug-layer-change', onDebugLayerChange);
         globalThis.addEventListener('player-debug-toggle', onDebugToggle);
@@ -99,11 +98,11 @@ export class PlayerTableScene extends Phaser.Scene {
             this.toggleDebugOverlay();
         });
 
+        this.syncViewModel(this.session.getViewModel(null));
+
         if (localStorage.getItem('player-debug-zones') === 'on') {
             this.toggleDebugOverlay();
         }
-
-        this.syncViewModel(this.session.getViewModel(null));
     }
 
     private getDebugLayers(): PlayerDebugLayerFlags {
@@ -123,12 +122,14 @@ export class PlayerTableScene extends Phaser.Scene {
             this.debugPanel?.destroy();
             this.debugPanel = undefined;
             localStorage.removeItem('player-debug-zones');
+            globalThis.dispatchEvent(new CustomEvent('player-debug-state-changed', { detail: { open: false } }));
             return;
         }
         localStorage.setItem('player-debug-zones', 'on');
         this.debugPanel = new PlayerDebugPanel();
         document.body.appendChild(this.debugPanel.element);
         this.redrawDebugOverlay();
+        globalThis.dispatchEvent(new CustomEvent('player-debug-state-changed', { detail: { open: true } }));
     }
 
     private redrawDebugOverlay(): void {

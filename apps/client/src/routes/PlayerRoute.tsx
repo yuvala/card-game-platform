@@ -38,6 +38,10 @@ export function PlayerRoute() {
             localStorage.setItem('player-debug-zones', zonesToggle.checked ? 'on' : 'off');
             globalThis.dispatchEvent(new Event('player-debug-toggle'));
         });
+        const onDebugStateChanged = (e: Event) => {
+            if (zonesToggle) zonesToggle.checked = (e as CustomEvent<{ open: boolean }>).detail.open;
+        };
+        globalThis.addEventListener('player-debug-state-changed', onDebugStateChanged);
 
         // settings panel open/close
         const onSettingsToggle = () => settings?.classList.toggle('open');
@@ -67,6 +71,7 @@ export function PlayerRoute() {
 
         return () => {
             globalThis.removeEventListener('player-settings-toggle', onSettingsToggle);
+            globalThis.removeEventListener('player-debug-state-changed', onDebugStateChanged);
             backdrop?.removeEventListener('click', onBackdropClick);
         };
     }, []);
