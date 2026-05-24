@@ -42,6 +42,7 @@ function createBaseViewModel(input?: Partial<CardGameViewModel>): CardGameViewMo
 
 function runBriscaPresentationTest(): void {
     const presentation = getPlayerPovPresentation(createBaseViewModel({
+        themeId: "brisca",
         deckLabel: "Spanish Deck | Trump: Oros",
         roundLabel: "Trick 1 / 8",
         piles: [
@@ -78,6 +79,7 @@ function runBriscaPresentationTest(): void {
 
 function runWarPresentationTest(): void {
     const presentation = getPlayerPovPresentation(createBaseViewModel({
+        themeId: "war",
         phaseLabel: "BATTLEREADY",
         roundLabel: "Battle 3 | War 1",
         deckLabel: "French Deck | 10 cards still in play",
@@ -100,6 +102,7 @@ function runWarPresentationTest(): void {
 
 function runPokerPresentationTest(): void {
     const presentation = getPlayerPovPresentation(createBaseViewModel({
+        themeId: "poker",
         deckLabel: "French Deck | 30 cards left in draw pile",
         piles: [
             {
@@ -130,7 +133,7 @@ function runPokerPresentationTest(): void {
     assert(presentation.gameKind === "poker", "Poker presentation should be selected when draw/discard piles exist.");
     assert(presentation.infoPanel === "pot", "Poker should expose a draw/discard info panel.");
     assert(presentation.centerArea === "showdown", "Poker should use a table/showdown center area.");
-    assert(presentation.bottomDock === "deck", "Poker should expose a deck bottom dock.");
+    assert(presentation.centerDock === "deck", "Poker should expose a deck center dock.");
 }
 
 async function main() {

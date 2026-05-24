@@ -112,7 +112,7 @@ async function runWarLiteViewModelTest() {
     );
     assert(
         viewModel.tablePileIds?.length === 1 &&
-        viewModel.tablePresentation === "table-row" &&
+        viewModel.tablePresentation === "battle-formation" &&
         viewModel.tableCards.length === 1 && viewModel.tableCards[0].playerId === firstPlayerId,
         "War Lite should keep the first revealed card visible while waiting for the next player."
     );
@@ -121,7 +121,7 @@ async function runWarLiteViewModelTest() {
     viewModel = getWarLiteViewModel(actor.getSnapshot());
     assert(
         viewModel.tablePileIds?.length === 1 &&
-        viewModel.tablePresentation === "table-row" &&
+        viewModel.tablePresentation === "battle-formation" &&
         viewModel.tableCards.length === 2 && viewModel.tableCards.every((card) => card.isFaceUp),
         "War Lite should expose both revealed battle cards while resolving a complete battle."
     );
