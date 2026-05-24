@@ -1324,6 +1324,26 @@ a {
     pointer-events: auto;
 }
 
+.playerDebugPanelHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.playerDebugPanelClose {
+    background: none;
+    border: none;
+    color: rgba(246, 236, 210, 0.45);
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0 2px;
+}
+
+.playerDebugPanelClose:hover {
+    color: rgba(246, 236, 210, 0.9);
+}
+
 /* ── Table Debug Panel (left) ── */
 .tableDebugPanel {
     flex: 0 0 220px;

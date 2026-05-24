@@ -41,15 +41,25 @@ export class PlayerDebugPanel {
         const root = document.createElement('div');
         root.className = 'playerDebugPanel';
 
+        const header = document.createElement('div');
+        header.className = 'playerDebugPanelHeader';
+
         const title = document.createElement('p');
         title.className = 'tableControlsEyebrow';
+        title.style.margin = '0';
         title.textContent = 'Debug';
-        root.appendChild(title);
+        header.appendChild(title);
 
-        const hint = document.createElement('p');
-        hint.className = 'tableDebugHint';
-        hint.innerHTML = '<kbd>D</kbd> toggle';
-        root.appendChild(hint);
+        const closeBtn = document.createElement('button');
+        closeBtn.className = 'playerDebugPanelClose';
+        closeBtn.textContent = '×';
+        closeBtn.title = 'Close (D)';
+        closeBtn.addEventListener('click', () => {
+            localStorage.removeItem('player-debug-zones');
+            globalThis.dispatchEvent(new Event('player-debug-toggle'));
+        });
+        header.appendChild(closeBtn);
+        root.appendChild(header);
 
         for (const layer of LAYERS) {
             root.appendChild(makeSep());
