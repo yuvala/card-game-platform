@@ -51,44 +51,30 @@ export function drawCapturePileWidget(
     const rotated = angle !== 0;
     const effectiveW = rotated ? cardH : cardW;
     const effectiveH = rotated ? cardW : cardH;
-    if (cardCount > 0) {
-        let stackCount = 1;
-        if (cardCount > 7) stackCount = 3;
-        else if (cardCount > 3) stackCount = 2;
-        for (let i = stackCount - 1; i >= 0; i--) {
-            const back = scene.add
-                .image(x - i * 2, y - i * 2, backTextureKey)
-                .setDisplaySize(cardW, cardH)
-                .setAngle(angle)
-                .setAlpha(0.6 + i * 0.14);
-            layer.add(back);
-        }
-        layer.add(
-            scene.add
-                .text(x + effectiveW / 2 - 2, y - effectiveH / 2 + 2, String(cardCount), {
-                    fontFamily: 'Arial',
-                    fontSize: '9px',
-                    fontStyle: '700',
-                    color: '#ffffff',
-                    backgroundColor: 'rgba(30,100,50,0.88)',
-                    padding: { x: 3, y: 1 },
-                })
-                .setOrigin(1, 0),
-        );
-    } else {
-        const g = scene.add.graphics();
-        g.lineStyle(1, 0x4d7c5a, 0.35);
-        g.strokeRoundedRect(x - effectiveW / 2, y - effectiveH / 2, effectiveW, effectiveH, 5);
-        layer.add(g);
+    if (cardCount <= 0) return;
+
+    let stackCount = 1;
+    if (cardCount > 7) stackCount = 3;
+    else if (cardCount > 3) stackCount = 2;
+    for (let i = stackCount - 1; i >= 0; i--) {
+        const back = scene.add
+            .image(x - i * 2, y - i * 2, backTextureKey)
+            .setDisplaySize(cardW, cardH)
+            .setAngle(angle)
+            .setAlpha(0.6 + i * 0.14);
+        layer.add(back);
     }
     layer.add(
         scene.add
-            .text(x, y + effectiveH / 2 + 5, 'Won', {
+            .text(x + effectiveW / 2 - 2, y - effectiveH / 2 + 2, String(cardCount), {
                 fontFamily: 'Arial',
                 fontSize: '9px',
-                color: cardCount > 0 ? 'rgba(100,220,140,0.86)' : 'rgba(100,180,120,0.38)',
+                fontStyle: '700',
+                color: '#ffffff',
+                backgroundColor: 'rgba(30,100,50,0.88)',
+                padding: { x: 3, y: 1 },
             })
-            .setOrigin(0.5, 0),
+            .setOrigin(1, 0),
     );
 }
 
